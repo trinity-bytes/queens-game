@@ -13,10 +13,12 @@ interface GameState {
   timer: number;
   mistakes: number;
   status: GameStatus;
+  darkMode: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
   setTheme: (theme: Theme) => void;
+  toggleDarkMode: () => void;
   generatePuzzle: () => void;
   toggleCell: (index: number) => void;
   resetBoard: () => void;
@@ -25,6 +27,20 @@ interface GameState {
 }
 
 const THEMES: Theme[] = ["dino", "dog", "cow", "potato", "starwars"];
+
+// Helper to detect system dark mode preference
+const getInitialDarkMode = (): boolean => {
+  if (typeof window === "undefined") return false;
+
+  // Check if user has manually set a preference
+  const stored = localStorage.getItem("dark-mode-override");
+  if (stored !== null) {
+    return stored === "true";
+  }
+
+  // Otherwise, use system preference
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+};
 
 export const useGameStore = create<GameState>((set, get) => ({
   gridSize: 9,
@@ -35,9 +51,25 @@ export const useGameStore = create<GameState>((set, get) => ({
   timer: 0,
   mistakes: 0,
   status: "idle",
+  darkMode: getInitialDarkMode(),
 
   setGridSize: (size) => set({ gridSize: size }),
   setTheme: (theme) => set({ theme }),
+
+  toggleDarkMode: () => {
+    const newMode = !get().darkMode;
+    set({ darkMode: newMode });
+    localStorage.setItem("dark-mode-override", String(newMode));
+
+    // Apply/remove dark class on html element
+    if (typeof window !== "undefined") {
+      if (newMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
+  },
 
   generatePuzzle: () => {
     set({ status: "generating", timer: 0, mistakes: 0, cells: [] });

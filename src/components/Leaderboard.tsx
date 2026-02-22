@@ -82,17 +82,17 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   if (loading) {
     return (
       <div
-        className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+        className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
         role="status"
         aria-busy="true"
         aria-label="Cargando tabla de clasificación"
       >
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-4 py-1">
-            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
             <div className="space-y-2">
-              <div className="h-4 bg-slate-200 rounded"></div>
-              <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
             </div>
           </div>
         </div>
@@ -103,16 +103,21 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
 
   return (
     <section
-      className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+      className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
       aria-label="Tabla de clasificación"
     >
-      <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-4">
-        <Trophy className="text-amber-500 w-6 h-6" aria-hidden="true" />
-        <h2 className="text-xl font-bold text-slate-800">Mejores Tiempos</h2>
+      <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700 pb-4">
+        <Trophy
+          className="text-amber-500 dark:text-amber-400 w-6 h-6"
+          aria-hidden="true"
+        />
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+          Mejores Tiempos
+        </h2>
       </div>
 
       {entries.length === 0 ? (
-        <p className="text-slate-500 text-center py-4">
+        <p className="text-slate-500 dark:text-slate-400 text-center py-4">
           Aún no hay récords. ¡Sé el primero!
         </p>
       ) : (
@@ -120,7 +125,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
           {entries.map((entry, index) => (
             <li
               key={entry.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <span
@@ -128,12 +133,12 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
                   ${
                     index === 0
-                      ? "bg-amber-100 text-amber-700"
+                      ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-400"
                       : index === 1
-                        ? "bg-slate-200 text-slate-700"
+                        ? "bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300"
                         : index === 2
-                          ? "bg-orange-100 text-orange-800"
-                          : "bg-slate-100 text-slate-500"
+                          ? "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-400"
+                          : "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400"
                   }
                 `}
                 >
@@ -141,19 +146,19 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 </span>
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-400" aria-hidden="true" />
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 dark:text-slate-200">
                     {entry.player_name}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 text-amber-500 font-bold">
+                <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-bold">
                   <Star className="w-4 h-4" aria-hidden="true" />
                   <span aria-label={`Puntaje: ${entry.score}`}>
                     {entry.score}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-sky-600 font-mono font-semibold text-sm">
+                <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400 font-mono font-semibold text-sm">
                   <Clock className="w-4 h-4" aria-hidden="true" />
                   <span aria-label={`Tiempo: ${formatTime(entry.time_ms)}`}>
                     {formatTime(entry.time_ms)}

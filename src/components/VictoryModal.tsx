@@ -142,7 +142,7 @@ export default function VictoryModal() {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="victory-title"
@@ -150,38 +150,43 @@ export default function VictoryModal() {
       tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100 opacity-100">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100 opacity-100">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Trophy className="w-8 h-8 text-sky-500" aria-hidden="true" />
+          <div className="w-16 h-16 bg-sky-100 dark:bg-sky-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trophy
+              className="w-8 h-8 text-sky-500 dark:text-sky-400"
+              aria-hidden="true"
+            />
           </div>
           <h2
             id="victory-title"
-            className="text-2xl font-bold text-slate-800 mb-2"
+            className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2"
           >
             ¡Victoria!
           </h2>
-          <p className="text-slate-600 font-medium">{getMessage()}</p>
+          <p className="text-slate-600 dark:text-slate-300 font-medium">
+            {getMessage()}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-slate-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 mb-1 flex items-center justify-center gap-1">
+          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
               <AlertCircle className="w-4 h-4" aria-hidden="true" /> Errores
             </p>
             <p
-              className="text-2xl font-bold text-rose-500"
+              className="text-2xl font-bold text-rose-500 dark:text-rose-400"
               aria-label={`Errores: ${mistakes}`}
             >
               {mistakes}
             </p>
           </div>
-          <div className="bg-slate-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 mb-1 flex items-center justify-center gap-1">
+          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
               <Star className="w-4 h-4" aria-hidden="true" /> Puntaje
             </p>
             <p
-              className="text-2xl font-bold text-amber-500"
+              className="text-2xl font-bold text-amber-500 dark:text-amber-400"
               aria-label={`Puntaje: ${score}`}
             >
               {score}
@@ -189,9 +194,11 @@ export default function VictoryModal() {
           </div>
         </div>
 
-        <div className="bg-slate-50 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm text-slate-500 mb-1">Tu tiempo</p>
-          <p className="text-3xl font-mono font-bold text-sky-600">
+        <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 mb-6 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+            Tu tiempo
+          </p>
+          <p className="text-3xl font-mono font-bold text-sky-600 dark:text-sky-400">
             {formatTime(timer)}
           </p>
         </div>
@@ -200,7 +207,7 @@ export default function VictoryModal() {
           <form onSubmit={handleSave} className="mb-6">
             <label
               htmlFor="player-name"
-              className="block text-sm font-medium text-slate-700 mb-2"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
             >
               Guarda tu récord
             </label>
@@ -211,7 +218,7 @@ export default function VictoryModal() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre o apodo"
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-sky-400"
                 maxLength={15}
                 required
                 list="nick-suggestions"
@@ -225,7 +232,7 @@ export default function VictoryModal() {
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 bg-sky-600 dark:bg-sky-700 text-white rounded-lg font-medium hover:bg-sky-700 dark:hover:bg-sky-600 disabled:opacity-50 transition-colors"
               >
                 {saving ? "..." : "Guardar"}
               </button>
@@ -234,14 +241,14 @@ export default function VictoryModal() {
         ) : (
           <div className="mb-6 space-y-3">
             <div
-              className="bg-green-50 text-green-700 p-3 rounded-lg text-center font-medium"
+              className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-3 rounded-lg text-center font-medium"
               role="alert"
             >
               ¡Récord guardado!
             </div>
             <Link
               href="/leaderboard"
-              className="w-full py-2.5 bg-amber-50 text-amber-700 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-amber-100 transition-colors border border-amber-200"
+              className="w-full py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors border border-amber-200 dark:border-amber-700"
             >
               <Trophy size={18} aria-hidden="true" />
               Ver Tabla de Líderes
@@ -255,7 +262,7 @@ export default function VictoryModal() {
             setName(getSavedNicks()[0] ?? "");
             generatePuzzle();
           }}
-          className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
+          className="w-full py-3 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
         >
           <Play size={20} aria-hidden="true" />
           Jugar de nuevo

@@ -10,21 +10,21 @@ interface CellProps {
 }
 
 const REGION_COLORS = [
-  "bg-sky-100",
-  "bg-blue-200",
-  "bg-indigo-100",
-  "bg-cyan-200",
-  "bg-teal-100",
-  "bg-emerald-200",
-  "bg-green-100",
-  "bg-lime-200",
-  "bg-yellow-100",
-  "bg-amber-200",
-  "bg-orange-100",
-  "bg-red-200",
-  "bg-rose-200",
-  "bg-violet-100",
-  "bg-fuchsia-200",
+  "bg-sky-100 dark:bg-sky-900",
+  "bg-blue-200 dark:bg-blue-900",
+  "bg-indigo-100 dark:bg-indigo-900",
+  "bg-cyan-200 dark:bg-cyan-900",
+  "bg-teal-100 dark:bg-teal-900",
+  "bg-emerald-200 dark:bg-emerald-900",
+  "bg-green-100 dark:bg-green-900",
+  "bg-lime-200 dark:bg-lime-900",
+  "bg-yellow-100 dark:bg-yellow-900",
+  "bg-amber-200 dark:bg-amber-900",
+  "bg-orange-100 dark:bg-orange-900",
+  "bg-red-200 dark:bg-red-900",
+  "bg-rose-200 dark:bg-rose-900",
+  "bg-violet-100 dark:bg-violet-900",
+  "bg-fuchsia-200 dark:bg-fuchsia-900",
 ];
 
 const REGION_NAMES = [
@@ -68,10 +68,10 @@ export default function Cell({
     col === gridSize - 1 || regions[row * gridSize + (col + 1)] !== regionId;
 
   const borderClasses = `
-    ${topBorder ? "border-t-2 border-t-slate-800" : "border-t border-t-transparent"}
-    ${bottomBorder ? "border-b-2 border-b-slate-800" : "border-b border-b-transparent"}
-    ${leftBorder ? "border-l-2 border-l-slate-800" : "border-l border-l-transparent"}
-    ${rightBorder ? "border-r-2 border-r-slate-800" : "border-r border-r-transparent"}
+    ${topBorder ? "border-t-2 border-t-slate-800 dark:border-t-slate-600" : "border-t border-t-transparent"}
+    ${bottomBorder ? "border-b-2 border-b-slate-800 dark:border-b-slate-600" : "border-b border-b-transparent"}
+    ${leftBorder ? "border-l-2 border-l-slate-800 dark:border-l-slate-600" : "border-l border-l-transparent"}
+    ${rightBorder ? "border-r-2 border-r-slate-800 dark:border-r-slate-600" : "border-r border-r-transparent"}
   `;
 
   const bgColor = REGION_COLORS[regionId % REGION_COLORS.length];
