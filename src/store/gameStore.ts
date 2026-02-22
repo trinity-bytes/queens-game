@@ -1,6 +1,7 @@
 import { create } from "zustand";
+import { getCurrentTheme } from "@/lib/themeSelector";
 
-export type CellState = 0 | 2; // 0: empty, 2: Queen
+export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
 export type GameStatus = "idle" | "generating" | "playing" | "won";
 export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars";
 
@@ -12,6 +13,7 @@ interface GameState {
   theme: Theme;
   timer: number;
   mistakes: number;
+  xPenalties: number;
   status: GameStatus;
   darkMode: boolean;
 
@@ -21,6 +23,7 @@ interface GameState {
   toggleDarkMode: () => void;
   generatePuzzle: () => void;
   toggleCell: (index: number) => void;
+  incrementXPenalty: () => void;
   resetBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
@@ -47,9 +50,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   regions: [],
   solution: [],
   cells: [],
-  theme: "dino",
+  theme: getCurrentTheme(),
   timer: 0,
   mistakes: 0,
+  xPenalties: 0,
   status: "idle",
   darkMode: getInitialDarkMode(),
 
@@ -72,7 +76,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   generatePuzzle: () => {
-    set({ status: "generating", timer: 0, mistakes: 0, cells: [] });
+    set({
+      status: "generating",
+      timer: 0,
+      mistakes: 0,
+      xPenalties: 0,
+      cells: [],
+    });
 
     const worker = new Worker(
       new URL("../workers/puzzleGenerator.worker.ts", import.meta.url),
@@ -85,7 +95,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           solution: e.data.solution,
           cells: new Array(e.data.size * e.data.size).fill(0),
           status: "playing",
-          theme: THEMES[Math.floor(Math.random() * THEMES.length)],
+          theme: getCurrentTheme(),
         });
       } else {
         console.error(e.data.error);
@@ -103,7 +113,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const newCells = [...cells];
     const currentState = newCells[index];
-    const newState = currentState === 0 ? 2 : 0;
+    // Cycle states: 0 -> 1 -> 2 -> 0
+    const newState = currentState === 0 ? 1 : currentState === 1 ? 2 : 0;
     newCells[index] = newState as CellState;
 
     let newMistakes = mistakes;
@@ -119,12 +130,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().checkWinCondition();
   },
 
+  incrementXPenalty: () => {
+    set((state) => ({ xPenalties: state.xPenalties + 1 }));
+  },
+
   resetBoard: () => {
     const { cells } = get();
     set({
       cells: new Array(cells.length).fill(0),
       timer: 0,
       mistakes: 0,
+      xPenalties: 0,
       status: "playing",
     });
   },

@@ -1,10 +1,10 @@
 import { useGameStore } from "@/store/gameStore";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 interface CellProps {
   index: number;
   regionId: number;
-  state: 0 | 2;
+  state: 0 | 1 | 2;
   gridSize: number;
   regions: number[];
 }
@@ -52,7 +52,29 @@ export default function Cell({
   gridSize,
   regions,
 }: CellProps) {
-  const { toggleCell, theme } = useGameStore();
+  const { toggleCell, theme, incrementXPenalty } = useGameStore();
+  const xTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (state === 1) {
+      // Start 2-second timer when cell becomes 'X'
+      xTimeoutRef.current = setTimeout(() => {
+        incrementXPenalty();
+      }, 2000);
+    } else {
+      // Clear timer if state changes before 2 seconds
+      if (xTimeoutRef.current) {
+        clearTimeout(xTimeoutRef.current);
+        xTimeoutRef.current = null;
+      }
+    }
+
+    return () => {
+      if (xTimeoutRef.current) {
+        clearTimeout(xTimeoutRef.current);
+      }
+    };
+  }, [state, incrementXPenalty]);
 
   const row = Math.floor(index / gridSize);
   const col = index % gridSize;
@@ -80,6 +102,7 @@ export default function Cell({
 
   const getIcon = () => {
     if (state === 0) return null;
+    if (state === 1) return "❌";
 
     switch (theme) {
       case "dino":
@@ -97,7 +120,8 @@ export default function Cell({
     }
   };
 
-  const stateLabel = state === 2 ? "con reina" : "vacía";
+  const stateLabel =
+    state === 2 ? "con reina" : state === 1 ? "marcada con X" : "vacía";
   const ariaLabel = `Fila ${row + 1}, Columna ${col + 1}, región ${regionName}, ${stateLabel}`;
 
   const handleKeyDown = useCallback(

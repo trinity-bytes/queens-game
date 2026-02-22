@@ -21,7 +21,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const limit = fullPage ? 25 : 10;
+  const limit = fullPage ? 50 : 10;
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -101,9 +101,29 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
     );
   }
 
+  const getRankStyle = (index: number) => {
+    if (index === 0)
+      return "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-400 border-2 border-amber-400"; // Oro
+    if (index === 1)
+      return "bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 border-2 border-slate-400"; // Plata
+    if (index === 2)
+      return "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-400 border-2 border-orange-400"; // Bronce
+    if (index < 10)
+      return "bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-400"; // Top 10
+    return "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"; // Resto
+  };
+
+  const getRankLabel = (index: number) => {
+    if (index === 0) return "Rango Oro";
+    if (index === 1) return "Rango Plata";
+    if (index === 2) return "Rango Bronce";
+    if (index < 10) return "Top 10";
+    return `Posición ${index + 1}`;
+  };
+
   return (
     <section
-      className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+      className={`w-full ${fullPage ? "max-w-2xl" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
       aria-label="Tabla de clasificación"
     >
       <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700 pb-4">
@@ -129,18 +149,9 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`
-                  w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                  ${
-                    index === 0
-                      ? "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-400"
-                      : index === 1
-                        ? "bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300"
-                        : index === 2
-                          ? "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-400"
-                          : "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400"
-                  }
-                `}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankStyle(index)}`}
+                  aria-label={getRankLabel(index)}
+                  title={getRankLabel(index)}
                 >
                   {index + 1}
                 </span>
@@ -155,7 +166,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-bold">
                   <Star className="w-4 h-4" aria-hidden="true" />
                   <span aria-label={`Puntaje: ${entry.score}`}>
-                    {entry.score}
+                    {entry.score.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400 font-mono font-semibold text-sm">

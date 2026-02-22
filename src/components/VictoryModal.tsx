@@ -15,7 +15,8 @@ function prefersReducedMotion(): boolean {
 }
 
 export default function VictoryModal() {
-  const { status, timer, mistakes, theme, generatePuzzle } = useGameStore();
+  const { status, timer, mistakes, xPenalties, theme, generatePuzzle } =
+    useGameStore();
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -23,7 +24,10 @@ export default function VictoryModal() {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const score = Math.max(0, 10000 - Math.floor(timer / 10) - mistakes * 500);
+  const score = Math.max(
+    0,
+    100000 - timer - mistakes * 5000 - xPenalties * 500,
+  );
 
   useEffect(() => {
     if (status === "won") {
@@ -169,7 +173,7 @@ export default function VictoryModal() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
               <AlertCircle className="w-4 h-4" aria-hidden="true" /> Errores
@@ -179,6 +183,17 @@ export default function VictoryModal() {
               aria-label={`Errores: ${mistakes}`}
             >
               {mistakes}
+            </p>
+          </div>
+          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" /> X
+            </p>
+            <p
+              className="text-2xl font-bold text-orange-500 dark:text-orange-400"
+              aria-label={`Penalizaciones por X: ${xPenalties}`}
+            >
+              {xPenalties}
             </p>
           </div>
           <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">

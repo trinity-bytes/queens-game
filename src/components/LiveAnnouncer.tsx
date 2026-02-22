@@ -7,9 +7,10 @@ import { useGameStore } from "@/store/gameStore";
  * Invisible live region that announces game events to screen readers.
  */
 export default function LiveAnnouncer() {
-  const { status, mistakes } = useGameStore();
+  const { status, mistakes, xPenalties } = useGameStore();
   const [message, setMessage] = useState("");
   const prevMistakes = useRef(mistakes);
+  const prevXPenalties = useRef(xPenalties);
   const prevStatus = useRef(status);
 
   useEffect(() => {
@@ -19,6 +20,16 @@ export default function LiveAnnouncer() {
     }
     prevMistakes.current = mistakes;
   }, [mistakes]);
+
+  useEffect(() => {
+    // Announce X penalty
+    if (xPenalties > prevXPenalties.current) {
+      setMessage(
+        `Penalización por mantener una X demasiado tiempo. Total: ${xPenalties}.`,
+      );
+    }
+    prevXPenalties.current = xPenalties;
+  }, [xPenalties]);
 
   useEffect(() => {
     if (status !== prevStatus.current) {
