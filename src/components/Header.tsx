@@ -1,9 +1,9 @@
 import { useGameStore } from "@/store/gameStore";
 import { useEffect } from "react";
-import { Play, RotateCcw, Trophy } from "lucide-react";
+import { Play } from "lucide-react";
 
 export default function Header() {
-  const { timer, status, theme, generatePuzzle, resetBoard } = useGameStore();
+  const { timer, status, theme, generatePuzzle } = useGameStore();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -42,31 +42,30 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between w-full max-w-md p-4 bg-white rounded-xl shadow-sm mb-6">
       <div className="flex items-center gap-2">
-        <span className="text-2xl">{getThemeIcon()}</span>
-        <span className="font-bold text-slate-700 text-lg">Queens</span>
+        <span className="text-2xl" aria-hidden="true">
+          {getThemeIcon()}
+        </span>
+        <h1 className="font-bold text-slate-700 text-lg">Queens</h1>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="font-mono text-xl font-semibold text-sky-600">
+        <div
+          role="timer"
+          aria-label={`Tiempo transcurrido: ${formatTime(timer)}`}
+          aria-live="off"
+          className="font-mono text-xl font-semibold text-sky-600"
+        >
           {formatTime(timer)}
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={resetBoard}
-            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
-            title="Reiniciar tablero"
-          >
-            <RotateCcw size={20} />
-          </button>
-          <button
-            onClick={generatePuzzle}
-            className="p-2 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-600 transition-colors"
-            title="Nuevo puzzle"
-          >
-            <Play size={20} />
-          </button>
-        </div>
+        <button
+          onClick={generatePuzzle}
+          className="p-2 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-600 transition-colors"
+          aria-label="Nuevo puzzle"
+          title="Nuevo puzzle"
+        >
+          <Play size={20} aria-hidden="true" />
+        </button>
       </div>
     </header>
   );

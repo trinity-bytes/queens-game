@@ -13,9 +13,15 @@ interface LeaderboardEntry {
   created_at: string;
 }
 
-export default function Leaderboard() {
+interface LeaderboardProps {
+  fullPage?: boolean;
+}
+
+export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const limit = fullPage ? 25 : 10;
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -23,10 +29,10 @@ export default function Leaderboard() {
         const { data, error } = await supabase
           .from("leaderboard")
           .select("*")
-          .eq("grid_size", 8)
+          .eq("grid_size", 9)
           .order("score", { ascending: false })
           .order("time_ms", { ascending: true })
-          .limit(10);
+          .limit(limit);
 
         if (error) throw error;
         setEntries(data || []);
@@ -55,7 +61,7 @@ export default function Leaderboard() {
                 }
                 return a.time_ms - b.time_ms;
               })
-              .slice(0, 10);
+              .slice(0, limit);
           });
         },
       )
@@ -64,7 +70,7 @@ export default function Leaderboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [limit]);
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -75,7 +81,12 @@ export default function Leaderboard() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-6 mt-6">
+      <div
+        className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando tabla de clasificación"
+      >
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-4 py-1">
             <div className="h-4 bg-slate-200 rounded w-3/4"></div>
@@ -85,14 +96,18 @@ export default function Leaderboard() {
             </div>
           </div>
         </div>
+        <span className="sr-only">Cargando mejores tiempos…</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-6 mt-6">
+    <section
+      className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+      aria-label="Tabla de clasificación"
+    >
       <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-4">
-        <Trophy className="text-amber-500 w-6 h-6" />
+        <Trophy className="text-amber-500 w-6 h-6" aria-hidden="true" />
         <h2 className="text-xl font-bold text-slate-800">Mejores Tiempos</h2>
       </div>
 
@@ -125,7 +140,7 @@ export default function Leaderboard() {
                   {index + 1}
                 </span>
                 <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-slate-400" />
+                  <User className="w-4 h-4 text-slate-400" aria-hidden="true" />
                   <span className="font-medium text-slate-700">
                     {entry.player_name}
                   </span>
@@ -133,18 +148,22 @@ export default function Leaderboard() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1 text-amber-500 font-bold">
-                  <Star className="w-4 h-4" />
-                  {entry.score}
+                  <Star className="w-4 h-4" aria-hidden="true" />
+                  <span aria-label={`Puntaje: ${entry.score}`}>
+                    {entry.score}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 text-sky-600 font-mono font-semibold text-sm">
-                  <Clock className="w-4 h-4" />
-                  {formatTime(entry.time_ms)}
+                  <Clock className="w-4 h-4" aria-hidden="true" />
+                  <span aria-label={`Tiempo: ${formatTime(entry.time_ms)}`}>
+                    {formatTime(entry.time_ms)}
+                  </span>
                 </div>
               </div>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

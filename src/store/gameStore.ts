@@ -27,7 +27,7 @@ interface GameState {
 const THEMES: Theme[] = ["dino", "dog", "cow", "potato", "starwars"];
 
 export const useGameStore = create<GameState>((set, get) => ({
-  gridSize: 8,
+  gridSize: 9,
   regions: [],
   solution: [],
   cells: [],

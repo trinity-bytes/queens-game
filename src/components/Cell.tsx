@@ -1,4 +1,5 @@
 import { useGameStore } from "@/store/gameStore";
+import { useCallback } from "react";
 
 interface CellProps {
   index: number;
@@ -21,6 +22,27 @@ const REGION_COLORS = [
   "bg-amber-200",
   "bg-orange-100",
   "bg-red-200",
+  "bg-rose-200",
+  "bg-violet-100",
+  "bg-fuchsia-200",
+];
+
+const REGION_NAMES = [
+  "cielo",
+  "azul",
+  "índigo",
+  "cian",
+  "verde azulado",
+  "esmeralda",
+  "verde",
+  "lima",
+  "amarillo",
+  "ámbar",
+  "naranja",
+  "rojo",
+  "rosa",
+  "violeta",
+  "fucsia",
 ];
 
 export default function Cell({
@@ -53,6 +75,8 @@ export default function Cell({
   `;
 
   const bgColor = REGION_COLORS[regionId % REGION_COLORS.length];
+  const patternClass = `region-pattern-${regionId % 15}`;
+  const regionName = REGION_NAMES[regionId % REGION_NAMES.length];
 
   const getIcon = () => {
     if (state === 0) return null;
@@ -73,20 +97,73 @@ export default function Cell({
     }
   };
 
+  const stateLabel = state === 2 ? "con reina" : "vacía";
+  const ariaLabel = `Fila ${row + 1}, Columna ${col + 1}, región ${regionName}, ${stateLabel}`;
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleCell(index);
+        return;
+      }
+
+      // Arrow key navigation within the grid
+      let targetIndex = -1;
+      switch (e.key) {
+        case "ArrowUp":
+          if (row > 0) targetIndex = (row - 1) * gridSize + col;
+          break;
+        case "ArrowDown":
+          if (row < gridSize - 1) targetIndex = (row + 1) * gridSize + col;
+          break;
+        case "ArrowLeft":
+          if (col > 0) targetIndex = row * gridSize + (col - 1);
+          break;
+        case "ArrowRight":
+          if (col < gridSize - 1) targetIndex = row * gridSize + (col + 1);
+          break;
+        case "Home":
+          targetIndex = row * gridSize;
+          break;
+        case "End":
+          targetIndex = row * gridSize + (gridSize - 1);
+          break;
+      }
+
+      if (targetIndex >= 0) {
+        e.preventDefault();
+        const targetEl = document.querySelector(
+          `[data-cell-index="${targetIndex}"]`,
+        ) as HTMLElement;
+        targetEl?.focus();
+      }
+    },
+    [index, row, col, gridSize, toggleCell],
+  );
+
+  const icon = getIcon();
+
   return (
-    <div
+    <button
+      type="button"
+      data-cell-index={index}
+      aria-label={ariaLabel}
+      aria-pressed={state === 2}
+      tabIndex={index === 0 ? 0 : -1}
       className={`
         w-full aspect-square flex items-center justify-center text-2xl cursor-pointer select-none
         transition-colors duration-200
-        ${bgColor} ${borderClasses}
+        ${bgColor} ${patternClass} ${borderClasses}
         hover:brightness-95 active:scale-95
       `}
       onPointerDown={(e) => {
-        e.preventDefault(); // Prevent default touch behavior like scrolling
+        e.preventDefault();
         toggleCell(index);
       }}
+      onKeyDown={handleKeyDown}
     >
-      {getIcon()}
-    </div>
+      {icon && <span aria-hidden="true">{icon}</span>}
+    </button>
   );
 }

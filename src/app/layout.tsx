@@ -18,7 +18,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="antialiased bg-sky-50 text-slate-900">{children}</body>
+      <body className="antialiased bg-sky-50 text-slate-900">
+        <a href="#main-content" className="skip-to-content">
+          Saltar al contenido
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

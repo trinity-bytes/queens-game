@@ -13,9 +13,17 @@ export default function Board() {
 
   if (status === "generating") {
     return (
-      <div className="w-full max-w-md aspect-square bg-slate-100 rounded-xl flex items-center justify-center shadow-inner">
+      <div
+        className="w-full max-w-md aspect-square bg-slate-100 rounded-xl flex items-center justify-center shadow-inner"
+        role="status"
+        aria-live="polite"
+        aria-label="Generando puzzle"
+      >
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+          <div
+            className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"
+            aria-hidden="true"
+          ></div>
           <p className="text-slate-500 font-medium animate-pulse">
             Generando puzzle único...
           </p>
@@ -26,6 +34,8 @@ export default function Board() {
 
   return (
     <div
+      role="grid"
+      aria-label={`Tablero de juego de ${gridSize} por ${gridSize}`}
       className="w-full max-w-md aspect-square bg-white rounded-xl shadow-lg overflow-hidden border-4 border-slate-800"
       style={{
         display: "grid",
@@ -33,15 +43,22 @@ export default function Board() {
         gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
       }}
     >
-      {cells.map((state, index) => (
-        <Cell
-          key={index}
-          index={index}
-          regionId={regions[index]}
-          state={state}
-          gridSize={gridSize}
-          regions={regions}
-        />
+      {Array.from({ length: gridSize }, (_, rowIdx) => (
+        <div key={rowIdx} role="row" style={{ display: "contents" }}>
+          {Array.from({ length: gridSize }, (_, colIdx) => {
+            const index = rowIdx * gridSize + colIdx;
+            return (
+              <Cell
+                key={index}
+                index={index}
+                regionId={regions[index]}
+                state={cells[index]}
+                gridSize={gridSize}
+                regions={regions}
+              />
+            );
+          })}
+        </div>
       ))}
     </div>
   );
