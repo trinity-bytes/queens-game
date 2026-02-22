@@ -1,10 +1,9 @@
 import { useGameStore } from "@/store/gameStore";
-import { X } from "lucide-react";
 
 interface CellProps {
   index: number;
   regionId: number;
-  state: 0 | 1 | 2;
+  state: 0 | 2;
   gridSize: number;
   regions: number[];
 }
@@ -57,7 +56,6 @@ export default function Cell({
 
   const getIcon = () => {
     if (state === 0) return null;
-    if (state === 1) return <X className="text-slate-400 w-6 h-6" />;
 
     switch (theme) {
       case "dino":

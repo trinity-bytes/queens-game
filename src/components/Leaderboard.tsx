@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Trophy, Clock, User } from "lucide-react";
+import { Trophy, Clock, User, Star } from "lucide-react";
 
 interface LeaderboardEntry {
   id: string;
@@ -8,6 +8,8 @@ interface LeaderboardEntry {
   time_ms: number;
   grid_size: number;
   theme_used: string;
+  mistakes: number;
+  score: number;
   created_at: string;
 }
 
@@ -22,6 +24,7 @@ export default function Leaderboard() {
           .from("leaderboard")
           .select("*")
           .eq("grid_size", 8)
+          .order("score", { ascending: false })
           .order("time_ms", { ascending: true })
           .limit(10);
 
@@ -46,7 +49,12 @@ export default function Leaderboard() {
           setEntries((current) => {
             const newEntries = [...current, payload.new as LeaderboardEntry];
             return newEntries
-              .sort((a, b) => a.time_ms - b.time_ms)
+              .sort((a, b) => {
+                if (b.score !== a.score) {
+                  return b.score - a.score;
+                }
+                return a.time_ms - b.time_ms;
+              })
               .slice(0, 10);
           });
         },
@@ -123,9 +131,15 @@ export default function Leaderboard() {
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-sky-600 font-mono font-semibold">
-                <Clock className="w-4 h-4" />
-                {formatTime(entry.time_ms)}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 text-amber-500 font-bold">
+                  <Star className="w-4 h-4" />
+                  {entry.score}
+                </div>
+                <div className="flex items-center gap-1 text-sky-600 font-mono font-semibold text-sm">
+                  <Clock className="w-4 h-4" />
+                  {formatTime(entry.time_ms)}
+                </div>
               </div>
             </li>
           ))}

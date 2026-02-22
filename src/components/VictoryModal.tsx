@@ -1,14 +1,16 @@
 import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
-import { Trophy, Play } from "lucide-react";
+import { Trophy, Play, AlertCircle, Star } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function VictoryModal() {
-  const { status, timer, theme, generatePuzzle } = useGameStore();
+  const { status, timer, mistakes, theme, generatePuzzle } = useGameStore();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const score = Math.max(0, 10000 - Math.floor(timer / 10) - mistakes * 500);
 
   useEffect(() => {
     if (status === "won") {
@@ -59,6 +61,8 @@ export default function VictoryModal() {
           time_ms: timer,
           grid_size: 8,
           theme_used: theme,
+          mistakes: mistakes,
+          score: score,
         },
       ]);
 
@@ -81,6 +85,21 @@ export default function VictoryModal() {
           </div>
           <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Victoria!</h2>
           <p className="text-slate-600 font-medium">{getMessage()}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-slate-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 mb-1 flex items-center justify-center gap-1">
+              <AlertCircle className="w-4 h-4" /> Errores
+            </p>
+            <p className="text-2xl font-bold text-rose-500">{mistakes}</p>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 mb-1 flex items-center justify-center gap-1">
+              <Star className="w-4 h-4" /> Puntaje
+            </p>
+            <p className="text-2xl font-bold text-amber-500">{score}</p>
+          </div>
         </div>
 
         <div className="bg-slate-50 rounded-xl p-4 mb-6 text-center">

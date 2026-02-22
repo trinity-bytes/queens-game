@@ -1,15 +1,17 @@
 import { create } from "zustand";
 
-export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
+export type CellState = 0 | 2; // 0: empty, 2: Queen
 export type GameStatus = "idle" | "generating" | "playing" | "won";
 export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars";
 
 interface GameState {
   gridSize: number;
   regions: number[];
+  solution: number[];
   cells: CellState[];
   theme: Theme;
   timer: number;
+  mistakes: number;
   status: GameStatus;
 
   // Actions
@@ -27,16 +29,18 @@ const THEMES: Theme[] = ["dino", "dog", "cow", "potato", "starwars"];
 export const useGameStore = create<GameState>((set, get) => ({
   gridSize: 8,
   regions: [],
+  solution: [],
   cells: [],
   theme: "dino",
   timer: 0,
+  mistakes: 0,
   status: "idle",
 
   setGridSize: (size) => set({ gridSize: size }),
   setTheme: (theme) => set({ theme }),
 
   generatePuzzle: () => {
-    set({ status: "generating", timer: 0, cells: [] });
+    set({ status: "generating", timer: 0, mistakes: 0, cells: [] });
 
     const worker = new Worker(
       new URL("../workers/puzzleGenerator.worker.ts", import.meta.url),
@@ -46,6 +50,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (e.data.success) {
         set({
           regions: e.data.regions,
+          solution: e.data.solution,
           cells: new Array(e.data.size * e.data.size).fill(0),
           status: "playing",
           theme: THEMES[Math.floor(Math.random() * THEMES.length)],
@@ -61,13 +66,24 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   toggleCell: (index) => {
-    const { cells, status } = get();
+    const { cells, status, solution, gridSize, mistakes } = get();
     if (status !== "playing") return;
 
     const newCells = [...cells];
-    newCells[index] = ((newCells[index] + 1) % 3) as CellState;
+    const currentState = newCells[index];
+    const newState = currentState === 0 ? 2 : 0;
+    newCells[index] = newState as CellState;
 
-    set({ cells: newCells });
+    let newMistakes = mistakes;
+    if (newState === 2) {
+      const row = Math.floor(index / gridSize);
+      const col = index % gridSize;
+      if (solution[row] !== col) {
+        newMistakes++;
+      }
+    }
+
+    set({ cells: newCells, mistakes: newMistakes });
     get().checkWinCondition();
   },
 
@@ -76,6 +92,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       cells: new Array(cells.length).fill(0),
       timer: 0,
+      mistakes: 0,
       status: "playing",
     });
   },

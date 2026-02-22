@@ -158,7 +158,7 @@ self.onmessage = (e: MessageEvent) => {
     const regions = generateRegions(seed, size);
 
     if (hasUniqueSolution(regions, size)) {
-      self.postMessage({ success: true, regions, size });
+      self.postMessage({ success: true, regions, size, solution: seed });
       return;
     }
   }
