@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Trophy, Clock, User, Star } from "lucide-react";
+import { Clock, User } from "lucide-react";
 
 interface LeaderboardEntry {
   id: string;
@@ -123,17 +123,16 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
 
   return (
     <section
-      className={`w-full ${fullPage ? "max-w-2xl" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+      className={`w-full ${fullPage ? "max-w-2xl" : "max-w-md"} bg-theme-surface rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
       aria-label="Tabla de clasificación"
     >
       <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700 pb-4">
-        <Trophy
-          className="text-amber-500 dark:text-amber-400 w-6 h-6"
-          aria-hidden="true"
+        <img
+          src="/assets/icons/trophy.png"
+          alt="Trophy"
+          className="w-6 h-6 object-contain"
         />
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
-          Mejores Tiempos
-        </h2>
+        <h2 className="text-xl font-bold text-theme-text">Mejores Tiempos</h2>
       </div>
 
       {entries.length === 0 ? (
@@ -164,12 +163,25 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-bold">
-                  <Star className="w-4 h-4" aria-hidden="true" />
+                  <div
+                    className="w-6 h-6 bg-amber-500 dark:bg-amber-400"
+                    style={{
+                      maskImage: "url(/assets/icons/star.svg)",
+                      WebkitMaskImage: "url(/assets/icons/star.svg)",
+                      maskSize: "contain",
+                      WebkitMaskSize: "contain",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskPosition: "center",
+                      WebkitMaskPosition: "center",
+                    }}
+                    aria-label="Star"
+                  />
                   <span aria-label={`Puntaje: ${entry.score}`}>
                     {entry.score.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400 font-mono font-semibold text-sm">
+                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-semibold text-sm">
                   <Clock className="w-4 h-4" aria-hidden="true" />
                   <span aria-label={`Tiempo: ${formatTime(entry.time_ms)}`}>
                     {formatTime(entry.time_ms)}

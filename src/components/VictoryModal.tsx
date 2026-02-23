@@ -1,7 +1,7 @@
 import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
-import { Trophy, Play, AlertCircle, Star } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
@@ -156,15 +156,16 @@ export default function VictoryModal() {
     >
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100 opacity-100">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-sky-100 dark:bg-sky-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Trophy
-              className="w-8 h-8 text-sky-500 dark:text-sky-400"
-              aria-hidden="true"
+          <div className="w-16 h-16 bg-theme-accent rounded-full flex items-center justify-center mx-auto mb-4">
+            <img
+              src="/assets/icons/trophy.png"
+              alt="Trophy"
+              className="w-8 h-8 object-contain"
             />
           </div>
           <h2
             id="victory-title"
-            className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2"
+            className="text-2xl font-bold text-theme-text mb-2"
           >
             ¡Victoria!
           </h2>
@@ -198,7 +199,12 @@ export default function VictoryModal() {
           </div>
           <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
-              <Star className="w-4 h-4" aria-hidden="true" /> Puntaje
+              <img
+                src="/assets/icons/star.svg"
+                alt="Star"
+                className="w-4 h-4 object-contain"
+              />{" "}
+              Puntaje
             </p>
             <p
               className="text-2xl font-bold text-amber-500 dark:text-amber-400"
@@ -213,7 +219,7 @@ export default function VictoryModal() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
             Tu tiempo
           </p>
-          <p className="text-3xl font-mono font-bold text-sky-600 dark:text-sky-400">
+          <p className="text-3xl font-mono font-bold text-theme-text">
             {formatTime(timer)}
           </p>
         </div>
@@ -265,7 +271,11 @@ export default function VictoryModal() {
               href="/leaderboard"
               className="w-full py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors border border-amber-200 dark:border-amber-700"
             >
-              <Trophy size={18} aria-hidden="true" />
+              <img
+                src="/assets/icons/trophy.png"
+                alt="Trophy"
+                className="w-5 h-5 object-contain"
+              />
               Ver Tabla de Líderes
             </Link>
           </div>
@@ -279,7 +289,11 @@ export default function VictoryModal() {
           }}
           className="w-full py-3 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
         >
-          <Play size={20} aria-hidden="true" />
+          <img
+            src="/assets/icons/play-button.png"
+            alt="Play"
+            className="w-5 h-5 object-contain invert"
+          />
           Jugar de nuevo
         </button>
       </div>

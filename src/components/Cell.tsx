@@ -102,22 +102,27 @@ export default function Cell({
 
   const getIcon = () => {
     if (state === 0) return null;
-    if (state === 1) return "❌";
+    if (state === 1)
+      return (
+        <img
+          src="/assets/figures/x-mark.png"
+          alt="X"
+          className="w-3/4 h-3/4 object-contain opacity-70"
+        />
+      );
 
-    switch (theme) {
-      case "dino":
-        return "🦕";
-      case "dog":
-        return "🐶";
-      case "cow":
-        return "🐮";
-      case "potato":
-        return "🥔";
-      case "starwars":
-        return "👽";
-      default:
-        return "👑";
-    }
+    const figureSrc = `/assets/figures/${theme}.png`;
+    return (
+      <img
+        src={figureSrc}
+        alt="Queen"
+        className="w-3/4 h-3/4 object-contain drop-shadow-md"
+        onError={(e) => {
+          // Fallback to default queen if theme image is missing
+          (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
+        }}
+      />
+    );
   };
 
   const stateLabel =
@@ -187,7 +192,7 @@ export default function Cell({
       }}
       onKeyDown={handleKeyDown}
     >
-      {icon && <span aria-hidden="true">{icon}</span>}
+      {icon}
     </button>
   );
 }

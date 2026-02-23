@@ -11,6 +11,13 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        theme: {
+          bg: "var(--theme-bg)",
+          surface: "var(--theme-surface)",
+          text: "var(--theme-text)",
+          accent: "var(--theme-accent)",
+          pattern: "var(--theme-pattern)",
+        },
       },
     },
   },

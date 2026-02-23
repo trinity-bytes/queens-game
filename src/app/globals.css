@@ -5,17 +5,114 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Default Theme (Crown) */
+  --theme-bg: #f0f9ff; /* sky-50 */
+  --theme-surface: #ffffff; /* white */
+  --theme-text: #0284c7; /* sky-600 */
+  --theme-accent: #e0f2fe; /* sky-100 */
+  --theme-pattern: rgba(2, 132, 199, 0.05);
 }
 
 .dark {
   --background: #0f172a;
   --foreground: #f1f5f9;
+
+  /* Default Theme Dark */
+  --theme-bg: #0f172a; /* slate-900 */
+  --theme-surface: #1e293b; /* slate-800 */
+  --theme-text: #38bdf8; /* sky-400 */
+  --theme-accent: #334155; /* slate-700 */
+  --theme-pattern: rgba(56, 189, 248, 0.05);
+}
+
+/* Dino Theme */
+.theme-dino {
+  --theme-bg: #f0fdf4; /* green-50 */
+  --theme-surface: #ffffff;
+  --theme-text: #16a34a; /* green-600 */
+  --theme-accent: #dcfce7; /* green-100 */
+  --theme-pattern: rgba(22, 163, 74, 0.05);
+}
+.dark.theme-dino {
+  --theme-bg: #052e16; /* green-950 */
+  --theme-surface: #14532d; /* green-900 */
+  --theme-text: #4ade80; /* green-400 */
+  --theme-accent: #166534; /* green-800 */
+  --theme-pattern: rgba(74, 222, 128, 0.05);
+}
+
+/* Dog Theme */
+.theme-dog {
+  --theme-bg: #fffbeb; /* amber-50 */
+  --theme-surface: #ffffff;
+  --theme-text: #d97706; /* amber-600 */
+  --theme-accent: #fef3c7; /* amber-100 */
+  --theme-pattern: rgba(217, 119, 6, 0.05);
+}
+.dark.theme-dog {
+  --theme-bg: #451a03; /* amber-950 */
+  --theme-surface: #78350f; /* amber-900 */
+  --theme-text: #fbbf24; /* amber-400 */
+  --theme-accent: #92400e; /* amber-800 */
+  --theme-pattern: rgba(251, 191, 36, 0.05);
+}
+
+/* Cow Theme */
+.theme-cow {
+  --theme-bg: #f8fafc; /* slate-50 */
+  --theme-surface: #ffffff;
+  --theme-text: #475569; /* slate-600 */
+  --theme-accent: #f1f5f9; /* slate-100 */
+  --theme-pattern: rgba(71, 85, 105, 0.05);
+}
+.dark.theme-cow {
+  --theme-bg: #020617; /* slate-950 */
+  --theme-surface: #0f172a; /* slate-900 */
+  --theme-text: #94a3b8; /* slate-400 */
+  --theme-accent: #1e293b; /* slate-800 */
+  --theme-pattern: rgba(148, 163, 184, 0.05);
+}
+
+/* Potato Theme */
+.theme-potato {
+  --theme-bg: #fdf4ff; /* fuchsia-50 */
+  --theme-surface: #ffffff;
+  --theme-text: #c026d3; /* fuchsia-600 */
+  --theme-accent: #fae8ff; /* fuchsia-100 */
+  --theme-pattern: rgba(192, 38, 211, 0.05);
+}
+.dark.theme-potato {
+  --theme-bg: #4a044e; /* fuchsia-950 */
+  --theme-surface: #701a75; /* fuchsia-900 */
+  --theme-text: #e879f9; /* fuchsia-400 */
+  --theme-accent: #86198f; /* fuchsia-800 */
+  --theme-pattern: rgba(232, 121, 249, 0.05);
+}
+
+/* Star Wars Theme */
+.theme-starwars {
+  --theme-bg: #fefce8; /* yellow-50 */
+  --theme-surface: #ffffff;
+  --theme-text: #eab308; /* yellow-500 */
+  --theme-accent: #fef08a; /* yellow-200 */
+  --theme-pattern: rgba(234, 179, 8, 0.05);
+}
+.dark.theme-starwars {
+  --theme-bg: #000000; /* black */
+  --theme-surface: #171717; /* neutral-900 */
+  --theme-text: #eab308; /* yellow-500 */
+  --theme-accent: #262626; /* neutral-800 */
+  --theme-pattern: rgba(234, 179, 8, 0.05);
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--theme-bg);
   font-family: Arial, Helvetica, sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Accessibility: visible focus indicators */
