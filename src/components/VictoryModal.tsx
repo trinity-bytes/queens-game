@@ -15,8 +15,17 @@ function prefersReducedMotion(): boolean {
 }
 
 export default function VictoryModal() {
-  const { status, timer, mistakes, xPenalties, theme, generatePuzzle, score } =
-    useGameStore();
+  const {
+    status,
+    timer,
+    mistakes,
+    xPenalties,
+    theme,
+    generatePuzzle,
+    score,
+    grossScore,
+    totalPenalties,
+  } = useGameStore();
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -47,13 +56,37 @@ export default function VictoryModal() {
     }
   }, [status]);
 
+  const handlePlayAgain = async () => {
+    if (!saved) {
+      const finalName = name.trim() || "Unknown";
+      try {
+        await supabase.from("leaderboard").insert([
+          {
+            player_name: finalName,
+            time_ms: timer,
+            grid_size: 9,
+            theme_used: theme,
+            mistakes: mistakes,
+            score: score,
+          },
+        ]);
+        if (name.trim()) {
+          saveNick(name.trim());
+        }
+      } catch (error) {
+        console.error("Error auto-saving score:", error);
+      }
+    }
+    setSaved(false);
+    setName(getSavedNicks()[0] ?? "");
+    generatePuzzle();
+  };
+
   // Focus trap: keep Tab/Shift+Tab inside modal
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
-        setSaved(false);
-        setName(getSavedNicks()[0] ?? "");
-        generatePuzzle();
+        handlePlayAgain();
         return;
       }
 
@@ -82,7 +115,7 @@ export default function VictoryModal() {
         }
       }
     },
-    [generatePuzzle],
+    [handlePlayAgain],
   );
 
   if (status !== "won") return null;
@@ -172,38 +205,44 @@ export default function VictoryModal() {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
-              <AlertCircle className="w-4 h-4" aria-hidden="true" /> Errores
-            </p>
-            <p
-              className="text-2xl font-bold text-rose-500 dark:text-rose-400"
-              aria-label={`Errores: ${mistakes}`}
-            >
-              {mistakes}
-            </p>
-          </div>
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
-              <AlertCircle className="w-4 h-4" aria-hidden="true" /> X
-            </p>
-            <p
-              className="text-2xl font-bold text-orange-500 dark:text-orange-400"
-              aria-label={`Penalizaciones por X: ${xPenalties}`}
-            >
-              {xPenalties}
-            </p>
-          </div>
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
               <img
                 src="/assets/icons/star.svg"
                 alt="Star"
                 className="w-4 h-4 object-contain"
               />{" "}
-              Puntaje
+              Puntos
+            </p>
+            <p
+              className="text-2xl font-bold text-green-500 dark:text-green-400"
+              aria-label={`Puntos ganados: ${grossScore}`}
+            >
+              +{grossScore}
+            </p>
+          </div>
+          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />{" "}
+              Penalización
+            </p>
+            <p
+              className="text-2xl font-bold text-rose-500 dark:text-rose-400"
+              aria-label={`Penalizaciones totales: ${totalPenalties}`}
+            >
+              -{totalPenalties}
+            </p>
+          </div>
+          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
+              <img
+                src="/assets/icons/trophy.png"
+                alt="Trophy"
+                className="w-4 h-4 object-contain"
+              />{" "}
+              Total
             </p>
             <p
               className="text-2xl font-bold text-amber-500 dark:text-amber-400"
-              aria-label={`Puntaje: ${score}`}
+              aria-label={`Puntaje final: ${score}`}
             >
               {score}
             </p>
@@ -277,11 +316,7 @@ export default function VictoryModal() {
         )}
 
         <button
-          onClick={() => {
-            setSaved(false);
-            setName(getSavedNicks()[0] ?? "");
-            generatePuzzle();
-          }}
+          onClick={handlePlayAgain}
           className="w-full py-3 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
         >
           <img

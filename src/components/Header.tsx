@@ -1,17 +1,10 @@
 import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState } from "react";
+import { Settings } from "lucide-react";
 
 export default function Header() {
-  const {
-    timer,
-    status,
-    theme,
-    darkMode,
-    generatePuzzle,
-    toggleDarkMode,
-    score,
-    combo,
-  } = useGameStore();
+  const { timer, status, theme, generatePuzzle, setSettingsOpen } =
+    useGameStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -66,55 +59,15 @@ export default function Header() {
           >
             {formatTime(timer)}
           </div>
-          <div className="flex items-center gap-2 text-sm font-bold">
-            <span className="text-theme-text">{score} pts</span>
-            {combo > 1 && (
-              <span className="text-theme-accent animate-pulse">x{combo}</span>
-            )}
-          </div>
         </div>
 
         <button
-          onClick={toggleDarkMode}
+          onClick={() => setSettingsOpen(true)}
           className="p-2 rounded-full bg-theme-accent hover:brightness-95 text-theme-text transition-all"
-          aria-label={
-            mounted && darkMode
-              ? "Cambiar a tema claro"
-              : "Cambiar a tema oscuro"
-          }
-          title={mounted && darkMode ? "Tema claro" : "Tema oscuro"}
+          aria-label="Ajustes"
+          title="Ajustes"
         >
-          {mounted && darkMode ? (
-            <div
-              className="w-5 h-5 bg-theme-text"
-              style={{
-                maskImage: "url(/assets/icons/sun.png)",
-                WebkitMaskImage: "url(/assets/icons/sun.png)",
-                maskSize: "contain",
-                WebkitMaskSize: "contain",
-                maskRepeat: "no-repeat",
-                WebkitMaskRepeat: "no-repeat",
-                maskPosition: "center",
-                WebkitMaskPosition: "center",
-              }}
-              aria-label="Sun"
-            />
-          ) : (
-            <div
-              className="w-5 h-5 bg-theme-text"
-              style={{
-                maskImage: "url(/assets/icons/moon.png)",
-                WebkitMaskImage: "url(/assets/icons/moon.png)",
-                maskSize: "contain",
-                WebkitMaskSize: "contain",
-                maskRepeat: "no-repeat",
-                WebkitMaskRepeat: "no-repeat",
-                maskPosition: "center",
-                WebkitMaskPosition: "center",
-              }}
-              aria-label="Moon"
-            />
-          )}
+          <Settings className="w-5 h-5" />
         </button>
 
         <button

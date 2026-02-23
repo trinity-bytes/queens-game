@@ -15,15 +15,20 @@ interface GameState {
   mistakes: number;
   xPenalties: number;
   score: number;
+  grossScore: number;
+  totalPenalties: number;
+  scoredQueens: number[];
   combo: number;
   lastCorrectMoveTime: number;
   status: GameStatus;
   darkMode: boolean;
+  isSettingsOpen: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
   setTheme: (theme: Theme) => void;
   toggleDarkMode: () => void;
+  setSettingsOpen: (isOpen: boolean) => void;
   generatePuzzle: () => void;
   toggleCell: (index: number) => void;
   incrementXPenalty: () => void;
@@ -58,13 +63,18 @@ export const useGameStore = create<GameState>((set, get) => ({
   mistakes: 0,
   xPenalties: 0,
   score: 0,
+  grossScore: 0,
+  totalPenalties: 0,
+  scoredQueens: [],
   combo: 1,
   lastCorrectMoveTime: 0,
   status: "idle",
   darkMode: getInitialDarkMode(),
+  isSettingsOpen: false,
 
   setGridSize: (size) => set({ gridSize: size }),
   setTheme: (theme) => set({ theme }),
+  setSettingsOpen: (isOpen) => set({ isSettingsOpen: isOpen }),
 
   toggleDarkMode: () => {
     const newMode = !get().darkMode;
@@ -88,6 +98,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       mistakes: 0,
       xPenalties: 0,
       score: 0,
+      grossScore: 0,
+      totalPenalties: 0,
+      scoredQueens: [],
       combo: 1,
       lastCorrectMoveTime: 0,
       cells: [],
@@ -124,6 +137,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       gridSize,
       mistakes,
       score,
+      grossScore,
+      totalPenalties,
+      scoredQueens,
       combo,
       lastCorrectMoveTime,
       timer,
@@ -138,6 +154,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     let newMistakes = mistakes;
     let newScore = score;
+    let newGrossScore = grossScore;
+    let newTotalPenalties = totalPenalties;
+    let newScoredQueens = [...scoredQueens];
     let newCombo = combo;
     let newLastCorrectMoveTime = lastCorrectMoveTime;
 
@@ -146,24 +165,30 @@ export const useGameStore = create<GameState>((set, get) => ({
       const col = index % gridSize;
       if (solution[row] !== col) {
         newMistakes++;
-        newScore = Math.max(0, newScore - 200);
+        const penalty = 200;
+        newScore = Math.max(0, newScore - penalty);
+        newTotalPenalties += penalty;
         newCombo = 1;
       } else {
         // Correct placement
-        const timeSinceLastCorrect = timer - lastCorrectMoveTime;
+        if (!newScoredQueens.includes(index)) {
+          const timeSinceLastCorrect = timer - lastCorrectMoveTime;
 
-        if (timeSinceLastCorrect <= 5000 && lastCorrectMoveTime !== 0) {
-          newCombo = Math.min(5, newCombo + 1);
-        } else {
-          newCombo = 1;
+          if (timeSinceLastCorrect <= 5000 && lastCorrectMoveTime !== 0) {
+            newCombo = Math.min(5, newCombo + 1);
+          } else {
+            newCombo = 1;
+          }
+
+          const secondsTaken = timeSinceLastCorrect / 1000;
+          const speedBonus = Math.max(0, 1000 - secondsTaken * 200);
+          const pointsEarned = Math.floor((500 + speedBonus) * newCombo);
+
+          newScore += pointsEarned;
+          newGrossScore += pointsEarned;
+          newScoredQueens.push(index);
+          newLastCorrectMoveTime = timer;
         }
-
-        const secondsTaken = timeSinceLastCorrect / 1000;
-        const speedBonus = Math.max(0, 1000 - secondsTaken * 200);
-        const pointsEarned = Math.floor((500 + speedBonus) * newCombo);
-
-        newScore += pointsEarned;
-        newLastCorrectMoveTime = timer;
       }
     }
 
@@ -171,6 +196,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       cells: newCells,
       mistakes: newMistakes,
       score: newScore,
+      grossScore: newGrossScore,
+      totalPenalties: newTotalPenalties,
+      scoredQueens: newScoredQueens,
       combo: newCombo,
       lastCorrectMoveTime: newLastCorrectMoveTime,
     });
@@ -178,10 +206,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   incrementXPenalty: () => {
-    set((state) => ({
-      xPenalties: state.xPenalties + 1,
-      score: Math.max(0, state.score - 50),
-    }));
+    set((state) => {
+      const penalty = 50;
+      return {
+        xPenalties: state.xPenalties + 1,
+        score: Math.max(0, state.score - penalty),
+        totalPenalties: state.totalPenalties + penalty,
+      };
+    });
   },
 
   resetBoard: () => {
@@ -192,6 +224,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       mistakes: 0,
       xPenalties: 0,
       score: 0,
+      grossScore: 0,
+      totalPenalties: 0,
+      scoredQueens: [],
       combo: 1,
       lastCorrectMoveTime: 0,
       status: "playing",
@@ -199,7 +234,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   tickTimer: () => {
-    const { status, timer, lastCorrectMoveTime, combo, score } = get();
+    const { status, timer, lastCorrectMoveTime, combo, score, totalPenalties } = get();
     if (status === "playing") {
       const newTimer = timer + 1000;
       let newCombo = combo;
@@ -209,10 +244,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         newCombo = 1;
       }
 
+      const penalty = 5;
       set({
         timer: newTimer,
         combo: newCombo,
-        score: Math.max(0, score - 20), // -20 points per second
+        score: Math.max(0, score - penalty), // -5 points per second
+        totalPenalties: totalPenalties + penalty,
       });
     }
   },

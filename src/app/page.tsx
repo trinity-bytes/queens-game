@@ -3,6 +3,7 @@
 import Header from "@/components/Header";
 import Board from "@/components/Board";
 import VictoryModal from "@/components/VictoryModal";
+import SettingsModal from "@/components/SettingsModal";
 import LiveAnnouncer from "@/components/LiveAnnouncer";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import Link from "next/link";
@@ -30,15 +31,9 @@ export default function Home() {
           />
           Ver Tabla de Líderes
         </Link>
-        <Link
-          href="/credits"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-theme-surface hover:brightness-95 text-theme-text font-semibold rounded-xl shadow-sm transition-all border border-slate-200 dark:border-slate-700"
-        >
-          <Info className="w-5 h-5" />
-          Créditos y Licencias
-        </Link>
       </div>
       <VictoryModal />
+      <SettingsModal />
     </main>
   );
 }
