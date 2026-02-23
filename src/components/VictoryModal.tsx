@@ -15,7 +15,7 @@ function prefersReducedMotion(): boolean {
 }
 
 export default function VictoryModal() {
-  const { status, timer, mistakes, xPenalties, theme, generatePuzzle } =
+  const { status, timer, mistakes, xPenalties, theme, generatePuzzle, score } =
     useGameStore();
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
@@ -23,11 +23,6 @@ export default function VictoryModal() {
   const nickSuggestions = getSavedNicks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-
-  const score = Math.max(
-    0,
-    100000 - timer - mistakes * 5000 - xPenalties * 500,
-  );
 
   useEffect(() => {
     if (status === "won") {

@@ -14,6 +14,9 @@ interface GameState {
   timer: number;
   mistakes: number;
   xPenalties: number;
+  score: number;
+  combo: number;
+  lastCorrectMoveTime: number;
   status: GameStatus;
   darkMode: boolean;
 
@@ -54,6 +57,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   timer: 0,
   mistakes: 0,
   xPenalties: 0,
+  score: 0,
+  combo: 1,
+  lastCorrectMoveTime: 0,
   status: "idle",
   darkMode: getInitialDarkMode(),
 
@@ -81,6 +87,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       timer: 0,
       mistakes: 0,
       xPenalties: 0,
+      score: 0,
+      combo: 1,
+      lastCorrectMoveTime: 0,
       cells: [],
     });
 
@@ -108,7 +117,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   toggleCell: (index) => {
-    const { cells, status, solution, gridSize, mistakes } = get();
+    const {
+      cells,
+      status,
+      solution,
+      gridSize,
+      mistakes,
+      score,
+      combo,
+      lastCorrectMoveTime,
+      timer,
+    } = get();
     if (status !== "playing") return;
 
     const newCells = [...cells];
@@ -118,20 +137,51 @@ export const useGameStore = create<GameState>((set, get) => ({
     newCells[index] = newState as CellState;
 
     let newMistakes = mistakes;
+    let newScore = score;
+    let newCombo = combo;
+    let newLastCorrectMoveTime = lastCorrectMoveTime;
+
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
       const col = index % gridSize;
       if (solution[row] !== col) {
         newMistakes++;
+        newScore = Math.max(0, newScore - 200);
+        newCombo = 1;
+      } else {
+        // Correct placement
+        const timeSinceLastCorrect = timer - lastCorrectMoveTime;
+
+        if (timeSinceLastCorrect <= 5000 && lastCorrectMoveTime !== 0) {
+          newCombo = Math.min(5, newCombo + 1);
+        } else {
+          newCombo = 1;
+        }
+
+        const secondsTaken = timeSinceLastCorrect / 1000;
+        const speedBonus = Math.max(0, 1000 - secondsTaken * 200);
+        const pointsEarned = Math.floor((500 + speedBonus) * newCombo);
+
+        newScore += pointsEarned;
+        newLastCorrectMoveTime = timer;
       }
     }
 
-    set({ cells: newCells, mistakes: newMistakes });
+    set({
+      cells: newCells,
+      mistakes: newMistakes,
+      score: newScore,
+      combo: newCombo,
+      lastCorrectMoveTime: newLastCorrectMoveTime,
+    });
     get().checkWinCondition();
   },
 
   incrementXPenalty: () => {
-    set((state) => ({ xPenalties: state.xPenalties + 1 }));
+    set((state) => ({
+      xPenalties: state.xPenalties + 1,
+      score: Math.max(0, state.score - 50),
+    }));
   },
 
   resetBoard: () => {
@@ -141,14 +191,29 @@ export const useGameStore = create<GameState>((set, get) => ({
       timer: 0,
       mistakes: 0,
       xPenalties: 0,
+      score: 0,
+      combo: 1,
+      lastCorrectMoveTime: 0,
       status: "playing",
     });
   },
 
   tickTimer: () => {
-    const { status } = get();
+    const { status, timer, lastCorrectMoveTime, combo, score } = get();
     if (status === "playing") {
-      set((state) => ({ timer: state.timer + 1000 }));
+      const newTimer = timer + 1000;
+      let newCombo = combo;
+
+      // Lose combo if 10 seconds pass without a correct move
+      if (newTimer - lastCorrectMoveTime > 10000 && lastCorrectMoveTime !== 0) {
+        newCombo = 1;
+      }
+
+      set({
+        timer: newTimer,
+        combo: newCombo,
+        score: Math.max(0, score - 20), // -20 points per second
+      });
     }
   },
 

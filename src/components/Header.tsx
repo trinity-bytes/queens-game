@@ -2,8 +2,16 @@ import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState } from "react";
 
 export default function Header() {
-  const { timer, status, theme, darkMode, generatePuzzle, toggleDarkMode } =
-    useGameStore();
+  const {
+    timer,
+    status,
+    theme,
+    darkMode,
+    generatePuzzle,
+    toggleDarkMode,
+    score,
+    combo,
+  } = useGameStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -49,13 +57,21 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div
-          role="timer"
-          aria-label={`Tiempo transcurrido: ${formatTime(timer)}`}
-          aria-live="off"
-          className="font-mono text-xl font-semibold text-theme-text"
-        >
-          {formatTime(timer)}
+        <div className="flex flex-col items-end">
+          <div
+            role="timer"
+            aria-label={`Tiempo transcurrido: ${formatTime(timer)}`}
+            aria-live="off"
+            className="font-mono text-xl font-semibold text-theme-text"
+          >
+            {formatTime(timer)}
+          </div>
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <span className="text-theme-text">{score} pts</span>
+            {combo > 1 && (
+              <span className="text-theme-accent animate-pulse">x{combo}</span>
+            )}
+          </div>
         </div>
 
         <button
