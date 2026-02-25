@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
 
+const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
+
 /**
  * Checks if user prefers reduced motion.
  */
@@ -26,13 +28,16 @@ export default function VictoryModal() {
     grossScore,
     totalPenalties,
     movesCount,
+    currentWinId,
+    hasSavedCurrentWin,
+    markCurrentWinSaved,
   } = useGameStore();
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const nickSuggestions = getSavedNicks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const saved = hasSavedCurrentWin();
 
   useEffect(() => {
     if (status === "won") {
@@ -58,10 +63,13 @@ export default function VictoryModal() {
   }, [status]);
 
   const handlePlayAgain = async () => {
+    if (saving) return;
+
     if (!saved) {
+      setSaving(true);
       const finalName = name.trim() || "Unknown";
       try {
-        await supabase.from("leaderboard").insert([
+        const { error } = await supabase.from("leaderboard").insert([
           {
             player_name: finalName,
             time_ms: timer,
@@ -69,21 +77,27 @@ export default function VictoryModal() {
             theme_used: theme,
             mistakes: mistakes,
             score: score,
+            win_id: currentWinId,
             device_local_time: new Date().toISOString(),
             user_agent: navigator.userAgent,
-            device_type: window.innerWidth < 768 ? 'mobile' : 'desktop',
+            device_type: window.innerWidth < 768 ? "mobile" : "desktop",
             moves_count: movesCount,
-            app_version: "1.1.0"
+            app_version: "1.1.0",
           },
         ]);
+
+        if (error) throw error;
+        markCurrentWinSaved();
         if (name.trim()) {
           saveNick(name.trim());
         }
       } catch (error) {
         console.error("Error auto-saving score:", error);
+      } finally {
+        setSaving(false);
       }
     }
-    setSaved(false);
+
     setName(getSavedNicks()[0] ?? "");
     generatePuzzle();
   };
@@ -152,7 +166,7 @@ export default function VictoryModal() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (saving || saved || !name.trim()) return;
 
     setSaving(true);
     try {
@@ -164,17 +178,18 @@ export default function VictoryModal() {
           theme_used: theme,
           mistakes: mistakes,
           score: score,
+          win_id: currentWinId,
           device_local_time: new Date().toISOString(),
           user_agent: navigator.userAgent,
-          device_type: window.innerWidth < 768 ? 'mobile' : 'desktop',
+          device_type: window.innerWidth < 768 ? "mobile" : "desktop",
           moves_count: movesCount,
-          app_version: "1.1.0"
+          app_version: "1.1.0",
         },
       ]);
 
       if (error) throw error;
       saveNick(name.trim());
-      setSaved(true);
+      markCurrentWinSaved();
     } catch (error) {
       console.error("Error saving score:", error);
       alert("Hubo un error al guardar tu récord. Intenta de nuevo.");
@@ -322,6 +337,9 @@ export default function VictoryModal() {
             </div>
             <Link
               href="/leaderboard"
+              onClick={() =>
+                sessionStorage.setItem(RESET_HOME_ON_RETURN_KEY, "1")
+              }
               className="w-full py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors border border-amber-200 dark:border-amber-700"
             >
               <img

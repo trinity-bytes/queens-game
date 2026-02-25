@@ -29,6 +29,8 @@ interface GameState {
   lastMoveTime: number;
   movesCount: number;
   status: GameStatus;
+  currentWinId: string | null;
+  savedWinId: string | null;
   darkMode: boolean;
   preloadedPuzzle: PreloadedPuzzle | null;
   isPreloading: boolean;
@@ -44,6 +46,8 @@ interface GameState {
   resetBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
+  hasSavedCurrentWin: () => boolean;
+  markCurrentWinSaved: () => void;
 }
 
 const THEMES: Theme[] = ["dino", "dog", "cow", "potato", "starwars"];
@@ -80,6 +84,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastMoveTime: 0,
   movesCount: 0,
   status: "idle",
+  currentWinId: null,
+  savedWinId: null,
   darkMode: getInitialDarkMode(),
   preloadedPuzzle: null,
   isPreloading: false,
@@ -112,6 +118,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastMoveTime: 0,
       movesCount: 0,
       cells: [],
+      currentWinId: null,
+      savedWinId: null,
     });
 
     // If we have a preloaded puzzle for the current size, use it immediately
@@ -298,6 +306,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastMoveTime: 0,
       movesCount: 0,
       status: "playing",
+      currentWinId: null,
+      savedWinId: null,
     });
   },
 
@@ -383,6 +393,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       status: "won",
       score: score + bonusPoints,
       grossScore: grossScore + bonusPoints,
+      currentWinId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      savedWinId: null,
     });
+  },
+
+  hasSavedCurrentWin: () => {
+    const { currentWinId, savedWinId } = get();
+    return Boolean(currentWinId && savedWinId === currentWinId);
+  },
+
+  markCurrentWinSaved: () => {
+    const { currentWinId } = get();
+    if (!currentWinId) return;
+    set({ savedWinId: currentWinId });
   },
 }));

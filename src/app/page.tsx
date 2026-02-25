@@ -5,10 +5,25 @@ import Board from "@/components/Board";
 import VictoryModal from "@/components/VictoryModal";
 import LiveAnnouncer from "@/components/LiveAnnouncer";
 import BackgroundPattern from "@/components/BackgroundPattern";
+import { useGameStore } from "@/store/gameStore";
+import { useEffect } from "react";
 import Link from "next/link";
 import { Info } from "lucide-react";
 
+const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
+
 export default function Home() {
+  const { generatePuzzle } = useGameStore();
+
+  useEffect(() => {
+    const shouldReset =
+      sessionStorage.getItem(RESET_HOME_ON_RETURN_KEY) === "1";
+    if (!shouldReset) return;
+
+    sessionStorage.removeItem(RESET_HOME_ON_RETURN_KEY);
+    generatePuzzle();
+  }, [generatePuzzle]);
+
   return (
     <main
       id="main-content"
