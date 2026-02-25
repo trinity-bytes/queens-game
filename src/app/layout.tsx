@@ -3,7 +3,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { useGameStore } from "@/store/gameStore";
-import { useEffect } from "react";
+import { ThemeScript } from "@/components/ThemeScript";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function RootLayout({
   children,
@@ -13,15 +14,6 @@ export default function RootLayout({
   const darkMode = useGameStore((state) => state.darkMode);
   const theme = useGameStore((state) => state.theme);
 
-  useEffect(() => {
-    // Apply dark class on mount based on initial state
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
-
   return (
     <html
       lang="es"
@@ -29,6 +21,7 @@ export default function RootLayout({
       className={`${darkMode ? "dark" : ""} theme-${theme}`}
     >
       <head>
+        <ThemeScript />
         <title>Queens 4 My Queen</title>
         <meta name="description" content="A special puzzle game for my queen" />
         <link rel="manifest" href="/manifest.json" />
@@ -45,8 +38,14 @@ export default function RootLayout({
           content="black-translucent"
         />
         <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="preload" as="image" href="/assets/figures/dino.png" />
+        <link rel="preload" as="image" href="/assets/figures/dog.png" />
+        <link rel="preload" as="image" href="/assets/figures/cow.png" />
+        <link rel="preload" as="image" href="/assets/figures/potato.png" />
+        <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
+        <LoadingScreen />
         <a href="#main-content" className="skip-to-content">
           Saltar al contenido
         </a>

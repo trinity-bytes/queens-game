@@ -20,15 +20,14 @@ interface GameState {
   scoredQueens: number[];
   combo: number;
   lastCorrectMoveTime: number;
+  lastMoveTime: number;
   status: GameStatus;
   darkMode: boolean;
-  isSettingsOpen: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
   setTheme: (theme: Theme) => void;
   toggleDarkMode: () => void;
-  setSettingsOpen: (isOpen: boolean) => void;
   generatePuzzle: () => void;
   toggleCell: (index: number) => void;
   incrementXPenalty: () => void;
@@ -68,27 +67,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   scoredQueens: [],
   combo: 1,
   lastCorrectMoveTime: 0,
+  lastMoveTime: 0,
   status: "idle",
   darkMode: getInitialDarkMode(),
-  isSettingsOpen: false,
 
   setGridSize: (size) => set({ gridSize: size }),
   setTheme: (theme) => set({ theme }),
-  setSettingsOpen: (isOpen) => set({ isSettingsOpen: isOpen }),
 
   toggleDarkMode: () => {
     const newMode = !get().darkMode;
     set({ darkMode: newMode });
     localStorage.setItem("dark-mode-override", String(newMode));
-
-    // Apply/remove dark class on html element
-    if (typeof window !== "undefined") {
-      if (newMode) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
   },
 
   generatePuzzle: () => {
@@ -103,6 +92,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       scoredQueens: [],
       combo: 1,
       lastCorrectMoveTime: 0,
+      lastMoveTime: 0,
       cells: [],
     });
 
@@ -142,6 +132,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       scoredQueens,
       combo,
       lastCorrectMoveTime,
+      lastMoveTime,
       timer,
     } = get();
     if (status !== "playing") return;
@@ -159,6 +150,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newScoredQueens = [...scoredQueens];
     let newCombo = combo;
     let newLastCorrectMoveTime = lastCorrectMoveTime;
+    let newLastMoveTime = timer;
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
@@ -201,6 +193,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       scoredQueens: newScoredQueens,
       combo: newCombo,
       lastCorrectMoveTime: newLastCorrectMoveTime,
+      lastMoveTime: newLastMoveTime,
     });
     get().checkWinCondition();
   },
@@ -212,6 +205,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         xPenalties: state.xPenalties + 1,
         score: Math.max(0, state.score - penalty),
         totalPenalties: state.totalPenalties + penalty,
+        lastMoveTime: state.timer,
       };
     });
   },
@@ -229,12 +223,21 @@ export const useGameStore = create<GameState>((set, get) => ({
       scoredQueens: [],
       combo: 1,
       lastCorrectMoveTime: 0,
+      lastMoveTime: 0,
       status: "playing",
     });
   },
 
   tickTimer: () => {
-    const { status, timer, lastCorrectMoveTime, combo, score, totalPenalties } = get();
+    const {
+      status,
+      timer,
+      lastCorrectMoveTime,
+      lastMoveTime,
+      combo,
+      score,
+      totalPenalties,
+    } = get();
     if (status === "playing") {
       const newTimer = timer + 1000;
       let newCombo = combo;
@@ -244,18 +247,20 @@ export const useGameStore = create<GameState>((set, get) => ({
         newCombo = 1;
       }
 
-      const penalty = 5;
+      const timeSinceLastMove = newTimer - lastMoveTime;
+      const penalty = 5 + Math.floor(timeSinceLastMove / 1000) * 5;
+
       set({
         timer: newTimer,
         combo: newCombo,
-        score: Math.max(0, score - penalty), // -5 points per second
+        score: Math.max(0, score - penalty),
         totalPenalties: totalPenalties + penalty,
       });
     }
   },
 
   checkWinCondition: () => {
-    const { cells, gridSize, regions } = get();
+    const { cells, gridSize, regions, timer, score, grossScore } = get();
 
     // Count queens
     const queens = cells.reduce((acc, cell, idx) => {
@@ -291,7 +296,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    // Calculate final speed bonus
+    const maxTimeForBonus = gridSize * 15; // e.g., 135 seconds for 9x9
+    const secondsTaken = timer / 1000;
+    const bonusPercentage = Math.max(
+      0,
+      0.1 * (1 - secondsTaken / maxTimeForBonus),
+    );
+    const bonusPoints = Math.floor(score * bonusPercentage);
+
     // If we reach here, it's a win!
-    set({ status: "won" });
+    set({
+      status: "won",
+      score: score + bonusPoints,
+      grossScore: grossScore + bonusPoints,
+    });
   },
 }));

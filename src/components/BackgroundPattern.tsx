@@ -41,25 +41,38 @@ export default function BackgroundPattern() {
     const themeKey = THEME_PATTERNS[theme] ? theme : "default";
     const availablePatterns = THEME_PATTERNS[themeKey];
 
-    // Generate random positions for patterns
-    const newPatterns = Array.from({ length: 20 }).map((_, i) => {
-      const randomPattern =
-        availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
-      return {
-        id: i,
-        src: `/assets/patterns/${themeKey}/${randomPattern}`,
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-        size: `${Math.random() * 40 + 30}px`, // 30px to 70px
-        rotation: `${Math.random() * 360}deg`,
-      };
-    });
+    // Generate a grid of patterns for uniform distribution
+    const cols = 8;
+    const rows = 5;
+    const newPatterns = [];
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const randomPattern =
+          availablePatterns[
+            Math.floor(Math.random() * availablePatterns.length)
+          ];
+
+        // Add slight random offsets to make it look more organic
+        const offsetX = (Math.random() - 0.5) * 10; // +/- 5%
+        const offsetY = (Math.random() - 0.5) * 10; // +/- 5%
+
+        newPatterns.push({
+          id: r * cols + c,
+          src: `/assets/patterns/${themeKey}/${randomPattern}`,
+          top: `${(r / rows) * 100 + 10 + offsetY}%`, // Center in cell + offset
+          left: `${(c / cols) * 100 + 6 + offsetX}%`, // Center in cell + offset
+          size: `${Math.random() * 30 + 40}px`, // 40px to 70px
+          rotation: `${Math.random() * 360}deg`,
+        });
+      }
+    }
 
     setPatterns(newPatterns);
   }, [theme]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 opacity-20">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 opacity-10">
       {patterns.map((pattern) => (
         <div
           key={pattern.id}

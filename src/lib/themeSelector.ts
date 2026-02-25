@@ -23,29 +23,24 @@ function shuffle<T>(array: T[], seed: number): T[] {
   return result;
 }
 
-export function getCurrentTheme(): Theme {
-  // 1. Get current time in Lima (GMT-5)
-  const now = new Date();
-  const limaTime = new Date(
-    now.toLocaleString("en-US", { timeZone: "America/Lima" }),
-  );
-
-  // 2. Calculate the number of 12-hour periods since a fixed epoch
-  // Let's use Jan 1, 2024 00:00:00 Lima time as epoch
-  const epoch = new Date("2024-01-01T00:00:00-05:00");
-  const diffMs = limaTime.getTime() - epoch.getTime();
+export function getCurrentPeriodIndex(): number {
+  // Epoch: Jan 1, 2024 00:00:00 Lima time (UTC-5)
+  // Which is Jan 1, 2024 05:00:00 UTC
+  const epochMs = Date.UTC(2024, 0, 1, 5, 0, 0);
+  const diffMs = Date.now() - epochMs;
   const periodDurationMs = 12 * 60 * 60 * 1000; // 12 hours
-  const currentPeriodIndex = Math.floor(diffMs / periodDurationMs);
+  return Math.floor(diffMs / periodDurationMs);
+}
 
-  // 3. Determine which "bag" we are in and the index within that bag
+export function getThemeForPeriod(periodIndex: number): Theme {
   const bagSize = THEMES.length;
-  const currentBagIndex = Math.floor(currentPeriodIndex / bagSize);
-  const indexWithinBag = currentPeriodIndex % bagSize;
+  const currentBagIndex = Math.floor(periodIndex / bagSize);
+  const indexWithinBag = periodIndex % bagSize;
 
-  // 4. Generate the current bag
+  // Generate the current bag
   let currentBag = shuffle(THEMES, currentBagIndex);
 
-  // 5. Prevent consecutive repeats between bags
+  // Prevent consecutive repeats between bags
   if (currentBagIndex > 0) {
     const previousBag = shuffle(THEMES, currentBagIndex - 1);
     const lastThemeOfPreviousBag = previousBag[bagSize - 1];
@@ -57,6 +52,10 @@ export function getCurrentTheme(): Theme {
     }
   }
 
-  // 6. Return the theme for the current period
   return currentBag[indexWithinBag];
+}
+
+export function getCurrentTheme(): Theme {
+  const currentPeriodIndex = getCurrentPeriodIndex();
+  return getThemeForPeriod(currentPeriodIndex);
 }

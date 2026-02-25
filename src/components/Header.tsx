@@ -1,9 +1,9 @@
 import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState } from "react";
-import { Settings } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 
 export default function Header() {
-  const { timer, status, theme, generatePuzzle, setSettingsOpen } =
+  const { timer, status, theme, generatePuzzle, darkMode, toggleDarkMode } =
     useGameStore();
   const [mounted, setMounted] = useState(false);
 
@@ -32,6 +32,7 @@ export default function Header() {
     const figureSrc = `/assets/figures/${theme}.png`;
     return (
       <img
+        suppressHydrationWarning
         src={figureSrc}
         alt="Theme Icon"
         className="w-8 h-8 object-contain"
@@ -62,12 +63,20 @@ export default function Header() {
         </div>
 
         <button
-          onClick={() => setSettingsOpen(true)}
+          onClick={toggleDarkMode}
           className="p-2 rounded-full bg-theme-accent hover:brightness-95 text-theme-text transition-all"
-          aria-label="Ajustes"
-          title="Ajustes"
+          aria-label={
+            mounted && darkMode
+              ? "Cambiar a modo claro"
+              : "Cambiar a modo oscuro"
+          }
+          title={mounted && darkMode ? "Modo Claro" : "Modo Oscuro"}
         >
-          <Settings className="w-5 h-5" />
+          {mounted && darkMode ? (
+            <Moon className="w-5 h-5" />
+          ) : (
+            <Sun className="w-5 h-5" />
+          )}
         </button>
 
         <button
