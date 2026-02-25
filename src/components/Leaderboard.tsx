@@ -10,6 +10,7 @@ interface LeaderboardEntry {
   theme_used: string;
   mistakes: number;
   score: number;
+  moves_count?: number;
   created_at: string;
 }
 
@@ -159,9 +160,24 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   <span className="font-medium text-slate-700 dark:text-slate-200">
                     {entry.player_name}
                   </span>
+                  {entry.mistakes === 0 && (
+                    <span 
+                      className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                      title="¡Completado sin errores!"
+                    >
+                      Flawless
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
+                {entry.moves_count !== undefined && (
+                  <div className="hidden sm:flex items-center gap-1 text-slate-400 dark:text-slate-500 text-xs font-medium" title="Movimientos totales">
+                    <span aria-label={`Movimientos: ${entry.moves_count}`}>
+                      {entry.moves_count} movs
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-bold">
                   <div
                     className="w-6 h-6 bg-amber-500 dark:bg-amber-400"

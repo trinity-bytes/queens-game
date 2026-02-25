@@ -5,7 +5,6 @@ import Board from "@/components/Board";
 import VictoryModal from "@/components/VictoryModal";
 import LiveAnnouncer from "@/components/LiveAnnouncer";
 import BackgroundPattern from "@/components/BackgroundPattern";
-import HamburgerMenu from "@/components/HamburgerMenu";
 import Link from "next/link";
 import { Info } from "lucide-react";
 
@@ -16,7 +15,6 @@ export default function Home() {
       className="flex min-h-screen flex-col items-center justify-start p-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:p-8 sm:pt-[calc(env(safe-area-inset-top)+2rem)] bg-theme-bg transition-colors duration-300 relative z-0"
     >
       <BackgroundPattern />
-      <HamburgerMenu />
       <LiveAnnouncer />
       <Header />
       <Board />

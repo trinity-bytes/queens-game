@@ -25,6 +25,7 @@ export default function VictoryModal() {
     score,
     grossScore,
     totalPenalties,
+    movesCount,
   } = useGameStore();
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
@@ -68,6 +69,11 @@ export default function VictoryModal() {
             theme_used: theme,
             mistakes: mistakes,
             score: score,
+            device_local_time: new Date().toISOString(),
+            user_agent: navigator.userAgent,
+            device_type: window.innerWidth < 768 ? 'mobile' : 'desktop',
+            moves_count: movesCount,
+            app_version: "1.1.0"
           },
         ]);
         if (name.trim()) {
@@ -158,6 +164,11 @@ export default function VictoryModal() {
           theme_used: theme,
           mistakes: mistakes,
           score: score,
+          device_local_time: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+          device_type: window.innerWidth < 768 ? 'mobile' : 'desktop',
+          moves_count: movesCount,
+          app_version: "1.1.0"
         },
       ]);
 
@@ -249,12 +260,20 @@ export default function VictoryModal() {
           </div>
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+        <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 mb-6 text-center relative">
+          {mistakes === 0 && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:border-emerald-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">
+              ¡Flawless!
+            </div>
+          )}
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 mt-2">
             Tu tiempo
           </p>
           <p className="text-3xl font-mono font-bold text-theme-text">
             {formatTime(timer)}
+          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">
+            Completado en {movesCount} movimientos
           </p>
         </div>
 

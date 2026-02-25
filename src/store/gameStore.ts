@@ -27,6 +27,7 @@ interface GameState {
   combo: number;
   lastCorrectMoveTime: number;
   lastMoveTime: number;
+  movesCount: number;
   status: GameStatus;
   darkMode: boolean;
   preloadedPuzzle: PreloadedPuzzle | null;
@@ -77,6 +78,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   combo: 1,
   lastCorrectMoveTime: 0,
   lastMoveTime: 0,
+  movesCount: 0,
   status: "idle",
   darkMode: getInitialDarkMode(),
   preloadedPuzzle: null,
@@ -108,6 +110,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       combo: 1,
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
+      movesCount: 0,
       cells: [],
     });
 
@@ -198,6 +201,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       combo,
       lastCorrectMoveTime,
       lastMoveTime,
+      movesCount,
       timer,
     } = get();
     if (status !== "playing") return;
@@ -216,6 +220,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newCombo = combo;
     let newLastCorrectMoveTime = lastCorrectMoveTime;
     let newLastMoveTime = timer;
+    let newMovesCount = movesCount + 1;
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
@@ -259,6 +264,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       combo: newCombo,
       lastCorrectMoveTime: newLastCorrectMoveTime,
       lastMoveTime: newLastMoveTime,
+      movesCount: newMovesCount,
     });
     get().checkWinCondition();
   },
@@ -271,6 +277,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         score: Math.max(0, state.score - penalty),
         totalPenalties: state.totalPenalties + penalty,
         lastMoveTime: state.timer,
+        movesCount: state.movesCount + 1,
       };
     });
   },
@@ -289,6 +296,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       combo: 1,
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
+      movesCount: 0,
       status: "playing",
     });
   },

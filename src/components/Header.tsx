@@ -1,6 +1,7 @@
 import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
+import HamburgerMenu from "./HamburgerMenu";
 
 export default function Header() {
   const { timer, status, theme, generatePuzzle, darkMode, toggleDarkMode } =
@@ -46,6 +47,7 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between w-full max-w-md p-4 bg-theme-surface rounded-xl shadow-sm mb-6 transition-colors duration-300">
       <div className="flex items-center gap-2">
+        <HamburgerMenu inHeader={true} />
         <span aria-hidden="true">{getThemeIcon()}</span>
         <h1 className="font-bold text-theme-text text-lg">Queens</h1>
       </div>
