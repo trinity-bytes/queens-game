@@ -145,24 +145,27 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
           {entries.map((entry, index) => (
             <li
               key={entry.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 gap-1.5 sm:gap-0 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <span
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankStyle(index)}`}
+                  className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${getRankStyle(index)}`}
                   aria-label={getRankLabel(index)}
                   title={getRankLabel(index)}
                 >
                   {index + 1}
                 </span>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-slate-400" aria-hidden="true" />
-                  <span className="font-medium text-slate-700 dark:text-slate-200">
+                <div className="flex items-center gap-2 min-w-0">
+                  <User
+                    className="w-4 h-4 shrink-0 text-slate-400"
+                    aria-hidden="true"
+                  />
+                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-[120px] sm:max-w-[180px]">
                     {entry.player_name}
                   </span>
                   {entry.mistakes === 0 && (
-                    <span 
-                      className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                    <span
+                      className="shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
                       title="¡Completado sin errores!"
                     >
                       Flawless
@@ -170,9 +173,12 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 pl-11 sm:pl-0 self-start sm:self-auto">
                 {entry.moves_count !== undefined && (
-                  <div className="hidden sm:flex items-center gap-1 text-slate-400 dark:text-slate-500 text-xs font-medium" title="Movimientos totales">
+                  <div
+                    className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-xs font-medium"
+                    title="Movimientos totales"
+                  >
                     <span aria-label={`Movimientos: ${entry.moves_count}`}>
                       {entry.moves_count} movs
                     </span>
@@ -180,7 +186,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 )}
                 <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-bold">
                   <div
-                    className="w-6 h-6 bg-amber-500 dark:bg-amber-400"
+                    className="w-5 h-5 sm:w-6 sm:h-6 bg-amber-500 dark:bg-amber-400"
                     style={{
                       maskImage: "url(/assets/icons/star.svg)",
                       WebkitMaskImage: "url(/assets/icons/star.svg)",
