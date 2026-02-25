@@ -5,6 +5,12 @@ export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
 export type GameStatus = "idle" | "generating" | "playing" | "won";
 export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars";
 
+interface PreloadedPuzzle {
+  regions: number[];
+  solution: number[];
+  size: number;
+}
+
 interface GameState {
   gridSize: number;
   regions: number[];
@@ -23,12 +29,15 @@ interface GameState {
   lastMoveTime: number;
   status: GameStatus;
   darkMode: boolean;
+  preloadedPuzzle: PreloadedPuzzle | null;
+  isPreloading: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
   setTheme: (theme: Theme) => void;
   toggleDarkMode: () => void;
   generatePuzzle: () => void;
+  preloadNextPuzzle: () => void;
   toggleCell: (index: number) => void;
   incrementXPenalty: () => void;
   resetBoard: () => void;
@@ -70,8 +79,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastMoveTime: 0,
   status: "idle",
   darkMode: getInitialDarkMode(),
+  preloadedPuzzle: null,
+  isPreloading: false,
 
-  setGridSize: (size) => set({ gridSize: size }),
+  setGridSize: (size) => {
+    set({ gridSize: size, preloadedPuzzle: null }); // Invalidate preloaded puzzle if size changes
+  },
   setTheme: (theme) => set({ theme }),
 
   toggleDarkMode: () => {
@@ -81,8 +94,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   generatePuzzle: () => {
+    const { preloadedPuzzle, gridSize } = get();
+
+    // Reset game stats
     set({
-      status: "generating",
       timer: 0,
       mistakes: 0,
       xPenalties: 0,
@@ -95,6 +110,24 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastMoveTime: 0,
       cells: [],
     });
+
+    // If we have a preloaded puzzle for the current size, use it immediately
+    if (preloadedPuzzle && preloadedPuzzle.size === gridSize) {
+      set({
+        regions: preloadedPuzzle.regions,
+        solution: preloadedPuzzle.solution,
+        cells: new Array(gridSize * gridSize).fill(0),
+        status: "playing",
+        theme: getCurrentTheme(),
+        preloadedPuzzle: null, // Consume it
+      });
+      // Start preloading the next one
+      get().preloadNextPuzzle();
+      return;
+    }
+
+    // Otherwise, generate one now (shows loading screen)
+    set({ status: "generating" });
 
     const worker = new Worker(
       new URL("../workers/puzzleGenerator.worker.ts", import.meta.url),
@@ -109,6 +142,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           status: "playing",
           theme: getCurrentTheme(),
         });
+        // Start preloading the next one
+        get().preloadNextPuzzle();
       } else {
         console.error(e.data.error);
         set({ status: "idle" });
@@ -116,7 +151,37 @@ export const useGameStore = create<GameState>((set, get) => ({
       worker.terminate();
     };
 
-    worker.postMessage({ size: get().gridSize });
+    worker.postMessage({ size: gridSize });
+  },
+
+  preloadNextPuzzle: () => {
+    const { isPreloading, gridSize } = get();
+    if (isPreloading) return;
+
+    set({ isPreloading: true });
+
+    const worker = new Worker(
+      new URL("../workers/puzzleGenerator.worker.ts", import.meta.url),
+    );
+
+    worker.onmessage = (e) => {
+      if (e.data.success) {
+        set({
+          preloadedPuzzle: {
+            regions: e.data.regions,
+            solution: e.data.solution,
+            size: e.data.size,
+          },
+          isPreloading: false,
+        });
+      } else {
+        console.error("Failed to preload puzzle:", e.data.error);
+        set({ isPreloading: false });
+      }
+      worker.terminate();
+    };
+
+    worker.postMessage({ size: gridSize });
   },
 
   toggleCell: (index) => {
