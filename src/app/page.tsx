@@ -8,12 +8,12 @@ import BackgroundPattern from "@/components/BackgroundPattern";
 import { useGameStore } from "@/store/gameStore";
 import { useEffect } from "react";
 import Link from "next/link";
-import { Info } from "lucide-react";
+import { t } from "@/lib/i18n";
 
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 export default function Home() {
-  const { generatePuzzle } = useGameStore();
+  const { generatePuzzle, locale } = useGameStore();
 
   useEffect(() => {
     const shouldReset =
@@ -43,7 +43,7 @@ export default function Home() {
             alt="Trophy"
             className="w-5 h-5 object-contain"
           />
-          Ver Tabla de Líderes
+          {t(locale, "home.viewLeaderboard")}
         </Link>
       </div>
       <VictoryModal />

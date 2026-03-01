@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useGameStore } from "@/store/gameStore";
+import { t } from "@/lib/i18n";
 
 export default function LoadingScreen() {
+  const locale = useGameStore((state) => state.locale);
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
 
@@ -39,7 +42,7 @@ export default function LoadingScreen() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-theme-accent border-t-theme-text rounded-full animate-spin"></div>
           <p className="text-theme-text font-medium animate-pulse">
-            Cargando...
+            {t(locale, "loading.text")}
           </p>
         </div>
       </div>

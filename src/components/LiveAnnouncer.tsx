@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
+import { t } from "@/lib/i18n";
 
 /**
  * Invisible live region that announces game events to screen readers.
  */
 export default function LiveAnnouncer() {
-  const { status, mistakes, xPenalties } = useGameStore();
+  const { status, mistakes, xPenalties, locale } = useGameStore();
   const [message, setMessage] = useState("");
   const prevMistakes = useRef(mistakes);
   const prevXPenalties = useRef(xPenalties);
@@ -16,41 +17,37 @@ export default function LiveAnnouncer() {
   useEffect(() => {
     // Announce mistake
     if (mistakes > prevMistakes.current) {
-      setMessage(`Error número ${mistakes}. Reina en posición incorrecta.`);
+      setMessage(t(locale, "announcer.mistake", { count: mistakes }));
     }
     prevMistakes.current = mistakes;
-  }, [mistakes]);
+  }, [mistakes, locale]);
 
   useEffect(() => {
     // Announce X penalty
     if (xPenalties > prevXPenalties.current) {
-      setMessage(
-        `Penalización por mantener una X demasiado tiempo. Total: ${xPenalties}.`,
-      );
+      setMessage(t(locale, "announcer.xPenalty", { count: xPenalties }));
     }
     prevXPenalties.current = xPenalties;
-  }, [xPenalties]);
+  }, [xPenalties, locale]);
 
   useEffect(() => {
     if (status !== prevStatus.current) {
       switch (status) {
         case "generating":
-          setMessage("Generando nuevo puzzle. Por favor espera.");
+          setMessage(t(locale, "announcer.generating"));
           break;
         case "playing":
           if (prevStatus.current === "generating") {
-            setMessage(
-              "Puzzle listo. Coloca una reina por fila, columna y región sin que se toquen entre sí.",
-            );
+            setMessage(t(locale, "announcer.ready"));
           }
           break;
         case "won":
-          setMessage("¡Victoria! Has completado el puzzle correctamente.");
+          setMessage(t(locale, "announcer.won"));
           break;
       }
     }
     prevStatus.current = status;
-  }, [status]);
+  }, [status, locale]);
 
   return (
     <div

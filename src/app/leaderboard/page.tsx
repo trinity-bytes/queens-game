@@ -4,8 +4,12 @@ import Leaderboard from "@/components/Leaderboard";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useGameStore } from "@/store/gameStore";
+import { t } from "@/lib/i18n";
 
 export default function LeaderboardPage() {
+  const locale = useGameStore((state) => state.locale);
+
   return (
     <main
       id="main-content"
@@ -17,13 +21,13 @@ export default function LeaderboardPage() {
           <Link
             href="/"
             className="p-2 rounded-full bg-theme-surface hover:brightness-95 text-theme-text transition-all shadow-sm"
-            aria-label="Volver al juego"
-            title="Volver al juego"
+            aria-label={t(locale, "leaderboardPage.back")}
+            title={t(locale, "leaderboardPage.back")}
           >
             <ArrowLeft size={20} aria-hidden="true" />
           </Link>
           <h1 className="text-2xl font-bold text-theme-text">
-            Tabla de Líderes
+            {t(locale, "leaderboardPage.title")}
           </h1>
         </div>
 

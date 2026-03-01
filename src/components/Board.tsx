@@ -1,9 +1,11 @@
 import { useGameStore } from "@/store/gameStore";
 import Cell from "./Cell";
 import { useEffect } from "react";
+import { t } from "@/lib/i18n";
 
 export default function Board() {
-  const { gridSize, regions, cells, status, generatePuzzle } = useGameStore();
+  const { gridSize, regions, cells, status, generatePuzzle, locale } =
+    useGameStore();
 
   useEffect(() => {
     if (status === "idle") {
@@ -17,7 +19,7 @@ export default function Board() {
         className="w-full max-w-md aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-inner"
         role="status"
         aria-live="polite"
-        aria-label="Generando puzzle"
+        aria-label={t(locale, "board.generatingLabel")}
       >
         <div className="flex flex-col items-center gap-4">
           <div
@@ -25,7 +27,7 @@ export default function Board() {
             aria-hidden="true"
           ></div>
           <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">
-            Generando puzzle único...
+            {t(locale, "board.generatingText")}
           </p>
         </div>
       </div>
@@ -35,7 +37,7 @@ export default function Board() {
   return (
     <div
       role="grid"
-      aria-label={`Tablero de juego de ${gridSize} por ${gridSize}`}
+      aria-label={t(locale, "board.gridAria", { size: gridSize })}
       className="w-full max-w-md aspect-square bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border-4 border-slate-800 dark:border-slate-600"
       style={{
         display: "grid",

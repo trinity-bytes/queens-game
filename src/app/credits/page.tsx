@@ -4,8 +4,12 @@ import Link from "next/link";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import { useGameStore } from "@/store/gameStore";
+import { t } from "@/lib/i18n";
 
 export default function CreditsPage() {
+  const locale = useGameStore((state) => state.locale);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:p-8 sm:pt-[calc(env(safe-area-inset-top)+6rem)] bg-theme-bg transition-colors duration-300 relative z-0">
       <BackgroundPattern />
@@ -16,21 +20,20 @@ export default function CreditsPage() {
           <Link
             href="/"
             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-theme-text transition-colors"
-            aria-label="Volver al juego"
+            aria-label={t(locale, "credits.back")}
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold text-theme-text flex items-center gap-3">
             <ShieldCheck className="w-8 h-8 text-theme-accent" />
-            Créditos y Licencias
+            {t(locale, "credits.title")}
           </h1>
         </div>
 
         <div className="space-y-8 text-slate-700 dark:text-slate-300">
           <section>
             <p className="text-lg leading-relaxed mb-6">
-              Los iconos utilizados en este proyecto fueron creados por
-              talentosos diseñadores en Flaticon:
+              {t(locale, "credits.intro")}
             </p>
             <ul className="space-y-4 text-lg">
               <li className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
@@ -42,7 +45,7 @@ export default function CreditsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Dinosaur icons created by Freepik - Flaticon
+                  {t(locale, "credits.dino")}
                 </a>
               </li>
               <li className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
@@ -54,7 +57,7 @@ export default function CreditsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Dog icons created by Freepik - Flaticon
+                  {t(locale, "credits.dog")}
                 </a>
               </li>
               <li className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
@@ -66,7 +69,7 @@ export default function CreditsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Cow icons created by Freepik - Flaticon
+                  {t(locale, "credits.cow")}
                 </a>
               </li>
               <li className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
@@ -78,7 +81,7 @@ export default function CreditsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Potato icons created by Freepik - Flaticon
+                  {t(locale, "credits.potato")}
                 </a>
               </li>
               <li className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
@@ -90,7 +93,7 @@ export default function CreditsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Star wars icons created by Freepik - Flaticon
+                  {t(locale, "credits.starwars")}
                 </a>
               </li>
               <li className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
@@ -102,7 +105,7 @@ export default function CreditsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Queen icons created by Freepik - Flaticon
+                  {t(locale, "credits.queen")}
                 </a>
               </li>
             </ul>
@@ -113,7 +116,7 @@ export default function CreditsPage() {
               href="/"
               className="px-8 py-3 bg-theme-accent hover:brightness-95 text-theme-text font-bold rounded-xl shadow-sm transition-all text-lg"
             >
-              Volver al Juego
+              {t(locale, "credits.cta")}
             </Link>
           </div>
         </div>

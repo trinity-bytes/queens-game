@@ -5,6 +5,7 @@ import "./globals.css";
 import { useGameStore } from "@/store/gameStore";
 import { ThemeScript } from "@/components/ThemeScript";
 import LoadingScreen from "@/components/LoadingScreen";
+import { t } from "@/lib/i18n";
 
 export default function RootLayout({
   children,
@@ -13,17 +14,18 @@ export default function RootLayout({
 }>) {
   const darkMode = useGameStore((state) => state.darkMode);
   const theme = useGameStore((state) => state.theme);
+  const locale = useGameStore((state) => state.locale);
 
   return (
     <html
-      lang="es"
+      lang={locale}
       suppressHydrationWarning
       className={`${darkMode ? "dark" : ""} theme-${theme}`}
     >
       <head>
         <ThemeScript />
         <title>Queens 4 My Queen</title>
-        <meta name="description" content="A special puzzle game for my queen" />
+        <meta name="description" content={t(locale, "app.description")} />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content={darkMode ? "#0f172a" : "#f0f9ff"} />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -47,7 +49,7 @@ export default function RootLayout({
       <body className="antialiased text-slate-900 dark:text-slate-100">
         <LoadingScreen />
         <a href="#main-content" className="skip-to-content">
-          Saltar al contenido
+          {t(locale, "skip.content")}
         </a>
         {children}
       </body>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu, X, Info, ShieldCheck } from "lucide-react";
+import { useGameStore } from "@/store/gameStore";
+import { getLanguageOptions, t } from "@/lib/i18n";
 
 interface HamburgerMenuProps {
   inHeader?: boolean;
@@ -9,8 +11,10 @@ interface HamburgerMenuProps {
 export default function HamburgerMenu({
   inHeader = false,
 }: HamburgerMenuProps) {
+  const { locale, setLocale } = useGameStore();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const languageOptions = getLanguageOptions();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -56,7 +60,7 @@ export default function HamburgerMenu({
             ? "p-2 rounded-full bg-theme-accent hover:brightness-95 text-theme-text transition-all"
             : "p-3 rounded-full bg-theme-surface shadow-md hover:brightness-95 text-theme-text transition-all border border-slate-200 dark:border-slate-700"
         }
-        aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+        aria-label={isOpen ? t(locale, "menu.close") : t(locale, "menu.open")}
         aria-expanded={isOpen}
       >
         {isOpen ? (
@@ -81,7 +85,7 @@ export default function HamburgerMenu({
             className="flex items-center gap-3 px-4 py-3 text-theme-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Info className="w-5 h-5" />
-            <span className="font-medium">Cómo Jugar</span>
+            <span className="font-medium">{t(locale, "menu.howToPlay")}</span>
           </Link>
           <Link
             href="/credits"
@@ -89,8 +93,30 @@ export default function HamburgerMenu({
             className="flex items-center gap-3 px-4 py-3 text-theme-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <ShieldCheck className="w-5 h-5" />
-            <span className="font-medium">Créditos</span>
+            <span className="font-medium">{t(locale, "menu.credits")}</span>
           </Link>
+          <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+            <label
+              htmlFor="language-select"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+            >
+              {t(locale, "menu.language")}
+            </label>
+            <select
+              id="language-select"
+              value={locale}
+              onChange={(event) =>
+                setLocale(event.target.value as typeof locale)
+              }
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-theme-text px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            >
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </nav>
       </div>
     </div>

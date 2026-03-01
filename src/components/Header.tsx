@@ -2,10 +2,18 @@ import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 import HamburgerMenu from "./HamburgerMenu";
+import { t } from "@/lib/i18n";
 
 export default function Header() {
-  const { timer, status, theme, generatePuzzle, darkMode, toggleDarkMode } =
-    useGameStore();
+  const {
+    timer,
+    status,
+    theme,
+    generatePuzzle,
+    darkMode,
+    toggleDarkMode,
+    locale,
+  } = useGameStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -56,7 +64,7 @@ export default function Header() {
         <div className="flex flex-col items-end">
           <div
             role="timer"
-            aria-label={`Tiempo transcurrido: ${formatTime(timer)}`}
+            aria-label={t(locale, "header.timer", { time: formatTime(timer) })}
             aria-live="off"
             className="font-mono text-xl font-semibold text-theme-text"
           >
@@ -69,10 +77,14 @@ export default function Header() {
           className="p-2 rounded-full bg-theme-accent hover:brightness-95 text-theme-text transition-all"
           aria-label={
             mounted && darkMode
-              ? "Cambiar a modo claro"
-              : "Cambiar a modo oscuro"
+              ? t(locale, "header.light")
+              : t(locale, "header.dark")
           }
-          title={mounted && darkMode ? "Modo Claro" : "Modo Oscuro"}
+          title={
+            mounted && darkMode
+              ? t(locale, "header.lightTitle")
+              : t(locale, "header.darkTitle")
+          }
         >
           {mounted && darkMode ? (
             <Moon className="w-5 h-5" />
@@ -84,8 +96,8 @@ export default function Header() {
         <button
           onClick={generatePuzzle}
           className="p-2 rounded-full bg-theme-accent hover:brightness-95 text-theme-text transition-all"
-          aria-label="Nuevo puzzle"
-          title="Nuevo puzzle"
+          aria-label={t(locale, "header.newPuzzle")}
+          title={t(locale, "header.newPuzzle")}
         >
           <div
             className="w-5 h-5 bg-theme-text"

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Clock, User } from "lucide-react";
+import { useGameStore } from "@/store/gameStore";
+import { t } from "@/lib/i18n";
 
 interface LeaderboardEntry {
   id: string;
@@ -19,6 +21,7 @@ interface LeaderboardProps {
 }
 
 export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
+  const locale = useGameStore((state) => state.locale);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +89,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
         className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
         role="status"
         aria-busy="true"
-        aria-label="Cargando tabla de clasificación"
+        aria-label={t(locale, "leaderboard.loading")}
       >
         <div className="animate-pulse flex space-x-4">
           <div className="flex-1 space-y-4 py-1">
@@ -97,7 +100,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             </div>
           </div>
         </div>
-        <span className="sr-only">Cargando mejores tiempos…</span>
+        <span className="sr-only">{t(locale, "leaderboard.loadingBest")}</span>
       </div>
     );
   }
@@ -115,17 +118,17 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   };
 
   const getRankLabel = (index: number) => {
-    if (index === 0) return "Rango Oro";
-    if (index === 1) return "Rango Plata";
-    if (index === 2) return "Rango Bronce";
-    if (index < 10) return "Top 10";
-    return `Posición ${index + 1}`;
+    if (index === 0) return t(locale, "leaderboard.rankGold");
+    if (index === 1) return t(locale, "leaderboard.rankSilver");
+    if (index === 2) return t(locale, "leaderboard.rankBronze");
+    if (index < 10) return t(locale, "leaderboard.top10");
+    return t(locale, "leaderboard.position", { position: index + 1 });
   };
 
   return (
     <section
       className={`w-full ${fullPage ? "max-w-2xl" : "max-w-md"} bg-theme-surface rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
-      aria-label="Tabla de clasificación"
+      aria-label={t(locale, "leaderboard.section")}
     >
       <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700 pb-4">
         <img
@@ -133,12 +136,14 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
           alt="Trophy"
           className="w-6 h-6 object-contain"
         />
-        <h2 className="text-xl font-bold text-theme-text">Mejores Tiempos</h2>
+        <h2 className="text-xl font-bold text-theme-text">
+          {t(locale, "leaderboard.title")}
+        </h2>
       </div>
 
       {entries.length === 0 ? (
         <p className="text-slate-500 dark:text-slate-400 text-center py-4">
-          Aún no hay récords. ¡Sé el primero!
+          {t(locale, "leaderboard.empty")}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -166,9 +171,9 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   {entry.mistakes === 0 && (
                     <span
                       className="shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
-                      title="¡Completado sin errores!"
+                      title={t(locale, "leaderboard.flawlessTitle")}
                     >
-                      Flawless
+                      {t(locale, "victory.flawless")}
                     </span>
                   )}
                 </div>
@@ -177,10 +182,14 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 {entry.moves_count !== undefined && (
                   <div
                     className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-xs font-medium"
-                    title="Movimientos totales"
+                    title={t(locale, "leaderboard.movesTitle")}
                   >
-                    <span aria-label={`Movimientos: ${entry.moves_count}`}>
-                      {entry.moves_count} movs
+                    <span
+                      aria-label={t(locale, "leaderboard.movesAria", {
+                        moves: entry.moves_count,
+                      })}
+                    >
+                      {entry.moves_count} {t(locale, "leaderboard.movesShort")}
                     </span>
                   </div>
                 )}
@@ -199,13 +208,21 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                     }}
                     aria-label="Star"
                   />
-                  <span aria-label={`Puntaje: ${entry.score}`}>
-                    {entry.score.toLocaleString()}
+                  <span
+                    aria-label={t(locale, "leaderboard.scoreAria", {
+                      score: entry.score,
+                    })}
+                  >
+                    {entry.score.toLocaleString(locale)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-semibold text-sm">
                   <Clock className="w-4 h-4" aria-hidden="true" />
-                  <span aria-label={`Tiempo: ${formatTime(entry.time_ms)}`}>
+                  <span
+                    aria-label={t(locale, "leaderboard.timeAria", {
+                      time: formatTime(entry.time_ms),
+                    })}
+                  >
                     {formatTime(entry.time_ms)}
                   </span>
                 </div>

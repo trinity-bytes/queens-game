@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
+import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
 
 export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
 export type GameStatus = "idle" | "generating" | "playing" | "won";
@@ -32,12 +33,14 @@ interface GameState {
   currentWinId: string | null;
   savedWinId: string | null;
   darkMode: boolean;
+  locale: Locale;
   preloadedPuzzle: PreloadedPuzzle | null;
   isPreloading: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
   setTheme: (theme: Theme) => void;
+  setLocale: (locale: Locale) => void;
   toggleDarkMode: () => void;
   generatePuzzle: () => void;
   preloadNextPuzzle: () => void;
@@ -87,6 +90,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentWinId: null,
   savedWinId: null,
   darkMode: getInitialDarkMode(),
+  locale: getInitialLocale(),
   preloadedPuzzle: null,
   isPreloading: false,
 
@@ -94,6 +98,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ gridSize: size, preloadedPuzzle: null }); // Invalidate preloaded puzzle if size changes
   },
   setTheme: (theme) => set({ theme }),
+  setLocale: (locale) => {
+    set({ locale });
+    setStoredLocale(locale);
+  },
 
   toggleDarkMode: () => {
     const newMode = !get().darkMode;

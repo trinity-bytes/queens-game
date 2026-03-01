@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
+import { getVictoryMessage, t } from "@/lib/i18n";
 
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
@@ -28,6 +29,7 @@ export default function VictoryModal() {
     grossScore,
     totalPenalties,
     movesCount,
+    locale,
     currentWinId,
     hasSavedCurrentWin,
     markCurrentWinSaved,
@@ -67,7 +69,7 @@ export default function VictoryModal() {
 
     if (!saved) {
       setSaving(true);
-      const finalName = name.trim() || "Unknown";
+      const finalName = name.trim() || t(locale, "victory.unknown");
       try {
         const { error } = await supabase.from("leaderboard").insert([
           {
@@ -83,6 +85,7 @@ export default function VictoryModal() {
             device_type: window.innerWidth < 768 ? "mobile" : "desktop",
             moves_count: movesCount,
             app_version: "1.1.0",
+            locale,
           },
         ]);
 
@@ -147,23 +150,6 @@ export default function VictoryModal() {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const getMessage = () => {
-    switch (theme) {
-      case "dino":
-        return "¡Eres un T-Rex de los puzzles!";
-      case "dog":
-        return "¡Guau! ¡Qué buen chico/a!";
-      case "cow":
-        return "¡Muuuuy bien hecho!";
-      case "potato":
-        return "¡Te ganaste un puré de papas!";
-      case "starwars":
-        return "¡La fuerza es intensa en ti, mi reina!";
-      default:
-        return "¡Felicidades, mi reina!";
-    }
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving || saved || !name.trim()) return;
@@ -184,6 +170,7 @@ export default function VictoryModal() {
           device_type: window.innerWidth < 768 ? "mobile" : "desktop",
           moves_count: movesCount,
           app_version: "1.1.0",
+          locale,
         },
       ]);
 
@@ -192,7 +179,7 @@ export default function VictoryModal() {
       markCurrentWinSaved();
     } catch (error) {
       console.error("Error saving score:", error);
-      alert("Hubo un error al guardar tu récord. Intenta de nuevo.");
+      alert(t(locale, "victory.saveError"));
     } finally {
       setSaving(false);
     }
@@ -221,10 +208,10 @@ export default function VictoryModal() {
             id="victory-title"
             className="text-2xl font-bold text-theme-text mb-2"
           >
-            ¡Victoria!
+            {t(locale, "victory.title")}
           </h2>
           <p className="text-slate-600 dark:text-slate-300 font-medium">
-            {getMessage()}
+            {getVictoryMessage(locale, theme, currentWinId)}
           </p>
         </div>
 
@@ -236,11 +223,13 @@ export default function VictoryModal() {
                 alt="Star"
                 className="w-4 h-4 object-contain"
               />{" "}
-              Puntos
+              {t(locale, "victory.points")}
             </p>
             <p
               className="text-2xl font-bold text-green-500 dark:text-green-400"
-              aria-label={`Puntos ganados: ${grossScore}`}
+              aria-label={t(locale, "victory.pointsAria", {
+                value: grossScore,
+              })}
             >
               +{grossScore}
             </p>
@@ -248,11 +237,13 @@ export default function VictoryModal() {
           <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
               <AlertCircle className="w-4 h-4" aria-hidden="true" />{" "}
-              Penalización
+              {t(locale, "victory.penalty")}
             </p>
             <p
               className="text-2xl font-bold text-rose-500 dark:text-rose-400"
-              aria-label={`Penalizaciones totales: ${totalPenalties}`}
+              aria-label={t(locale, "victory.penaltiesAria", {
+                value: totalPenalties,
+              })}
             >
               -{totalPenalties}
             </p>
@@ -264,11 +255,11 @@ export default function VictoryModal() {
                 alt="Trophy"
                 className="w-4 h-4 object-contain"
               />{" "}
-              Total
+              {t(locale, "victory.total")}
             </p>
             <p
               className="text-2xl font-bold text-amber-500 dark:text-amber-400"
-              aria-label={`Puntaje final: ${score}`}
+              aria-label={t(locale, "victory.totalAria", { value: score })}
             >
               {score}
             </p>
@@ -278,17 +269,17 @@ export default function VictoryModal() {
         <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 mb-6 text-center relative">
           {mistakes === 0 && (
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:border-emerald-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">
-              ¡Flawless!
+              {t(locale, "victory.flawless")}
             </div>
           )}
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 mt-2">
-            Tu tiempo
+            {t(locale, "victory.yourTime")}
           </p>
           <p className="text-3xl font-mono font-bold text-theme-text">
             {formatTime(timer)}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">
-            Completado en {movesCount} movimientos
+            {t(locale, "victory.completedMoves", { moves: movesCount })}
           </p>
         </div>
 
@@ -298,7 +289,7 @@ export default function VictoryModal() {
               htmlFor="player-name"
               className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
             >
-              Guarda tu récord
+              {t(locale, "victory.saveRecord")}
             </label>
             <div className="flex gap-2">
               <input
@@ -306,7 +297,7 @@ export default function VictoryModal() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Tu nombre o apodo"
+                placeholder={t(locale, "victory.namePlaceholder")}
                 className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-sky-400"
                 maxLength={15}
                 required
@@ -323,7 +314,9 @@ export default function VictoryModal() {
                 disabled={saving || !name.trim()}
                 className="px-4 py-2 bg-sky-600 dark:bg-sky-700 text-white rounded-lg font-medium hover:bg-sky-700 dark:hover:bg-sky-600 disabled:opacity-50 transition-colors"
               >
-                {saving ? "..." : "Guardar"}
+                {saving
+                  ? t(locale, "victory.saving")
+                  : t(locale, "victory.save")}
               </button>
             </div>
           </form>
@@ -333,7 +326,7 @@ export default function VictoryModal() {
               className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-3 rounded-lg text-center font-medium"
               role="alert"
             >
-              ¡Récord guardado!
+              {t(locale, "victory.saved")}
             </div>
             <Link
               href="/leaderboard"
@@ -347,7 +340,7 @@ export default function VictoryModal() {
                 alt="Trophy"
                 className="w-5 h-5 object-contain"
               />
-              Ver Tabla de Líderes
+              {t(locale, "victory.viewLeaderboard")}
             </Link>
           </div>
         )}
@@ -361,7 +354,7 @@ export default function VictoryModal() {
             alt="Play"
             className="w-5 h-5 object-contain invert"
           />
-          Jugar de nuevo
+          {t(locale, "victory.playAgain")}
         </button>
       </div>
     </div>

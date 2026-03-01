@@ -1,5 +1,6 @@
 import { useGameStore } from "@/store/gameStore";
 import { useCallback, useEffect, useRef } from "react";
+import { getRegionName, t } from "@/lib/i18n";
 
 interface CellProps {
   index: number;
@@ -27,24 +28,6 @@ const REGION_COLORS = [
   "bg-fuchsia-200 dark:bg-fuchsia-900",
 ];
 
-const REGION_NAMES = [
-  "cielo",
-  "azul",
-  "índigo",
-  "cian",
-  "verde azulado",
-  "esmeralda",
-  "verde",
-  "lima",
-  "amarillo",
-  "ámbar",
-  "naranja",
-  "rojo",
-  "rosa",
-  "violeta",
-  "fucsia",
-];
-
 export default function Cell({
   index,
   regionId,
@@ -52,7 +35,7 @@ export default function Cell({
   gridSize,
   regions,
 }: CellProps) {
-  const { toggleCell, theme, incrementXPenalty } = useGameStore();
+  const { toggleCell, theme, incrementXPenalty, locale } = useGameStore();
   const xTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -98,7 +81,7 @@ export default function Cell({
 
   const bgColor = REGION_COLORS[regionId % REGION_COLORS.length];
   const patternClass = `region-pattern-${regionId % 15}`;
-  const regionName = REGION_NAMES[regionId % REGION_NAMES.length];
+  const regionName = getRegionName(locale, regionId);
 
   const getIcon = () => {
     if (state === 0) return null;
@@ -126,8 +109,17 @@ export default function Cell({
   };
 
   const stateLabel =
-    state === 2 ? "con reina" : state === 1 ? "marcada con X" : "vacía";
-  const ariaLabel = `Fila ${row + 1}, Columna ${col + 1}, región ${regionName}, ${stateLabel}`;
+    state === 2
+      ? t(locale, "cell.stateQueen")
+      : state === 1
+        ? t(locale, "cell.stateX")
+        : t(locale, "cell.stateEmpty");
+  const ariaLabel = t(locale, "cell.aria", {
+    row: row + 1,
+    col: col + 1,
+    region: regionName,
+    state: stateLabel,
+  });
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
