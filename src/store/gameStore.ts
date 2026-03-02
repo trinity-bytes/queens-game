@@ -4,7 +4,7 @@ import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
 
 export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
 export type GameStatus = "idle" | "generating" | "playing" | "won";
-export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars";
+export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars" | "elephant";
 
 interface PreloadedPuzzle {
   regions: number[];
@@ -53,7 +53,14 @@ interface GameState {
   markCurrentWinSaved: () => void;
 }
 
-const THEMES: Theme[] = ["dino", "dog", "cow", "potato", "starwars"];
+const THEMES: Theme[] = [
+  "dino",
+  "dog",
+  "cow",
+  "potato",
+  "starwars",
+  "elephant",
+];
 
 // Helper to detect system dark mode preference
 const getInitialDarkMode = (): boolean => {

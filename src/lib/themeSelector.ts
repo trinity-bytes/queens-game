@@ -1,9 +1,25 @@
 import { Theme } from "@/store/gameStore";
 
-const THEMES: Theme[] = ["dino", "dog", "cow", "potato", "starwars"];
+const THEMES: Theme[] = [
+  "dino",
+  "dog",
+  "cow",
+  "potato",
+  "starwars",
+  "elephant",
+];
 
 // Seeded random number generator (Mulberry32)
-function mulberry32(a: number) {
+function mulberry32(seed: number) {
+  // Hash the sequential seed to destroy linear correlations before starting PRNG
+  let a = seed;
+  a = (a + 0x9e3779b9) | 0;
+  let t = a ^ (a >>> 16);
+  t = Math.imul(t, 0x21f0aaad);
+  t = t ^ (t >>> 15);
+  t = Math.imul(t, 0x735a2d97);
+  a = t ^ (t >>> 15);
+
   return function () {
     var t = (a += 0x6d2b79f5);
     t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -24,15 +40,18 @@ function shuffle<T>(array: T[], seed: number): T[] {
 }
 
 export function getCurrentPeriodIndex(): number {
-  // Epoch: Jan 1, 2024 00:00:00 Lima time (UTC-5)
-  // Which is Jan 1, 2024 05:00:00 UTC
-  const epochMs = Date.UTC(2024, 0, 1, 5, 0, 0);
+  // Epoch: March 2, 2026 00:00:00 Lima time (UTC-5)
+  // Which is March 2, 2026 05:00:00 UTC
+  const epochMs = Date.UTC(2026, 2, 2, 5, 0, 0);
   const diffMs = Date.now() - epochMs;
   const periodDurationMs = 12 * 60 * 60 * 1000; // 12 hours
   return Math.floor(diffMs / periodDurationMs);
 }
 
 export function getThemeForPeriod(periodIndex: number): Theme {
+  // Always premiere elephant directly on epoch's Period 0
+  if (periodIndex === 0) return "elephant";
+
   const bagSize = THEMES.length;
   const currentBagIndex = Math.floor(periodIndex / bagSize);
   const indexWithinBag = periodIndex % bagSize;

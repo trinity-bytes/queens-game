@@ -106,6 +106,22 @@
   --theme-pattern: rgba(234, 179, 8, 0.05);
 }
 
+/* Elephant Theme (Slate / Teal) */
+.theme-elephant {
+  --theme-bg: #f8fafc; /* slate-50 */
+  --theme-surface: #ffffff;
+  --theme-text: #0f766e; /* light teal-600 */
+  --theme-accent: #f1f5f9; /* slate-100 */
+  --theme-pattern: rgba(15, 118, 110, 0.05);
+}
+.dark.theme-elephant {
+  --theme-bg: #0f172a; /* slate-900 */
+  --theme-surface: #1e293b; /* slate-800 */
+  --theme-text: #2dd4bf; /* light teal-400 */
+  --theme-accent: #334155; /* slate-700 */
+  --theme-pattern: rgba(45, 212, 191, 0.05);
+}
+
 body {
   color: var(--foreground);
   background: var(--theme-bg);

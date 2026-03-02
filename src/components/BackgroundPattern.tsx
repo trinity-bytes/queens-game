@@ -17,6 +17,13 @@ const THEME_PATTERNS: Record<string, string[]> = {
     "pattern-stawrars-alliance-logo.svg",
     "pattern-stawrars-jedi-logo.svg",
   ],
+  elephant: [
+    "pattern-elephant-big-animal-huge.svg",
+    "pattern-elephant-head-1.svg",
+    "pattern-elephant-head-2.svg",
+    "pattern-elephant-side-view.svg",
+    "pattern-elephant-svgrepo-com.svg",
+  ],
   default: [
     "pattern-default-crown-1.svg",
     "pattern-default-crown-2.svg",

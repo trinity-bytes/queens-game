@@ -11,7 +11,7 @@ export const SUPPORTED_LOCALES: Locale[] = [
   "tr",
 ];
 
-type ThemeKey = "dino" | "dog" | "cow" | "potato" | "starwars";
+type ThemeKey = "dino" | "dog" | "cow" | "potato" | "starwars" | "elephant";
 
 const LANGUAGE_LABELS: Record<Locale, string> = {
   es: "Español",
@@ -164,6 +164,13 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
       "¡Puro lado luminoso en cada reina!",
       "¡Hipersalto directo a la victoria!",
     ],
+    elephant: [
+      "¡Victoria de tamaño elefante!",
+      "¡Aplastaste a la competencia!",
+      "¡Una memoria de elefante para los buenos movimientos!",
+      "¡Estrategia inolvidable!",
+      "¡Pisaste fuerte en el tablero!",
+    ],
   },
   en: {
     dino: [
@@ -200,6 +207,13 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
       "You balanced the board galaxy!",
       "Pure light-side precision!",
       "Hyperdrive straight to victory!",
+    ],
+    elephant: [
+      "Elephant-sized victory!",
+      "You trampled the competition!",
+      "A trunk full of right moves!",
+      "Unforgettable strategy!",
+      "You stomped the board!",
     ],
   },
   ko: {
@@ -238,6 +252,13 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
       "빛의 편 정밀 플레이!",
       "하이퍼드라이브 승리!",
     ],
+    elephant: [
+      "코끼리 크기의 승리!",
+      "경쟁자들을 짓밟았습니다!",
+      "좋은 움직임이 가득한 코!",
+      "잊을 수 없는 전략!",
+      "보드를 쿵쾅거리며 장악했습니다!",
+    ],
   },
   "zh-CN": {
     dino: [
@@ -274,6 +295,13 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
       "你让棋盘银河重归平衡！",
       "光明面精准操作！",
       "超空间直达胜利！",
+    ],
+    elephant: [
+      "大象级别的胜利！",
+      "你践踏了竞争！",
+      "装满正确动作的鼻子！",
+      "令人难忘的策略！",
+      "你踩踏了棋盘！",
     ],
   },
   pt: {
@@ -312,6 +340,13 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
       "Precisão total do lado da luz!",
       "Hiperespaço direto para a vitória!",
     ],
+    elephant: [
+      "Vitória do tamanho de um elefante!",
+      "Você esmagou a competição!",
+      "Uma tromba cheia de movimentos certos!",
+      "Estratégia inesquecível!",
+      "Você pisoteou o tabuleiro!",
+    ],
   },
   tr: {
     dino: [
@@ -348,6 +383,13 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
       "Tahta galaksisine denge getirdin!",
       "Aydınlık taraf hassasiyeti!",
       "Işık hızında zafere atladın!",
+    ],
+    elephant: [
+      "Fil boyutunda bir zafer!",
+      "Rakiplerini ezip geçtin!",
+      "Doğru hamlelerle dolu bir hortum!",
+      "Unutulmaz strateji!",
+      "Tahtayı ayaklarının altına aldın!",
     ],
   },
 };
@@ -439,6 +481,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "credits.cow": "Iconos de vaca creados por Freepik - Flaticon",
     "credits.potato": "Iconos de patata creados por Freepik - Flaticon",
     "credits.starwars": "Iconos de Star Wars creados por Freepik - Flaticon",
+    "credits.elephant": "Iconos de elefantes creados por Freepik - Flaticon",
     "credits.queen": "Iconos de reina creados por Freepik - Flaticon",
     "credits.cta": "Volver al Juego",
     "loading.text": "Cargando...",
@@ -539,6 +582,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "credits.cow": "Cow icons created by Freepik - Flaticon",
     "credits.potato": "Potato icons created by Freepik - Flaticon",
     "credits.starwars": "Star wars icons created by Freepik - Flaticon",
+    "credits.elephant": "Elephant icons created by Freepik - Flaticon",
     "credits.queen": "Queen icons created by Freepik - Flaticon",
     "credits.cta": "Back to Game",
     "loading.text": "Loading...",
@@ -638,6 +682,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "credits.cow": "Freepik - Flaticon에서 제작한 소 아이콘",
     "credits.potato": "Freepik - Flaticon에서 제작한 감자 아이콘",
     "credits.starwars": "Freepik - Flaticon에서 제작한 스타워즈 아이콘",
+    "credits.elephant": "Freepik - Flaticon에서 제작한 코끼리 아이콘",
     "credits.queen": "Freepik - Flaticon에서 제작한 여왕 아이콘",
     "credits.cta": "게임으로 돌아가기",
     "loading.text": "로딩 중...",
@@ -735,6 +780,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "credits.cow": "由 Freepik - Flaticon 创作的牛图标",
     "credits.potato": "由 Freepik - Flaticon 创作的土豆图标",
     "credits.starwars": "由 Freepik - Flaticon 创作的星球大战图标",
+    "credits.elephant": "由 Freepik - Flaticon 创作的大象图标",
     "credits.queen": "由 Freepik - Flaticon 创作的皇后图标",
     "credits.cta": "返回游戏",
     "loading.text": "加载中...",
@@ -835,6 +881,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "credits.cow": "Ícones de vaca criados por Freepik - Flaticon",
     "credits.potato": "Ícones de batata criados por Freepik - Flaticon",
     "credits.starwars": "Ícones de Star Wars criados por Freepik - Flaticon",
+    "credits.elephant": "Ícones de elefante criados por Freepik - Flaticon",
     "credits.queen": "Ícones de rainha criados por Freepik - Flaticon",
     "credits.cta": "Voltar ao Jogo",
     "loading.text": "Carregando...",
@@ -935,6 +982,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "credits.cow": "İnek ikonları Freepik - Flaticon",
     "credits.potato": "Patates ikonları Freepik - Flaticon",
     "credits.starwars": "Star Wars ikonları Freepik - Flaticon",
+    "credits.elephant": "Fil ikonları Freepik - Flaticon",
     "credits.queen": "Kraliçe ikonları Freepik - Flaticon",
     "credits.cta": "Oyuna Dön",
     "loading.text": "Yükleniyor...",
