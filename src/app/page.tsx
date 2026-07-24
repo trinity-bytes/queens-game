@@ -2,6 +2,7 @@
 
 import Header from "@/components/Header";
 import Board from "@/components/Board";
+import MessageStrip from "@/components/MessageStrip";
 import VictoryModal from "@/components/VictoryModal";
 import LiveAnnouncer from "@/components/LiveAnnouncer";
 import BackgroundPattern from "@/components/BackgroundPattern";
@@ -32,16 +33,17 @@ export default function Home() {
       <BackgroundPattern />
       <LiveAnnouncer />
       <Header />
+      <MessageStrip />
       <Board />
-      <div className="flex flex-col sm:flex-row gap-4 mt-6">
+      <div className="flex justify-center mt-5">
         <Link
           href="/leaderboard"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-theme-surface hover:brightness-95 text-theme-text font-semibold rounded-xl shadow-sm transition-all border border-slate-200 dark:border-slate-700"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-card hover:-translate-y-px text-ink font-extrabold rounded-[18px] shadow-[0_6px_16px_rgba(18,58,94,0.10)] transition-all active:scale-[0.97]"
         >
           <img
             src="/assets/icons/trophy.png"
             alt="Trophy"
-            className="w-5 h-5 object-contain"
+            className="w-[18px] h-[18px] object-contain"
           />
           {t(locale, "home.viewLeaderboard")}
         </Link>

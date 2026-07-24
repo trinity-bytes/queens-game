@@ -1,6 +1,14 @@
 import { useGameStore } from "@/store/gameStore";
 import { useCallback, useEffect, useRef } from "react";
 import { getRegionName, t } from "@/lib/i18n";
+import {
+  REGION_PALETTE_LIGHT,
+  REGION_PALETTE_DARK,
+  CELL_EDGE_LIGHT,
+  CELL_EDGE_DARK,
+  CELL_CONFLICT_LIGHT,
+  CELL_CONFLICT_DARK,
+} from "@/lib/designTokens";
 
 interface CellProps {
   index: number;
@@ -10,24 +18,6 @@ interface CellProps {
   regions: number[];
 }
 
-const REGION_COLORS = [
-  "bg-sky-100 dark:bg-sky-900",
-  "bg-blue-200 dark:bg-blue-900",
-  "bg-indigo-100 dark:bg-indigo-900",
-  "bg-cyan-200 dark:bg-cyan-900",
-  "bg-teal-100 dark:bg-teal-900",
-  "bg-emerald-200 dark:bg-emerald-900",
-  "bg-green-100 dark:bg-green-900",
-  "bg-lime-200 dark:bg-lime-900",
-  "bg-yellow-100 dark:bg-yellow-900",
-  "bg-amber-200 dark:bg-amber-900",
-  "bg-orange-100 dark:bg-orange-900",
-  "bg-red-200 dark:bg-red-900",
-  "bg-rose-200 dark:bg-rose-900",
-  "bg-violet-100 dark:bg-violet-900",
-  "bg-fuchsia-200 dark:bg-fuchsia-900",
-];
-
 export default function Cell({
   index,
   regionId,
@@ -35,7 +25,8 @@ export default function Cell({
   gridSize,
   regions,
 }: CellProps) {
-  const { toggleCell, theme, incrementXPenalty, locale } = useGameStore();
+  const { toggleCell, theme, incrementXPenalty, locale, solution, darkMode } =
+    useGameStore();
   const xTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -62,24 +53,14 @@ export default function Cell({
   const row = Math.floor(index / gridSize);
   const col = index % gridSize;
 
-  // Calculate borders based on adjacent regions
-  const topBorder =
-    row === 0 || regions[(row - 1) * gridSize + col] !== regionId;
-  const bottomBorder =
-    row === gridSize - 1 || regions[(row + 1) * gridSize + col] !== regionId;
-  const leftBorder =
-    col === 0 || regions[row * gridSize + (col - 1)] !== regionId;
-  const rightBorder =
-    col === gridSize - 1 || regions[row * gridSize + (col + 1)] !== regionId;
+  // A queen that doesn't match the solution row is an immediate conflict.
+  const isWrongQueen =
+    state === 2 && solution.length > 0 && solution[row] !== col;
 
-  const borderClasses = `
-    ${topBorder ? "border-t-2 border-t-slate-800 dark:border-t-slate-600" : "border-t border-t-transparent"}
-    ${bottomBorder ? "border-b-2 border-b-slate-800 dark:border-b-slate-600" : "border-b border-b-transparent"}
-    ${leftBorder ? "border-l-2 border-l-slate-800 dark:border-l-slate-600" : "border-l border-l-transparent"}
-    ${rightBorder ? "border-r-2 border-r-slate-800 dark:border-r-slate-600" : "border-r border-r-transparent"}
-  `;
-
-  const bgColor = REGION_COLORS[regionId % REGION_COLORS.length];
+  const palette = darkMode ? REGION_PALETTE_DARK : REGION_PALETTE_LIGHT;
+  const conflict = darkMode ? CELL_CONFLICT_DARK : CELL_CONFLICT_LIGHT;
+  const edge = darkMode ? CELL_EDGE_DARK : CELL_EDGE_LIGHT;
+  const bgColor = isWrongQueen ? conflict : palette[regionId % palette.length];
   const patternClass = `region-pattern-${regionId % 15}`;
   const regionName = getRegionName(locale, regionId);
 
@@ -90,7 +71,8 @@ export default function Cell({
         <img
           src="/assets/figures/x-mark.png"
           alt="X"
-          className="w-3/4 h-3/4 object-contain opacity-70"
+          className="w-1/2 h-1/2 object-contain opacity-60 pointer-events-none"
+          style={darkMode ? { filter: "invert(1)" } : undefined}
         />
       );
 
@@ -99,7 +81,7 @@ export default function Cell({
       <img
         src={figureSrc}
         alt="Queen"
-        className="w-3/4 h-3/4 object-contain drop-shadow-md"
+        className="w-[74%] h-[74%] object-contain drop-shadow-md animate-qpop pointer-events-none"
         onError={(e) => {
           // Fallback to default queen if theme image is missing
           (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
@@ -172,12 +154,11 @@ export default function Cell({
       aria-label={ariaLabel}
       aria-pressed={state === 2}
       tabIndex={index === 0 ? 0 : -1}
-      className={`
-        w-full aspect-square flex items-center justify-center text-2xl cursor-pointer select-none
-        transition-colors duration-200
-        ${bgColor} ${patternClass} ${borderClasses}
-        hover:brightness-95 active:scale-95
-      `}
+      className={`w-full aspect-square flex items-center justify-center cursor-pointer select-none transition-colors duration-200 hover:brightness-95 active:scale-90 ${patternClass}`}
+      style={{
+        backgroundColor: bgColor,
+        border: `1px solid ${edge}`,
+      }}
       onPointerDown={(e) => {
         e.preventDefault();
         toggleCell(index);
