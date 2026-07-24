@@ -25,6 +25,16 @@ export default function RootLayout({
       <head>
         <ThemeScript />
         <title>Queens 4 My Queen</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
         <meta name="description" content={t(locale, "app.description")} />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content={darkMode ? "#0f172a" : "#f0f9ff"} />
