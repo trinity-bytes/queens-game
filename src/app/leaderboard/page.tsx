@@ -2,7 +2,6 @@
 
 import Leaderboard from "@/components/Leaderboard";
 import BackgroundPattern from "@/components/BackgroundPattern";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
@@ -13,21 +12,23 @@ export default function LeaderboardPage() {
   return (
     <main
       id="main-content"
-      className="flex min-h-screen flex-col items-center justify-start p-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:p-8 sm:pt-[calc(env(safe-area-inset-top)+2rem)] bg-theme-bg transition-colors duration-300"
+      className="flex min-h-screen flex-col items-center justify-start p-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] sm:p-8 sm:pt-[calc(env(safe-area-inset-top)+2rem)] bg-theme-bg transition-colors duration-300 relative z-0"
     >
       <BackgroundPattern />
-      <div className="w-full max-w-lg">
-        <div className="flex items-center gap-3 mb-6">
+      <div className="w-full max-w-md">
+        <div className="flex items-center gap-3 mb-5">
           <Link
             href="/"
-            className="p-2 rounded-full bg-theme-surface hover:brightness-95 text-theme-text transition-all shadow-sm"
+            className="w-[38px] h-[38px] rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
             aria-label={t(locale, "leaderboardPage.back")}
             title={t(locale, "leaderboardPage.back")}
           >
-            <ArrowLeft size={20} aria-hidden="true" />
+            <span aria-hidden="true" className="text-base">
+              ←
+            </span>
           </Link>
-          <h1 className="text-2xl font-bold text-theme-text">
-            {t(locale, "leaderboardPage.title")}
+          <h1 className="font-display text-[22px] font-extrabold text-ink">
+            {t(locale, "leaderboard.title")}
           </h1>
         </div>
 

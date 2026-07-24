@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Clock, User } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
+import { PODIUM_MEDALS } from "@/lib/designTokens";
 
 interface LeaderboardEntry {
   id: string;
@@ -20,8 +21,16 @@ interface LeaderboardProps {
   fullPage?: boolean;
 }
 
+function formatTime(ms: number) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
 export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   const locale = useGameStore((state) => state.locale);
+  const theme = useGameStore((state) => state.theme);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +58,6 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
 
     fetchLeaderboard();
 
-    // Subscribe to changes
     const channel = supabase
       .channel("public:leaderboard")
       .on(
@@ -60,9 +68,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             const newEntries = [...current, payload.new as LeaderboardEntry];
             return newEntries
               .sort((a, b) => {
-                if (b.score !== a.score) {
-                  return b.score - a.score;
-                }
+                if (b.score !== a.score) return b.score - a.score;
                 return a.time_ms - b.time_ms;
               })
               .slice(0, limit);
@@ -76,156 +82,165 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
     };
   }, [limit]);
 
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
-
   if (loading) {
     return (
       <div
-        className={`w-full ${fullPage ? "max-w-lg" : "max-w-md"} bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+        className="w-full max-w-md mx-auto flex flex-col gap-2.5"
         role="status"
         aria-busy="true"
         aria-label={t(locale, "leaderboard.loading")}
       >
-        <div className="animate-pulse flex space-x-4">
-          <div className="flex-1 space-y-4 py-1">
-            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
-            </div>
+        {[62, 48, 56, 42, 52].map((w, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-2.5 p-3 bg-card rounded-2xl shadow-[0_3px_8px_rgba(18,58,94,0.06)]"
+          >
+            <div className="w-[26px] h-[26px] rounded-[9px] bg-chip-bg shrink-0 animate-pulse" />
+            <div
+              className="h-3 rounded-md bg-chip-bg animate-pulse"
+              style={{ width: `${w}%` }}
+            />
+            <div className="h-3 w-12 rounded-md bg-chip-bg opacity-70 ml-auto shrink-0 animate-pulse" />
           </div>
-        </div>
-        <span className="sr-only">{t(locale, "leaderboard.loadingBest")}</span>
+        ))}
+        <p className="text-center text-muted text-xs font-bold mt-2">
+          {t(locale, "leaderboard.loadingBest")}
+        </p>
       </div>
     );
   }
 
-  const getRankStyle = (index: number) => {
-    if (index === 0)
-      return "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-400 border-2 border-amber-400"; // Oro
-    if (index === 1)
-      return "bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 border-2 border-slate-400"; // Plata
-    if (index === 2)
-      return "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-400 border-2 border-orange-400"; // Bronce
-    if (index < 10)
-      return "bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-400"; // Top 10
-    return "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"; // Resto
-  };
+  if (entries.length === 0) {
+    return (
+      <section
+        className="w-full max-w-md mx-auto bg-card rounded-3xl p-8 text-center flex flex-col items-center gap-2.5"
+        aria-label={t(locale, "leaderboard.section")}
+      >
+        <div className="w-[72px] h-[72px] rounded-[22px] bg-chip-bg flex items-center justify-center">
+          <img
+            src={`/assets/figures/${theme}.png`}
+            alt=""
+            aria-hidden="true"
+            className="w-11 h-11 object-contain opacity-85"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
+            }}
+          />
+        </div>
+        <div className="font-display font-extrabold text-[17px] text-ink">
+          {t(locale, "leaderboard.emptyTitle")}
+        </div>
+        <p className="text-muted text-sm font-semibold leading-relaxed">
+          {t(locale, "leaderboard.empty")}
+        </p>
+        <Link
+          href="/"
+          className="mt-1.5 bg-accent text-white font-extrabold rounded-2xl px-5 py-2.5 text-sm hover:brightness-95 transition-all active:scale-95"
+        >
+          {t(locale, "leaderboard.playCta")}
+        </Link>
+      </section>
+    );
+  }
 
-  const getRankLabel = (index: number) => {
-    if (index === 0) return t(locale, "leaderboard.rankGold");
-    if (index === 1) return t(locale, "leaderboard.rankSilver");
-    if (index === 2) return t(locale, "leaderboard.rankBronze");
-    if (index < 10) return t(locale, "leaderboard.top10");
-    return t(locale, "leaderboard.position", { position: index + 1 });
-  };
+  const top3 = entries.slice(0, 3);
+  const rest = entries.slice(3);
+  // Visual podium order: silver, gold, bronze.
+  const podiumOrder = [top3[1], top3[0], top3[2]]
+    .map((entry, visualIdx) => {
+      if (!entry) return null;
+      const rank = entry === top3[0] ? 1 : entry === top3[1] ? 2 : 3;
+      return { entry, rank, medal: PODIUM_MEDALS[rank - 1], visualIdx };
+    })
+    .filter(Boolean) as {
+    entry: LeaderboardEntry;
+    rank: number;
+    medal: (typeof PODIUM_MEDALS)[number];
+    visualIdx: number;
+  }[];
 
   return (
     <section
-      className={`w-full ${fullPage ? "max-w-2xl" : "max-w-md"} bg-theme-surface rounded-xl shadow-sm p-6 ${fullPage ? "" : "mt-6"}`}
+      className="w-full max-w-md mx-auto"
       aria-label={t(locale, "leaderboard.section")}
     >
-      <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-700 pb-4">
-        <img
-          src="/assets/icons/trophy.png"
-          alt="Trophy"
-          className="w-6 h-6 object-contain"
-        />
-        <h2 className="text-xl font-bold text-theme-text">
-          {t(locale, "leaderboard.title")}
-        </h2>
+      {/* Podium */}
+      <div className="flex items-end justify-center gap-3 mb-6">
+        {podiumOrder.map(({ entry, rank, medal }) => (
+          <div
+            key={entry.id}
+            className="flex flex-col items-center gap-1.5 w-[110px]"
+          >
+            <div
+              className="w-[50px] h-[50px] rounded-2xl bg-card shadow-[0_6px_16px_rgba(18,58,94,0.12)] flex items-center justify-center font-black text-lg"
+              style={{ color: medal.medalColor }}
+              aria-label={t(locale, "leaderboard.position", { position: rank })}
+            >
+              {rank}
+            </div>
+            <span className="font-extrabold text-ink text-[13px] truncate max-w-full px-1">
+              {entry.player_name}
+            </span>
+            <span className="font-black text-[#c9962c] text-[13px]">
+              {entry.score.toLocaleString(locale)}
+            </span>
+            <div
+              className="w-full rounded-t-2xl"
+              style={{
+                background: medal.barColor,
+                height: `${medal.barHeight}px`,
+              }}
+            />
+          </div>
+        ))}
       </div>
 
-      {entries.length === 0 ? (
-        <p className="text-slate-500 dark:text-slate-400 text-center py-4">
-          {t(locale, "leaderboard.empty")}
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {entries.map((entry, index) => (
+      {/* Rest */}
+      {rest.length > 0 && (
+        <ul className="flex flex-col gap-2.5">
+          {rest.map((entry, i) => (
             <li
               key={entry.id}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 gap-1.5 sm:gap-0 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+              className="flex items-center justify-between bg-card rounded-2xl px-3.5 py-2.5 shadow-[0_3px_8px_rgba(18,58,94,0.06)]"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <span
-                  className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${getRankStyle(index)}`}
-                  aria-label={getRankLabel(index)}
-                  title={getRankLabel(index)}
-                >
-                  {index + 1}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-[26px] h-[26px] rounded-[9px] bg-chip-bg flex items-center justify-center font-extrabold text-xs text-muted shrink-0">
+                  {i + 4}
                 </span>
-                <div className="flex items-center gap-2 min-w-0">
-                  <User
-                    className="w-4 h-4 shrink-0 text-slate-400"
-                    aria-hidden="true"
-                  />
-                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-[120px] sm:max-w-[180px]">
-                    {entry.player_name}
-                  </span>
-                  {entry.mistakes === 0 && (
-                    <span
-                      className="shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
-                      title={t(locale, "leaderboard.flawlessTitle")}
-                    >
-                      {t(locale, "victory.flawless")}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 sm:gap-4 pl-11 sm:pl-0 self-start sm:self-auto">
-                {entry.moves_count !== undefined && (
-                  <div
-                    className="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-xs font-medium"
-                    title={t(locale, "leaderboard.movesTitle")}
+                <span className="font-bold text-ink text-sm truncate">
+                  {entry.player_name}
+                </span>
+                {entry.mistakes === 0 && (
+                  <span
+                    className="shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#1f9d5f] bg-[#e3f9ec] dark:bg-[rgba(31,157,95,0.16)] rounded-full"
+                    title={t(locale, "leaderboard.flawlessTitle")}
                   >
-                    <span
-                      aria-label={t(locale, "leaderboard.movesAria", {
-                        moves: entry.moves_count,
-                      })}
-                    >
-                      {entry.moves_count} {t(locale, "leaderboard.movesShort")}
-                    </span>
-                  </div>
+                    {t(locale, "victory.flawless")}
+                  </span>
                 )}
-                <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-bold">
-                  <div
-                    className="w-5 h-5 sm:w-6 sm:h-6 bg-amber-500 dark:bg-amber-400"
-                    style={{
-                      maskImage: "url(/assets/icons/star.svg)",
-                      WebkitMaskImage: "url(/assets/icons/star.svg)",
-                      maskSize: "contain",
-                      WebkitMaskSize: "contain",
-                      maskRepeat: "no-repeat",
-                      WebkitMaskRepeat: "no-repeat",
-                      maskPosition: "center",
-                      WebkitMaskPosition: "center",
-                    }}
-                    aria-label="Star"
-                  />
-                  <span
-                    aria-label={t(locale, "leaderboard.scoreAria", {
-                      score: entry.score,
-                    })}
-                  >
-                    {entry.score.toLocaleString(locale)}
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                {entry.moves_count !== undefined && (
+                  <span className="text-muted text-xs font-semibold opacity-80 hidden sm:inline">
+                    {entry.moves_count} {t(locale, "leaderboard.movesShort")}
                   </span>
-                </div>
-                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-semibold text-sm">
-                  <Clock className="w-4 h-4" aria-hidden="true" />
-                  <span
-                    aria-label={t(locale, "leaderboard.timeAria", {
-                      time: formatTime(entry.time_ms),
-                    })}
-                  >
-                    {formatTime(entry.time_ms)}
-                  </span>
-                </div>
+                )}
+                <span
+                  className="font-extrabold text-[#c9962c] text-[13px]"
+                  aria-label={t(locale, "leaderboard.scoreAria", {
+                    score: entry.score,
+                  })}
+                >
+                  {entry.score.toLocaleString(locale)}
+                </span>
+                <span
+                  className="font-bold text-muted text-[13px] tabular-nums"
+                  aria-label={t(locale, "leaderboard.timeAria", {
+                    time: formatTime(entry.time_ms),
+                  })}
+                >
+                  {formatTime(entry.time_ms)}
+                </span>
               </div>
             </li>
           ))}
