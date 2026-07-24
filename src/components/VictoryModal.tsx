@@ -187,7 +187,7 @@ export default function VictoryModal() {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-[rgba(18,58,94,0.35)] backdrop-blur-sm flex items-center justify-center p-4 z-50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="victory-title"
@@ -195,99 +195,93 @@ export default function VictoryModal() {
       tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all scale-100 opacity-100">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-theme-accent rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="bg-card rounded-[26px] shadow-[0_24px_40px_rgba(0,0,0,0.25)] w-full max-w-sm p-6 animate-qpop max-h-full overflow-auto">
+        <div className="text-center mb-4">
+          <div className="w-[70px] h-[70px] rounded-[22px] bg-[#fff6da] dark:bg-amber-400/15 flex items-center justify-center mx-auto mb-3">
             <img
               src="/assets/icons/trophy.png"
               alt="Trophy"
-              className="w-8 h-8 object-contain"
+              className="w-9 h-9 object-contain"
             />
           </div>
           <h2
             id="victory-title"
-            className="text-2xl font-bold text-theme-text mb-2"
+            className="font-display text-2xl font-extrabold text-ink"
           >
             {t(locale, "victory.title")}
           </h2>
-          <p className="text-slate-600 dark:text-slate-300 font-medium">
+          <p className="text-muted font-bold mt-1 text-sm">
             {getVictoryMessage(locale, theme, currentWinId)}
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
-              <img
-                src="/assets/icons/star.svg"
-                alt="Star"
-                className="w-4 h-4 object-contain"
-              />{" "}
+        <div className="grid grid-cols-3 gap-2.5 my-[18px]">
+          <div className="rounded-2xl p-[11px_6px] text-center bg-[#f3f9ff] dark:bg-[rgba(47,174,118,0.12)]">
+            <div className="text-[10px] font-extrabold text-muted">
               {t(locale, "victory.points")}
-            </p>
-            <p
-              className="text-2xl font-bold text-green-500 dark:text-green-400"
-              aria-label={t(locale, "victory.pointsAria", {
-                value: grossScore,
-              })}
+            </div>
+            <div
+              className="font-display font-black text-lg mt-0.5 text-[#2fae76]"
+              aria-label={t(locale, "victory.pointsAria", { value: grossScore })}
             >
-              +{grossScore}
-            </p>
+              +{grossScore.toLocaleString(locale)}
+            </div>
           </div>
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
-              <AlertCircle className="w-4 h-4" aria-hidden="true" />{" "}
+          <div className="rounded-2xl p-[11px_6px] text-center bg-[#fff1f0] dark:bg-[rgba(225,92,103,0.12)]">
+            <div className="text-[10px] font-extrabold text-muted flex items-center justify-center gap-0.5">
+              <AlertCircle className="w-3 h-3" aria-hidden="true" />
               {t(locale, "victory.penalty")}
-            </p>
-            <p
-              className="text-2xl font-bold text-rose-500 dark:text-rose-400"
+            </div>
+            <div
+              className="font-display font-black text-lg mt-0.5 text-[#e15c67]"
               aria-label={t(locale, "victory.penaltiesAria", {
                 value: totalPenalties,
               })}
             >
-              -{totalPenalties}
-            </p>
+              −{totalPenalties.toLocaleString(locale)}
+            </div>
           </div>
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1">
-              <img
-                src="/assets/icons/trophy.png"
-                alt="Trophy"
-                className="w-4 h-4 object-contain"
-              />{" "}
+          <div className="rounded-2xl p-[11px_6px] text-center bg-[#fff6da] dark:bg-[rgba(201,150,44,0.12)]">
+            <div className="text-[10px] font-extrabold text-muted">
               {t(locale, "victory.total")}
-            </p>
-            <p
-              className="text-2xl font-bold text-amber-500 dark:text-amber-400"
+            </div>
+            <div
+              className="font-display font-black text-lg mt-0.5 text-[#c9962c]"
               aria-label={t(locale, "victory.totalAria", { value: score })}
             >
-              {score}
-            </p>
+              {score.toLocaleString(locale)}
+            </div>
           </div>
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4 mb-6 text-center relative">
-          {mistakes === 0 && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:border-emerald-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">
-              {t(locale, "victory.flawless")}
-            </div>
-          )}
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-1 mt-2">
+        <div className="bg-chip-bg rounded-2xl p-3 mb-[18px] text-center relative">
+          <div
+            className={`absolute -top-[11px] left-1/2 -translate-x-1/2 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-xl border-2 border-card ${
+              mistakes === 0
+                ? "bg-[#e3f9ec] text-[#1f9d5f]"
+                : "bg-[#fbdad9] text-[#d5525d]"
+            }`}
+          >
+            {mistakes === 0
+              ? t(locale, "victory.flawless")
+              : t(locale, "victory.errorsBadge", { count: mistakes })}
+          </div>
+          <p className="text-[11px] font-bold text-muted mt-1">
             {t(locale, "victory.yourTime")}
           </p>
-          <p className="text-3xl font-mono font-bold text-theme-text">
+          <p className="font-display text-[26px] font-black text-ink tabular-nums">
             {formatTime(timer)}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">
+          <p className="text-[11px] text-muted opacity-80 mt-1 font-semibold">
             {t(locale, "victory.completedMoves", { moves: movesCount })}
           </p>
         </div>
 
         {!saved ? (
-          <form onSubmit={handleSave} className="mb-6">
+          <form onSubmit={handleSave} className="mb-3">
             <label
               htmlFor="player-name"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              className="block text-[12.5px] font-extrabold text-muted mb-[7px]"
             >
               {t(locale, "victory.saveRecord")}
             </label>
@@ -298,7 +292,7 @@ export default function VictoryModal() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t(locale, "victory.namePlaceholder")}
-                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-sky-400"
+                className="flex-1 min-w-0 bg-chip-bg border-0 rounded-2xl px-3.5 py-2.5 text-ink font-bold focus:outline-none focus:ring-2 focus:ring-accent"
                 maxLength={15}
                 required
                 list="nick-suggestions"
@@ -312,7 +306,7 @@ export default function VictoryModal() {
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="px-4 py-2 bg-sky-600 dark:bg-sky-700 text-white rounded-lg font-medium hover:bg-sky-700 dark:hover:bg-sky-600 disabled:opacity-50 transition-colors"
+                className="px-4 bg-accent text-white rounded-2xl font-extrabold hover:brightness-95 disabled:opacity-50 transition-all active:scale-95"
               >
                 {saving
                   ? t(locale, "victory.saving")
@@ -321,38 +315,37 @@ export default function VictoryModal() {
             </div>
           </form>
         ) : (
-          <div className="mb-6 space-y-3">
-            <div
-              className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 p-3 rounded-lg text-center font-medium"
-              role="alert"
-            >
-              {t(locale, "victory.saved")}
-            </div>
+          <div className="mb-3">
             <Link
               href="/leaderboard"
               onClick={() =>
                 sessionStorage.setItem(RESET_HOME_ON_RETURN_KEY, "1")
               }
-              className="w-full py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors border border-amber-200 dark:border-amber-700"
+              className="w-full py-[11px] px-2 bg-[#e3f9ec] dark:bg-[rgba(31,157,95,0.16)] text-[#1f7a4d] dark:text-[#6fe0ac] rounded-2xl font-extrabold text-[13.5px] flex items-center justify-center gap-2 hover:brightness-95 transition-all active:scale-[0.97]"
+              role="alert"
             >
-              <img
-                src="/assets/icons/trophy.png"
-                alt="Trophy"
-                className="w-5 h-5 object-contain"
-              />
-              {t(locale, "victory.viewLeaderboard")}
+              ✓ {t(locale, "victory.saved")}
             </Link>
           </div>
         )}
 
         <button
           onClick={handlePlayAgain}
-          className="w-full py-3 bg-slate-800 dark:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+          className="w-full py-3 bg-ink text-card rounded-2xl font-extrabold flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-[0.97]"
         >
-          <img
-            src="/assets/icons/play-button.png"
-            alt="Play"
-            className="w-5 h-5 object-contain invert"
+          <div
+            className="w-[15px] h-[15px] bg-card"
+            style={{
+              maskImage: "url(/assets/icons/play-button.png)",
+              WebkitMaskImage: "url(/assets/icons/play-button.png)",
+              maskSize: "contain",
+              WebkitMaskSize: "contain",
+              maskRepeat: "no-repeat",
+              WebkitMaskRepeat: "no-repeat",
+              maskPosition: "center",
+              WebkitMaskPosition: "center",
+            }}
+            aria-hidden="true"
           />
           {t(locale, "victory.playAgain")}
         </button>
