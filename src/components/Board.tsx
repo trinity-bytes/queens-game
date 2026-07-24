@@ -16,17 +16,18 @@ export default function Board() {
   if (status === "generating") {
     return (
       <div
-        className="w-full max-w-md aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-inner"
+        className="w-full max-w-md aspect-square bg-card rounded-[28px] flex items-center justify-center shadow-[0_14px_30px_rgba(18,58,94,0.18)]"
         role="status"
         aria-live="polite"
         aria-label={t(locale, "board.generatingLabel")}
       >
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="w-12 h-12 border-4 border-sky-200 dark:border-slate-600 border-t-sky-600 dark:border-t-sky-400 rounded-full animate-spin"
-            aria-hidden="true"
-          ></div>
-          <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">
+        <div className="flex flex-col items-center gap-5">
+          <div className="flex gap-2" aria-hidden="true">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent dot-bounce" />
+            <span className="w-2.5 h-2.5 rounded-full bg-accent opacity-60 dot-bounce [animation-delay:0.15s]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-accent opacity-30 dot-bounce [animation-delay:0.3s]" />
+          </div>
+          <p className="text-muted font-semibold animate-pulse">
             {t(locale, "board.generatingText")}
           </p>
         </div>
@@ -38,7 +39,7 @@ export default function Board() {
     <div
       role="grid"
       aria-label={t(locale, "board.gridAria", { size: gridSize })}
-      className="w-full max-w-md aspect-square bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border-4 border-slate-800 dark:border-slate-600"
+      className="w-full max-w-md aspect-square bg-card rounded-[28px] shadow-[0_14px_30px_rgba(18,58,94,0.18)] overflow-hidden"
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,

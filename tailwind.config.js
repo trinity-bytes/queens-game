@@ -8,6 +8,10 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        display: ['var(--font-baloo)', '"Baloo 2"', "sans-serif"],
+        sans: ['var(--font-nunito)', '"Nunito"', "system-ui", "sans-serif"],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
@@ -18,6 +22,20 @@ export default {
           accent: "var(--theme-accent)",
           pattern: "var(--theme-pattern)",
         },
+        ink: "var(--ink)",
+        muted: "var(--muted)",
+        card: "var(--card)",
+        accent: "var(--accent)",
+        "icon-bg": "var(--icon-bg)",
+        "chip-bg": "var(--chip-bg)",
+        "chip-label": "var(--chip-label)",
+        "score-bg": "var(--score-bg)",
+        "score-label": "var(--score-label)",
+        "score-text": "var(--score-text)",
+      },
+      borderRadius: {
+        "3xl": "1.5rem",
+        "4xl": "1.75rem",
       },
     },
   },

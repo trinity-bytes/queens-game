@@ -57,3 +57,5 @@ public/worker-*.js
 
 # ESLint
 .eslintcache
+
+.atl/

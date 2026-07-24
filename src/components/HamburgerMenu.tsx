@@ -1,11 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, Info, ShieldCheck } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getLanguageOptions, t } from "@/lib/i18n";
 
 interface HamburgerMenuProps {
   inHeader?: boolean;
+}
+
+function Bars() {
+  return (
+    <span className="w-[18px] h-[14px] flex flex-col justify-between">
+      <span className="block h-[3px] rounded-[3px] bg-ink" />
+      <span className="block h-[3px] rounded-[3px] bg-ink" />
+      <span className="block h-[3px] rounded-[3px] bg-ink" />
+    </span>
+  );
 }
 
 export default function HamburgerMenu({
@@ -57,48 +66,52 @@ export default function HamburgerMenu({
         onClick={() => setIsOpen(!isOpen)}
         className={
           inHeader
-            ? "p-2 rounded-full bg-theme-accent hover:brightness-95 text-theme-text transition-all"
-            : "p-3 rounded-full bg-theme-surface shadow-md hover:brightness-95 text-theme-text transition-all border border-slate-200 dark:border-slate-700"
+            ? "w-[38px] h-[38px] -ml-1.5 rounded-xl flex items-center justify-center hover:bg-icon-bg transition-colors active:opacity-50"
+            : "w-11 h-11 rounded-2xl bg-card shadow-[0_6px_18px_rgba(18,58,94,0.1)] flex items-center justify-center hover:brightness-95 transition-all"
         }
         aria-label={isOpen ? t(locale, "menu.close") : t(locale, "menu.open")}
         aria-expanded={isOpen}
       >
-        {isOpen ? (
-          <X className={inHeader ? "w-5 h-5" : "w-6 h-6"} />
-        ) : (
-          <Menu className={inHeader ? "w-5 h-5" : "w-6 h-6"} />
-        )}
+        <Bars />
       </button>
 
       {/* Dropdown Menu */}
       <div
-        className={`absolute top-full left-0 mt-2 w-56 bg-theme-surface rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-200 origin-top-left z-50 ${
+        className={`absolute top-full left-0 mt-3 w-64 bg-card rounded-3xl shadow-[0_16px_34px_rgba(18,58,94,0.18)] overflow-hidden transition-all duration-200 origin-top-left z-50 ${
           isOpen
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-95 pointer-events-none"
         }`}
       >
-        <nav className="flex flex-col py-2">
+        <nav className="flex flex-col">
           <Link
             href="/tutorial"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-theme-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <Info className="w-5 h-5" />
-            <span className="font-medium">{t(locale, "menu.howToPlay")}</span>
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-[15px]">
+              ℹ️
+            </span>
+            <span className="font-extrabold text-ink text-sm">
+              {t(locale, "menu.howToPlay")}
+            </span>
           </Link>
           <Link
             href="/credits"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-theme-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <ShieldCheck className="w-5 h-5" />
-            <span className="font-medium">{t(locale, "menu.credits")}</span>
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-[15px]">
+              🛡️
+            </span>
+            <span className="font-extrabold text-ink text-sm">
+              {t(locale, "menu.credits")}
+            </span>
           </Link>
-          <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+          <div className="px-4 py-[15px]">
             <label
               htmlFor="language-select"
-              className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2"
+              className="block text-[10px] font-extrabold uppercase tracking-wider text-muted mb-2"
             >
               {t(locale, "menu.language")}
             </label>
@@ -108,7 +121,7 @@ export default function HamburgerMenu({
               onChange={(event) =>
                 setLocale(event.target.value as typeof locale)
               }
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-theme-text px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full rounded-xl bg-chip-bg text-ink px-3 py-2.5 text-sm font-bold border-0 focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {languageOptions.map((option) => (
                 <option key={option.value} value={option.value}>

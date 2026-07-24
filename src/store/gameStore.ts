@@ -1,8 +1,26 @@
 import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
 import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
+import type { FeedbackType } from "@/lib/designTokens";
 
 export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
+
+/** A transient floating +/- points indicator, keyed by id so the UI re-triggers. */
+export interface ScoreDelta {
+  value: number;
+  id: number;
+}
+
+/** A transient contextual message shown in the game message strip. */
+export interface GameMessage {
+  type: FeedbackType;
+  textKey: string;
+  vars?: Record<string, string | number>;
+  id: number;
+}
+
+let eventSeq = 0;
+const nextEventId = () => ++eventSeq;
 export type GameStatus = "idle" | "generating" | "playing" | "won";
 export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars" | "elephant";
 
@@ -29,6 +47,8 @@ interface GameState {
   lastCorrectMoveTime: number;
   lastMoveTime: number;
   movesCount: number;
+  lastDelta: ScoreDelta | null;
+  lastMessage: GameMessage | null;
   status: GameStatus;
   currentWinId: string | null;
   savedWinId: string | null;
@@ -93,6 +113,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastCorrectMoveTime: 0,
   lastMoveTime: 0,
   movesCount: 0,
+  lastDelta: null,
+  lastMessage: null,
   status: "idle",
   currentWinId: null,
   savedWinId: null,
@@ -132,6 +154,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
       movesCount: 0,
+      lastDelta: null,
+      lastMessage: null,
       cells: [],
       currentWinId: null,
       savedWinId: null,
@@ -244,6 +268,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newLastCorrectMoveTime = lastCorrectMoveTime;
     let newLastMoveTime = timer;
     let newMovesCount = movesCount + 1;
+    let newDelta: ScoreDelta | null = get().lastDelta;
+    let newMessage: GameMessage | null = get().lastMessage;
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
@@ -254,6 +280,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         newScore = Math.max(0, newScore - penalty);
         newTotalPenalties += penalty;
         newCombo = 1;
+        newDelta = { value: -penalty, id: nextEventId() };
+        newMessage = {
+          type: "bad",
+          textKey: "msg.attack",
+          vars: { penalty },
+          id: nextEventId(),
+        };
       } else {
         // Correct placement
         if (!newScoredQueens.includes(index)) {
@@ -273,6 +306,15 @@ export const useGameStore = create<GameState>((set, get) => ({
           newGrossScore += pointsEarned;
           newScoredQueens.push(index);
           newLastCorrectMoveTime = timer;
+          newDelta = { value: pointsEarned, id: nextEventId() };
+          if (newCombo >= 2) {
+            newMessage = {
+              type: "good",
+              textKey: "msg.combo",
+              vars: { combo: newCombo, points: pointsEarned },
+              id: nextEventId(),
+            };
+          }
         }
       }
     }
@@ -288,6 +330,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastCorrectMoveTime: newLastCorrectMoveTime,
       lastMoveTime: newLastMoveTime,
       movesCount: newMovesCount,
+      lastDelta: newDelta,
+      lastMessage: newMessage,
     });
     get().checkWinCondition();
   },
@@ -301,6 +345,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         totalPenalties: state.totalPenalties + penalty,
         lastMoveTime: state.timer,
         movesCount: state.movesCount + 1,
+        lastDelta: { value: -penalty, id: nextEventId() },
+        lastMessage: {
+          type: "warn" as const,
+          textKey: "msg.xUnsolved",
+          vars: { penalty },
+          id: nextEventId(),
+        },
       };
     });
   },
@@ -320,6 +371,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
       movesCount: 0,
+      lastDelta: null,
+      lastMessage: null,
       status: "playing",
       currentWinId: null,
       savedWinId: null,
