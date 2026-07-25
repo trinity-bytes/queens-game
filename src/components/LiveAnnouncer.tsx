@@ -31,6 +31,9 @@ export default function LiveAnnouncer() {
         case "won":
           setMessage(t(locale, "announcer.won"));
           break;
+        case "error":
+          setMessage(t(locale, "announcer.error"));
+          break;
       }
     }
     prevStatus.current = status;

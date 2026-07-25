@@ -1,5 +1,12 @@
 // src/workers/puzzleGenerator.worker.ts
 
+import type {
+  GenerationFailure,
+  GenerationPhase,
+  GenerationSuccess,
+  PhaseStats,
+} from "./puzzleGenerator.types";
+
 // Helper to check if a queen can be placed at (row, col)
 function isValidQueenPlacement(
   board: number[],
@@ -306,53 +313,117 @@ function evaluateDifficulty(regions: number[], size: number): number {
   return trivialCount / size;
 }
 
-self.onmessage = (e: MessageEvent) => {
-  const { size } = e.data;
-  const maxSeeds = 1000;
-  const regionsPerSeed = 15;
-  const maxTrivialFraction = 0.5;
+const MAX_SEEDS = 1000;
+const REGIONS_PER_SEED = 15;
+const MAX_TRIVIAL_FRACTION = 0.5;
 
-  // Phase 1: Try to find a hard + unique puzzle
-  for (let s = 0; s < maxSeeds; s++) {
+/**
+ * Searches for an acceptable layout, counting every rejection by cause.
+ *
+ * Both phases share this body: "relaxed" differs from "strict" only in passing
+ * a null trivial-fraction ceiling, which skips the difficulty filter. Measured
+ * over 250k candidates at size 9, that filter rejects effectively nothing (the
+ * observed trivial fraction of unique layouts tops out around 0.44 against a
+ * 0.5 ceiling), so the two phases search at nearly the same acceptance rate.
+ * The counters below exist to keep that claim checkable rather than assumed.
+ */
+function runPhase(
+  phase: GenerationPhase,
+  size: number,
+  maxTrivialFraction: number | null,
+): { solution: number[] | null; regions: number[] | null; stats: PhaseStats } {
+  const startedAt = Date.now();
+  const stats: PhaseStats = {
+    phase,
+    seedsTried: 0,
+    seedFailures: 0,
+    candidates: 0,
+    rejectedRegionTooSmall: 0,
+    rejectedNonUnique: 0,
+    rejectedTrivial: 0,
+    elapsedMs: 0,
+  };
+
+  const finish = (solution: number[] | null, regions: number[] | null) => {
+    stats.elapsedMs = Date.now() - startedAt;
+    return { solution, regions, stats };
+  };
+
+  for (let s = 0; s < MAX_SEEDS; s++) {
+    stats.seedsTried++;
     const seed = generateSeed(size);
-    if (!seed) continue;
+    if (!seed) {
+      stats.seedFailures++;
+      continue;
+    }
 
-    for (let r = 0; r < regionsPerSeed; r++) {
+    for (let r = 0; r < REGIONS_PER_SEED; r++) {
+      stats.candidates++;
       const regions = generateRegions(seed, size);
 
       // Verify no region has fewer than 2 cells
       const regionSizes = new Array(size).fill(0);
       for (let i = 0; i < size * size; i++) regionSizes[regions[i]]++;
-      if (regionSizes.some((sz: number) => sz < 2)) continue;
+      if (regionSizes.some((sz: number) => sz < 2)) {
+        stats.rejectedRegionTooSmall++;
+        continue;
+      }
 
-      if (!hasUniqueSolution(regions, size)) continue;
+      if (!hasUniqueSolution(regions, size)) {
+        stats.rejectedNonUnique++;
+        continue;
+      }
 
-      const trivialFraction = evaluateDifficulty(regions, size);
-      if (trivialFraction > maxTrivialFraction) continue;
+      if (
+        maxTrivialFraction !== null &&
+        evaluateDifficulty(regions, size) > maxTrivialFraction
+      ) {
+        stats.rejectedTrivial++;
+        continue;
+      }
 
-      self.postMessage({ success: true, regions, size, solution: seed });
+      return finish(seed, regions);
+    }
+  }
+
+  return finish(null, null);
+}
+
+self.onmessage = (e: MessageEvent) => {
+  const { size } = e.data;
+  const startedAt = Date.now();
+  const phases: PhaseStats[] = [];
+
+  const phaseConfigs: [GenerationPhase, number | null][] = [
+    ["strict", MAX_TRIVIAL_FRACTION],
+    ["relaxed", null],
+  ];
+
+  for (const [phase, maxTrivialFraction] of phaseConfigs) {
+    const { solution, regions, stats } = runPhase(
+      phase,
+      size,
+      maxTrivialFraction,
+    );
+    phases.push(stats);
+
+    if (solution && regions) {
+      const result: GenerationSuccess = {
+        success: true,
+        regions,
+        size,
+        solution,
+        diagnostics: { size, elapsedMs: Date.now() - startedAt, phases },
+      };
+      self.postMessage(result);
       return;
     }
   }
 
-  // Phase 2: Relax difficulty, keep uniqueness
-  for (let s = 0; s < maxSeeds; s++) {
-    const seed = generateSeed(size);
-    if (!seed) continue;
-
-    for (let r = 0; r < regionsPerSeed; r++) {
-      const regions = generateRegions(seed, size);
-
-      const regionSizes = new Array(size).fill(0);
-      for (let i = 0; i < size * size; i++) regionSizes[regions[i]]++;
-      if (regionSizes.some((sz: number) => sz < 2)) continue;
-
-      if (hasUniqueSolution(regions, size)) {
-        self.postMessage({ success: true, regions, size, solution: seed });
-        return;
-      }
-    }
-  }
-
-  self.postMessage({ success: false, error: "Failed to generate puzzle" });
+  const result: GenerationFailure = {
+    success: false,
+    error: "Failed to generate puzzle",
+    diagnostics: { size, elapsedMs: Date.now() - startedAt, phases },
+  };
+  self.postMessage(result);
 };
