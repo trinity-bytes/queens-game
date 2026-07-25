@@ -328,6 +328,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   generatePuzzle: () => {
     const { preloadedPuzzle, gridSize } = get();
 
+    // Drop any generation still in flight or waiting out a backoff. Nothing
+    // reaches this call mid-retry today, but a stale attempt that resolved
+    // later would swap the board out from under a game in progress.
+    cancelGeneration();
+
     // Reset game stats
     set({
       timer: 0,
