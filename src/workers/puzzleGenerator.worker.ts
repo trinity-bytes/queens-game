@@ -7,7 +7,23 @@ import type {
   PhaseStats,
 } from "./puzzleGenerator.types";
 
-// Helper to check if a queen can be placed at (row, col)
+/**
+ * Checks a queen against the ones already placed, under the rules the game
+ * actually enforces: one queen per row and column, and no two queens touching.
+ *
+ * There is deliberately no full-diagonal test here. The win condition in
+ * gameStore only forbids 8-way adjacency, and a seed generator that also
+ * banned shared diagonals was solving a stricter puzzle than the one it
+ * shipped: enumerating all 362,880 column permutations for a 9x9 board gives
+ * 47,622 layouts legal under the game's rules, of which only 352 are
+ * diagonal-free. Every puzzle ever generated came from that 0.74% — so a
+ * player who assumed "two queens never share a diagonal" had a free rule the
+ * game never taught and could never be punished for using.
+ *
+ * The adjacency test below was dead code under the old diagonal rule (no
+ * permutation is diagonal-free and adjacent, verified by the same
+ * enumeration). It is the only spacing constraint now.
+ */
 function isValidQueenPlacement(
   board: number[],
   row: number,
@@ -17,8 +33,6 @@ function isValidQueenPlacement(
     const c = board[r];
     // Column conflict
     if (c === col) return false;
-    // Standard diagonal conflict
-    if (Math.abs(c - col) === Math.abs(r - row)) return false;
     // 8-way adjacency: no two queens touching (includes diagonal neighbors)
     if (Math.abs(r - row) <= 1 && Math.abs(c - col) <= 1) return false;
   }
@@ -321,11 +335,12 @@ const MAX_TRIVIAL_FRACTION = 0.5;
  * Searches for an acceptable layout, counting every rejection by cause.
  *
  * Both phases share this body: "relaxed" differs from "strict" only in passing
- * a null trivial-fraction ceiling, which skips the difficulty filter. Measured
- * over 250k candidates at size 9, that filter rejects effectively nothing (the
- * observed trivial fraction of unique layouts tops out around 0.44 against a
- * 0.5 ceiling), so the two phases search at nearly the same acceptance rate.
- * The counters below exist to keep that claim checkable rather than assumed.
+ * a null trivial-fraction ceiling, which skips the difficulty filter. That
+ * filter rejects effectively nothing — zero hits across ~2M candidates at size
+ * 9, since the trivial fraction of unique layouts tops out around 0.44 against
+ * a 0.5 ceiling — so in practice the second phase is not a relaxation, just a
+ * second draw at the same acceptance rate. Worth revisiting as a difficulty
+ * knob; the counters below keep the claim checkable rather than assumed.
  */
 function runPhase(
   phase: GenerationPhase,
