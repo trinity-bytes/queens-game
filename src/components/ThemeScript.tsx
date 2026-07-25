@@ -66,21 +66,23 @@ export const ThemeScript = () => {
           html.classList.add("dark");
         } else {
           html.classList.remove("dark");
-                    function normalizeLocale(value) {
-                      if (!value) return null;
-                      var lowered = String(value).toLowerCase();
-                      if (lowered.indexOf("es") === 0) return "es";
-                      if (lowered.indexOf("en") === 0) return "en";
-                      if (lowered.indexOf("ko") === 0) return "ko";
-                      if (lowered.indexOf("zh") === 0) return "zh-CN";
-                      if (lowered.indexOf("pt") === 0) return "pt";
-                      if (lowered.indexOf("tr") === 0) return "tr";
-                      return null;
-                    }
-                    var storedLocale = normalizeLocale(localStorage.getItem("queens-locale"));
-                    var browserLocale = normalizeLocale((navigator.languages && navigator.languages[0]) || navigator.language);
-                    html.lang = storedLocale || browserLocale || "es";
         }
+
+        function normalizeLocale(value) {
+          if (!value) return null;
+          var lowered = String(value).toLowerCase();
+          if (lowered.indexOf("es") === 0) return "es";
+          if (lowered.indexOf("en") === 0) return "en";
+          if (lowered.indexOf("ko") === 0) return "ko";
+          if (lowered.indexOf("zh") === 0) return "zh-CN";
+          if (lowered.indexOf("pt") === 0) return "pt";
+          if (lowered.indexOf("tr") === 0) return "tr";
+          return null;
+        }
+        var storedLocale = normalizeLocale(localStorage.getItem("queens-locale"));
+        var browserLocale = normalizeLocale((navigator.languages && navigator.languages[0]) || navigator.language);
+        html.lang = storedLocale || browserLocale || "es";
+
         html.classList.add("theme-" + theme);
       } catch (e) {}
     })();
