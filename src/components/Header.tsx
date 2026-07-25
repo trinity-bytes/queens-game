@@ -11,8 +11,13 @@ import { playButton } from "@/lib/sound";
  * tell the player whether the queen they just placed is correct.
  */
 export default function Header() {
-  const { timer, status, theme, generatePuzzle, darkMode, toggleDarkMode, locale } =
-    useGameStore();
+  const timer = useGameStore((state) => state.timer);
+  const status = useGameStore((state) => state.status);
+  const theme = useGameStore((state) => state.theme);
+  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const darkMode = useGameStore((state) => state.darkMode);
+  const toggleDarkMode = useGameStore((state) => state.toggleDarkMode);
+  const locale = useGameStore((state) => state.locale);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

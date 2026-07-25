@@ -59,7 +59,6 @@ interface GameState {
   resetBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
-  hasSavedCurrentWin: () => boolean;
   markCurrentWinSaved: () => void;
 }
 
@@ -440,11 +439,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentWinId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       savedWinId: null,
     });
-  },
-
-  hasSavedCurrentWin: () => {
-    const { currentWinId, savedWinId } = get();
-    return Boolean(currentWinId && savedWinId === currentWinId);
   },
 
   markCurrentWinSaved: () => {

@@ -1,5 +1,5 @@
 import { useGameStore } from "@/store/gameStore";
-import { useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import { getRegionName, t } from "@/lib/i18n";
 import { playTap } from "@/lib/sound";
 import {
@@ -20,15 +20,17 @@ interface CellProps {
   isConflicting: boolean;
 }
 
-export default function Cell({
-  index,
-  regionId,
-  state,
-  gridSize,
-  isConflicting,
-}: CellProps) {
-  const { toggleCell, theme, incrementXPenalty, locale, darkMode } =
-    useGameStore();
+function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
+  // One subscription per value. Reading the whole store here would re-render
+  // all 81 cells on every timer tick, since tickTimer writes to the store once
+  // a second whether or not anything on the board changed.
+  // `store` rather than the usual `state`, which is already a prop here.
+  const toggleCell = useGameStore((store) => store.toggleCell);
+  const incrementXPenalty = useGameStore((store) => store.incrementXPenalty);
+  const theme = useGameStore((store) => store.theme);
+  const locale = useGameStore((store) => store.locale);
+  const darkMode = useGameStore((store) => store.darkMode);
+
   const xTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -169,3 +171,10 @@ export default function Cell({
     </button>
   );
 }
+
+/**
+ * Memoised because Board re-renders the whole grid whenever any cell changes,
+ * and every prop here is a primitive. Only the cells whose own state or
+ * conflict status actually moved need to re-render.
+ */
+export default memo(Cell);

@@ -22,28 +22,29 @@ function prefersReducedMotion(): boolean {
 }
 
 export default function VictoryModal() {
-  const {
-    status,
-    timer,
-    mistakes,
-    xPenalties,
-    theme,
-    generatePuzzle,
-    score,
-    grossScore,
-    totalPenalties,
-    movesCount,
-    locale,
-    currentWinId,
-    hasSavedCurrentWin,
-    markCurrentWinSaved,
-  } = useGameStore();
+  const status = useGameStore((state) => state.status);
+  const timer = useGameStore((state) => state.timer);
+  const mistakes = useGameStore((state) => state.mistakes);
+  const theme = useGameStore((state) => state.theme);
+  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const score = useGameStore((state) => state.score);
+  const grossScore = useGameStore((state) => state.grossScore);
+  const totalPenalties = useGameStore((state) => state.totalPenalties);
+  const movesCount = useGameStore((state) => state.movesCount);
+  const locale = useGameStore((state) => state.locale);
+  const currentWinId = useGameStore((state) => state.currentWinId);
+  const savedWinId = useGameStore((state) => state.savedWinId);
+  const markCurrentWinSaved = useGameStore((state) => state.markCurrentWinSaved);
+
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
   const nickSuggestions = getSavedNicks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const saved = hasSavedCurrentWin();
+
+  // Derived here rather than read through a store method: a method would call
+  // get() without subscribing, so the "saved" badge would never appear.
+  const saved = Boolean(currentWinId && savedWinId === currentWinId);
 
   useEffect(() => {
     if (status === "won") {

@@ -14,7 +14,8 @@ import { t } from "@/lib/i18n";
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 export default function Home() {
-  const { generatePuzzle, locale } = useGameStore();
+  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const locale = useGameStore((state) => state.locale);
 
   useEffect(() => {
     const shouldReset =

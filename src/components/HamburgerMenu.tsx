@@ -22,7 +22,10 @@ function Bars() {
 export default function HamburgerMenu({
   inHeader = false,
 }: HamburgerMenuProps) {
-  const { locale, setLocale, soundEnabled, toggleSound } = useGameStore();
+  const locale = useGameStore((state) => state.locale);
+  const setLocale = useGameStore((state) => state.setLocale);
+  const soundEnabled = useGameStore((state) => state.soundEnabled);
+  const toggleSound = useGameStore((state) => state.toggleSound);
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

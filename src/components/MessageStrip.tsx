@@ -8,7 +8,8 @@ import { FEEDBACK_STYLES } from "@/lib/designTokens";
  * feedback would reveal whether a queen is correctly placed.
  */
 export default function MessageStrip() {
-  const { locale, darkMode } = useGameStore();
+  const locale = useGameStore((state) => state.locale);
+  const darkMode = useGameStore((state) => state.darkMode);
   const style = FEEDBACK_STYLES.tip;
 
   return (

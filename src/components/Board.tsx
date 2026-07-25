@@ -47,8 +47,12 @@ function getConflictingQueens(
 }
 
 export default function Board() {
-  const { gridSize, regions, cells, status, generatePuzzle, locale } =
-    useGameStore();
+  const gridSize = useGameStore((state) => state.gridSize);
+  const regions = useGameStore((state) => state.regions);
+  const cells = useGameStore((state) => state.cells);
+  const status = useGameStore((state) => state.status);
+  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const locale = useGameStore((state) => state.locale);
 
   const conflicting = useMemo(
     () => getConflictingQueens(cells, regions, gridSize),
