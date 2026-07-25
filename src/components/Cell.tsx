@@ -1,6 +1,7 @@
 import { useGameStore } from "@/store/gameStore";
 import { useCallback, useEffect, useRef } from "react";
 import { getRegionName, t } from "@/lib/i18n";
+import { playTap } from "@/lib/sound";
 import {
   REGION_PALETTE_LIGHT,
   REGION_PALETTE_DARK,
@@ -15,7 +16,8 @@ interface CellProps {
   regionId: number;
   state: 0 | 1 | 2;
   gridSize: number;
-  regions: number[];
+  /** True when this queen breaks a rule against another queen on the board. */
+  isConflicting: boolean;
 }
 
 export default function Cell({
@@ -23,9 +25,9 @@ export default function Cell({
   regionId,
   state,
   gridSize,
-  regions,
+  isConflicting,
 }: CellProps) {
-  const { toggleCell, theme, incrementXPenalty, locale, solution, darkMode } =
+  const { toggleCell, theme, incrementXPenalty, locale, darkMode } =
     useGameStore();
   const xTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -53,14 +55,10 @@ export default function Cell({
   const row = Math.floor(index / gridSize);
   const col = index % gridSize;
 
-  // A queen that doesn't match the solution row is an immediate conflict.
-  const isWrongQueen =
-    state === 2 && solution.length > 0 && solution[row] !== col;
-
   const palette = darkMode ? REGION_PALETTE_DARK : REGION_PALETTE_LIGHT;
   const conflict = darkMode ? CELL_CONFLICT_DARK : CELL_CONFLICT_LIGHT;
   const edge = darkMode ? CELL_EDGE_DARK : CELL_EDGE_LIGHT;
-  const bgColor = isWrongQueen ? conflict : palette[regionId % palette.length];
+  const bgColor = isConflicting ? conflict : palette[regionId % palette.length];
   const patternClass = `region-pattern-${regionId % 15}`;
   const regionName = getRegionName(locale, regionId);
 
@@ -107,6 +105,7 @@ export default function Cell({
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
+        playTap();
         toggleCell(index);
         return;
       }
@@ -161,6 +160,7 @@ export default function Cell({
       }}
       onPointerDown={(e) => {
         e.preventDefault();
+        playTap();
         toggleCell(index);
       }}
       onKeyDown={handleKeyDown}

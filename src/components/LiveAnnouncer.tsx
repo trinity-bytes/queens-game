@@ -6,29 +6,15 @@ import { t } from "@/lib/i18n";
 
 /**
  * Invisible live region that announces game events to screen readers.
+ *
+ * Only puzzle lifecycle events are announced. Mistakes and penalties are
+ * deliberately silent: announcing them would give assistive-technology users a
+ * move-by-move oracle that sighted players no longer have.
  */
 export default function LiveAnnouncer() {
-  const { status, mistakes, xPenalties, locale } = useGameStore();
+  const { status, locale } = useGameStore();
   const [message, setMessage] = useState("");
-  const prevMistakes = useRef(mistakes);
-  const prevXPenalties = useRef(xPenalties);
   const prevStatus = useRef(status);
-
-  useEffect(() => {
-    // Announce mistake
-    if (mistakes > prevMistakes.current) {
-      setMessage(t(locale, "announcer.mistake", { count: mistakes }));
-    }
-    prevMistakes.current = mistakes;
-  }, [mistakes, locale]);
-
-  useEffect(() => {
-    // Announce X penalty
-    if (xPenalties > prevXPenalties.current) {
-      setMessage(t(locale, "announcer.xPenalty", { count: xPenalties }));
-    }
-    prevXPenalties.current = xPenalties;
-  }, [xPenalties, locale]);
 
   useEffect(() => {
     if (status !== prevStatus.current) {
