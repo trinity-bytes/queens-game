@@ -2,7 +2,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useEffect, useState, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
 import { AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { submitScore } from "@/lib/leaderboard";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
 import { getVictoryMessage, t } from "@/lib/i18n";
@@ -70,34 +70,35 @@ export default function VictoryModal() {
     }
   }, [status]);
 
+  /**
+   * Sends the run to the database. The server re-validates every field and
+   * dedupes on the win id, so calling this twice for the same win is safe.
+   */
+  const persistScore = async (playerName: string) => {
+    if (!currentWinId) return;
+
+    await submitScore({
+      winId: currentWinId,
+      playerName,
+      score,
+      timeMs: timer,
+      mistakes,
+      movesCount,
+      themeUsed: theme,
+      locale,
+      appVersion: APP_VERSION,
+    });
+    markCurrentWinSaved();
+  };
+
   const handlePlayAgain = async () => {
     if (saving) return;
     playButton();
 
     if (!saved) {
       setSaving(true);
-      const finalName = name.trim() || t(locale, "victory.unknown");
       try {
-        const { error } = await supabase.from("leaderboard").insert([
-          {
-            player_name: finalName,
-            time_ms: timer,
-            grid_size: 9,
-            theme_used: theme,
-            mistakes: mistakes,
-            score: score,
-            win_id: currentWinId,
-            device_local_time: new Date().toISOString(),
-            user_agent: navigator.userAgent,
-            device_type: window.innerWidth < 768 ? "mobile" : "desktop",
-            moves_count: movesCount,
-            app_version: APP_VERSION,
-            locale,
-          },
-        ]);
-
-        if (error) throw error;
-        markCurrentWinSaved();
+        await persistScore(name.trim() || t(locale, "victory.unknown"));
         if (name.trim()) {
           saveNick(name.trim());
         }
@@ -164,27 +165,8 @@ export default function VictoryModal() {
     playButton();
     setSaving(true);
     try {
-      const { error } = await supabase.from("leaderboard").insert([
-        {
-          player_name: name.trim(),
-          time_ms: timer,
-          grid_size: 9,
-          theme_used: theme,
-          mistakes: mistakes,
-          score: score,
-          win_id: currentWinId,
-          device_local_time: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-          device_type: window.innerWidth < 768 ? "mobile" : "desktop",
-          moves_count: movesCount,
-          app_version: APP_VERSION,
-          locale,
-        },
-      ]);
-
-      if (error) throw error;
+      await persistScore(name.trim());
       saveNick(name.trim());
-      markCurrentWinSaved();
     } catch (error) {
       console.error("Error saving score:", error);
       alert(t(locale, "victory.saveError"));
