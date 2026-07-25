@@ -31,8 +31,18 @@ const THEME_PATTERNS: Record<string, string[]> = {
   ],
 };
 
+const MOBILE_MEDIA_QUERY = "(max-width: 767px)";
+
+// Grid density per breakpoint. Mobile uses fewer, smaller elements so the
+// pattern stays readable instead of crowding a narrow viewport.
+const GRID_BY_BREAKPOINT = {
+  mobile: { cols: 3, rows: 5, minSize: 32, sizeRange: 20, jitter: 8 },
+  desktop: { cols: 8, rows: 5, minSize: 40, sizeRange: 30, jitter: 10 },
+} as const;
+
 export default function BackgroundPattern() {
   const theme = useGameStore((state) => state.theme);
+  const [isMobile, setIsMobile] = useState(false);
   const [patterns, setPatterns] = useState<
     {
       id: number;
@@ -45,12 +55,22 @@ export default function BackgroundPattern() {
   >([]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const syncBreakpoint = () => setIsMobile(mediaQuery.matches);
+
+    syncBreakpoint();
+    mediaQuery.addEventListener("change", syncBreakpoint);
+
+    return () => mediaQuery.removeEventListener("change", syncBreakpoint);
+  }, []);
+
+  useEffect(() => {
     const themeKey = THEME_PATTERNS[theme] ? theme : "default";
     const availablePatterns = THEME_PATTERNS[themeKey];
 
     // Generate a grid of patterns for uniform distribution
-    const cols = 8;
-    const rows = 5;
+    const { cols, rows, minSize, sizeRange, jitter } =
+      GRID_BY_BREAKPOINT[isMobile ? "mobile" : "desktop"];
     const newPatterns = [];
 
     for (let r = 0; r < rows; r++) {
@@ -61,22 +81,22 @@ export default function BackgroundPattern() {
           ];
 
         // Add slight random offsets to make it look more organic
-        const offsetX = (Math.random() - 0.5) * 10; // +/- 5%
-        const offsetY = (Math.random() - 0.5) * 10; // +/- 5%
+        const offsetX = (Math.random() - 0.5) * jitter;
+        const offsetY = (Math.random() - 0.5) * jitter;
 
         newPatterns.push({
           id: r * cols + c,
           src: `/assets/patterns/${themeKey}/${randomPattern}`,
-          top: `${(r / rows) * 100 + 10 + offsetY}%`, // Center in cell + offset
-          left: `${(c / cols) * 100 + 6 + offsetX}%`, // Center in cell + offset
-          size: `${Math.random() * 30 + 40}px`, // 40px to 70px
+          top: `${((r + 0.5) / rows) * 100 + offsetY}%`, // Cell center + offset
+          left: `${((c + 0.5) / cols) * 100 + offsetX}%`, // Cell center + offset
+          size: `${Math.random() * sizeRange + minSize}px`,
           rotation: `${Math.random() * 360}deg`,
         });
       }
     }
 
     setPatterns(newPatterns);
-  }, [theme]);
+  }, [theme, isMobile]);
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 opacity-10">
@@ -89,7 +109,7 @@ export default function BackgroundPattern() {
             left: pattern.left,
             width: pattern.size,
             height: pattern.size,
-            transform: `rotate(${pattern.rotation})`,
+            transform: `translate(-50%, -50%) rotate(${pattern.rotation})`,
             maskImage: `url(${pattern.src})`,
             WebkitMaskImage: `url(${pattern.src})`,
             maskSize: "contain",
