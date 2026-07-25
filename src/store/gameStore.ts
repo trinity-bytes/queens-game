@@ -62,15 +62,6 @@ interface GameState {
   markCurrentWinSaved: () => void;
 }
 
-const THEMES: Theme[] = [
-  "dino",
-  "dog",
-  "cow",
-  "potato",
-  "starwars",
-  "elephant",
-];
-
 const SOUND_STORAGE_KEY = "sound-enabled";
 
 // Sound is opt-in: a page that makes noise on first load is never forgiven.
@@ -251,7 +242,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       scoredQueens,
       combo,
       lastCorrectMoveTime,
-      lastMoveTime,
       movesCount,
       timer,
     } = get();
@@ -267,11 +257,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newScore = score;
     let newGrossScore = grossScore;
     let newTotalPenalties = totalPenalties;
-    let newScoredQueens = [...scoredQueens];
+    const newScoredQueens = [...scoredQueens];
     let newCombo = combo;
     let newLastCorrectMoveTime = lastCorrectMoveTime;
-    let newLastMoveTime = timer;
-    let newMovesCount = movesCount + 1;
+    const newLastMoveTime = timer;
+    const newMovesCount = movesCount + 1;
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);

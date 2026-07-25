@@ -1,5 +1,5 @@
 import { useGameStore } from "@/store/gameStore";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { AlertCircle } from "lucide-react";
 import { submitScore } from "@/lib/leaderboard";
@@ -114,41 +114,42 @@ export default function VictoryModal() {
     generatePuzzle();
   };
 
-  // Focus trap: keep Tab/Shift+Tab inside modal
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handlePlayAgain();
-        return;
+  // Focus trap: keep Tab/Shift+Tab inside modal.
+  //
+  // Not memoised: it depends on handlePlayAgain, which is rebuilt every render,
+  // so a useCallback here never returned a stable reference. It is only ever
+  // attached to a plain DOM element, so there is nothing to gain from one.
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handlePlayAgain();
+      return;
+    }
+
+    if (e.key !== "Tab") return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
       }
-
-      if (e.key !== "Tab") return;
-
-      const modal = modalRef.current;
-      if (!modal) return;
-
-      const focusable = modal.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
-    },
-    [handlePlayAgain],
-  );
+    }
+  };
 
   if (status !== "won") return null;
 
