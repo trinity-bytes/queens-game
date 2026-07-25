@@ -419,6 +419,10 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "board.generatingLabel": "Generando puzzle",
     "board.generatingText": "Generando puzzle único...",
     "board.gridAria": "Tablero de juego de {size} por {size}",
+    "board.errorTitle": "No pudimos crear el puzzle",
+    "board.errorText":
+      "El generador agotó sus intentos sin encontrar un puzzle válido. Intenta de nuevo.",
+    "board.errorRetry": "Reintentar",
     "msg.tip": "Toca una casilla: vacío → ✕ → reina",
     "msg.combo": "¡Combo x{combo}! Sigue así · +{points}",
     "msg.attack": "Dos reinas se atacan · −{penalty}",
@@ -509,6 +513,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "announcer.ready":
       "Puzzle listo. Coloca una reina por fila, columna y región sin que se toquen entre sí.",
     "announcer.won": "¡Victoria! Has completado el puzzle correctamente.",
+    "announcer.error":
+      "No se pudo generar el puzzle. Usa el botón de reintentar.",
     "cell.stateQueen": "con reina",
     "cell.stateX": "marcada con X",
     "cell.stateEmpty": "vacía",
@@ -538,6 +544,10 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "board.generatingLabel": "Generating puzzle",
     "board.generatingText": "Generating unique puzzle...",
     "board.gridAria": "Game board {size} by {size}",
+    "board.errorTitle": "We couldn't create the puzzle",
+    "board.errorText":
+      "The generator ran out of attempts before finding a valid puzzle. Try again.",
+    "board.errorRetry": "Try again",
     "msg.tip": "Tap a cell: empty → ✕ → queen",
     "msg.combo": "Combo x{combo}! Keep going · +{points}",
     "msg.attack": "Two queens attack each other · −{penalty}",
@@ -625,6 +635,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "announcer.ready":
       "Puzzle ready. Place one queen per row, column, and region without touching each other.",
     "announcer.won": "Victory! You completed the puzzle correctly.",
+    "announcer.error":
+      "Puzzle generation failed. Use the try again button.",
     "cell.stateQueen": "with queen",
     "cell.stateX": "marked with X",
     "cell.stateEmpty": "empty",
@@ -654,6 +666,10 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "board.generatingLabel": "퍼즐 생성 중",
     "board.generatingText": "고유 퍼즐 생성 중...",
     "board.gridAria": "게임 보드 {size} x {size}",
+    "board.errorTitle": "퍼즐을 만들지 못했습니다",
+    "board.errorText":
+      "생성기가 유효한 퍼즐을 찾지 못한 채 시도 횟수를 모두 사용했습니다. 다시 시도해 주세요.",
+    "board.errorRetry": "다시 시도",
     "msg.tip": "칸을 탭하세요: 빈칸 → ✕ → 퀸",
     "msg.combo": "콤보 x{combo}! 계속 가요 · +{points}",
     "msg.attack": "두 퀸이 서로 공격해요 · −{penalty}",
@@ -742,6 +758,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "announcer.ready":
       "퍼즐 준비 완료. 행, 열, 영역마다 퀸을 하나씩 두고 서로 닿지 않게 하세요.",
     "announcer.won": "승리! 퍼즐을 정확히 완료했습니다.",
+    "announcer.error": "퍼즐 생성에 실패했습니다. 다시 시도 버튼을 사용하세요.",
     "cell.stateQueen": "퀸 있음",
     "cell.stateX": "X 표시됨",
     "cell.stateEmpty": "비어 있음",
@@ -771,6 +788,9 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "board.generatingLabel": "正在生成谜题",
     "board.generatingText": "正在生成独特谜题...",
     "board.gridAria": "游戏棋盘 {size} x {size}",
+    "board.errorTitle": "无法生成谜题",
+    "board.errorText": "生成器已用完尝试次数，仍未找到有效的谜题。请再试一次。",
+    "board.errorRetry": "重试",
     "msg.tip": "点击格子：空 → ✕ → 皇后",
     "msg.combo": "连击 x{combo}！继续保持 · +{points}",
     "msg.attack": "两个皇后互相攻击 · −{penalty}",
@@ -855,6 +875,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "announcer.ready":
       "谜题已准备好。请在每行、每列和每个区域放置一个皇后，且彼此不能接触。",
     "announcer.won": "胜利！你已正确完成谜题。",
+    "announcer.error": "谜题生成失败。请使用重试按钮。",
     "cell.stateQueen": "有皇后",
     "cell.stateX": "标记为 X",
     "cell.stateEmpty": "空",
@@ -884,6 +905,10 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "board.generatingLabel": "Gerando puzzle",
     "board.generatingText": "Gerando puzzle único...",
     "board.gridAria": "Tabuleiro {size} por {size}",
+    "board.errorTitle": "Não conseguimos criar o puzzle",
+    "board.errorText":
+      "O gerador esgotou as tentativas sem encontrar um puzzle válido. Tente novamente.",
+    "board.errorRetry": "Tentar novamente",
     "msg.tip": "Toque numa célula: vazia → ✕ → rainha",
     "msg.combo": "Combo x{combo}! Continue assim · +{points}",
     "msg.attack": "Duas rainhas se atacam · −{penalty}",
@@ -973,6 +998,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "announcer.ready":
       "Puzzle pronto. Coloque uma rainha por linha, coluna e região sem que se toquem.",
     "announcer.won": "Vitória! Você concluiu o puzzle corretamente.",
+    "announcer.error":
+      "Falha ao gerar o puzzle. Use o botão de tentar novamente.",
     "cell.stateQueen": "com rainha",
     "cell.stateX": "marcada com X",
     "cell.stateEmpty": "vazia",
@@ -1002,6 +1029,10 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "board.generatingLabel": "Bulmaca oluşturuluyor",
     "board.generatingText": "Benzersiz bulmaca oluşturuluyor...",
     "board.gridAria": "Oyun tahtası {size} x {size}",
+    "board.errorTitle": "Bulmacayı oluşturamadık",
+    "board.errorText":
+      "Oluşturucu geçerli bir bulmaca bulamadan denemelerini tüketti. Lütfen tekrar dene.",
+    "board.errorRetry": "Tekrar dene",
     "msg.tip": "Bir kareye dokun: boş → ✕ → vezir",
     "msg.combo": "Kombo x{combo}! Böyle devam · +{points}",
     "msg.attack": "İki vezir birbirine saldırıyor · −{penalty}",
@@ -1089,6 +1120,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "announcer.ready":
       "Bulmaca hazır. Satır, sütun ve bölge başına bir vezir yerleştirin ve birbirine temas ettirmeyin.",
     "announcer.won": "Zafer! Bulmacayı doğru şekilde tamamladın.",
+    "announcer.error":
+      "Bulmaca oluşturulamadı. Tekrar dene düğmesini kullan.",
     "cell.stateQueen": "vezir var",
     "cell.stateX": "X ile işaretli",
     "cell.stateEmpty": "boş",

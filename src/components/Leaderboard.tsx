@@ -1,21 +1,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import {
+  fetchTopScores,
+  subscribeToNewScores,
+  type LeaderboardEntry,
+} from "@/lib/leaderboard";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 import { PODIUM_MEDALS } from "@/lib/designTokens";
-
-interface LeaderboardEntry {
-  id: string;
-  player_name: string;
-  time_ms: number;
-  grid_size: number;
-  theme_used: string;
-  mistakes: number;
-  score: number;
-  moves_count?: number;
-  created_at: string;
-}
 
 interface LeaderboardProps {
   fullPage?: boolean;
@@ -37,18 +29,9 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   const limit = fullPage ? 50 : 10;
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const loadLeaderboard = async () => {
       try {
-        const { data, error } = await supabase
-          .from("leaderboard")
-          .select("*")
-          .eq("grid_size", 9)
-          .order("score", { ascending: false })
-          .order("time_ms", { ascending: true })
-          .limit(limit);
-
-        if (error) throw error;
-        setEntries(data || []);
+        setEntries(await fetchTopScores(limit));
       } catch (error) {
         console.error("Error fetching leaderboard:", error);
       } finally {
@@ -56,30 +39,18 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
       }
     };
 
-    fetchLeaderboard();
+    loadLeaderboard();
 
-    const channel = supabase
-      .channel("public:leaderboard")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "leaderboard" },
-        (payload) => {
-          setEntries((current) => {
-            const newEntries = [...current, payload.new as LeaderboardEntry];
-            return newEntries
-              .sort((a, b) => {
-                if (b.score !== a.score) return b.score - a.score;
-                return a.time_ms - b.time_ms;
-              })
-              .slice(0, limit);
-          });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeToNewScores((entry) => {
+      setEntries((current) =>
+        [...current, entry]
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.time_ms - b.time_ms;
+          })
+          .slice(0, limit),
+      );
+    });
   }, [limit]);
 
   if (loading) {
@@ -220,7 +191,8 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 )}
               </div>
               <div className="flex items-center gap-2.5 shrink-0">
-                {entry.moves_count !== undefined && (
+                {/* Rows migrated from before move tracking carry null here. */}
+                {entry.moves_count != null && (
                   <span className="text-muted text-xs font-semibold opacity-80 hidden sm:inline">
                     {entry.moves_count} {t(locale, "leaderboard.movesShort")}
                   </span>

@@ -2,6 +2,11 @@ import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
 import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
 import { setSoundEnabled } from "@/lib/sound";
+import {
+  summarizeDiagnostics,
+  type GenerationDiagnostics,
+  type GenerationResult,
+} from "@/workers/puzzleGenerator.types";
 
 export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
 
@@ -11,7 +16,14 @@ export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
  * player could read the sign of a score change to learn whether a queen sits on
  * the stored solution, and brute-force the board cell by cell.
  */
-export type GameStatus = "idle" | "generating" | "playing" | "won";
+/**
+ * "error" is terminal on purpose. Generation failure used to fall back to
+ * "idle", but Board re-runs generatePuzzle whenever it sees "idle", so a
+ * failure re-triggered generation immediately and spun forever — each cycle
+ * burning two full phases of backtracking in a worker thread. Only an explicit
+ * player action leaves "error".
+ */
+export type GameStatus = "idle" | "generating" | "playing" | "won" | "error";
 export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars" | "elephant";
 
 interface PreloadedPuzzle {
@@ -59,18 +71,8 @@ interface GameState {
   resetBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
-  hasSavedCurrentWin: () => boolean;
   markCurrentWinSaved: () => void;
 }
-
-const THEMES: Theme[] = [
-  "dino",
-  "dog",
-  "cow",
-  "potato",
-  "starwars",
-  "elephant",
-];
 
 const SOUND_STORAGE_KEY = "sound-enabled";
 
@@ -96,6 +98,184 @@ const getInitialDarkMode = (): boolean => {
 
 const initialSound = getInitialSound();
 setSoundEnabled(initialSound);
+
+/**
+ * The generator is probabilistic and does fail: measured over 250 runs at size
+ * 9 (~2M candidates) it accepts roughly 1 layout per 8,000, against a budget of
+ * 15,000 candidates per phase, which leaves a single worker failing about 1.2%
+ * of the time. Rare, but every puzzle spawns two workers, so it is worth
+ * retrying — and the retries have to be bounded, or a genuinely impossible
+ * configuration pins a core indefinitely.
+ */
+const MAX_GENERATION_ATTEMPTS = 3;
+const GENERATION_RETRY_BASE_MS = 400;
+
+/** Preloading is a background optimisation, so it backs off more gently. */
+const MAX_PRELOAD_ATTEMPTS = 3;
+const PRELOAD_RETRY_BASE_MS = 1500;
+
+// Live handles so a new run can cancel whatever the previous one left behind
+// instead of racing it.
+let generationWorker: Worker | null = null;
+let generationRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let preloadWorker: Worker | null = null;
+let preloadRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const createGeneratorWorker = () =>
+  new Worker(new URL("../workers/puzzleGenerator.worker.ts", import.meta.url));
+
+const backoffMs = (base: number, attempt: number) =>
+  base * Math.pow(2, attempt - 1);
+
+const logFailure = (
+  label: string,
+  reason: string,
+  diagnostics?: GenerationDiagnostics,
+) => {
+  console.error(
+    diagnostics
+      ? `${label}: ${reason} — ${summarizeDiagnostics(diagnostics)}`
+      : `${label}: ${reason}`,
+  );
+};
+
+const cancelGeneration = () => {
+  if (generationRetryTimer !== null) {
+    clearTimeout(generationRetryTimer);
+    generationRetryTimer = null;
+  }
+  generationWorker?.terminate();
+  generationWorker = null;
+};
+
+const cancelPreload = () => {
+  if (preloadRetryTimer !== null) {
+    clearTimeout(preloadRetryTimer);
+    preloadRetryTimer = null;
+  }
+  preloadWorker?.terminate();
+  preloadWorker = null;
+};
+
+/**
+ * Runs a single generation attempt, retrying up to MAX_GENERATION_ATTEMPTS
+ * before parking the game in the terminal "error" state.
+ *
+ * Status deliberately stays "generating" across the backoff: the player really
+ * is still waiting, and it keeps Board's "idle" effect from firing.
+ */
+const runGenerationAttempt = (attempt: number) => {
+  cancelGeneration();
+
+  const worker = createGeneratorWorker();
+  generationWorker = worker;
+
+  const release = () => {
+    worker.terminate();
+    if (generationWorker === worker) generationWorker = null;
+  };
+
+  const fail = (reason: string, diagnostics?: GenerationDiagnostics) => {
+    release();
+    logFailure(
+      `Puzzle generation attempt ${attempt}/${MAX_GENERATION_ATTEMPTS} failed`,
+      reason,
+      diagnostics,
+    );
+
+    if (attempt >= MAX_GENERATION_ATTEMPTS) {
+      useGameStore.setState({ status: "error" });
+      return;
+    }
+
+    generationRetryTimer = setTimeout(
+      () => runGenerationAttempt(attempt + 1),
+      backoffMs(GENERATION_RETRY_BASE_MS, attempt),
+    );
+  };
+
+  worker.onmessage = (e: MessageEvent<GenerationResult>) => {
+    if (!e.data.success) {
+      fail(e.data.error, e.data.diagnostics);
+      return;
+    }
+
+    const { regions, solution, size } = e.data;
+    release();
+    useGameStore.setState({
+      regions,
+      solution,
+      cells: new Array(size * size).fill(0),
+      status: "playing",
+      theme: getCurrentTheme(),
+    });
+    useGameStore.getState().preloadNextPuzzle();
+  };
+
+  // Without this a worker that throws or fails to load never posts a message,
+  // and the game would sit on "generating" forever.
+  worker.onerror = (event) => {
+    fail(event.message || "Worker error");
+  };
+
+  worker.postMessage({ size: useGameStore.getState().gridSize });
+};
+
+/**
+ * Same bounded-retry shape as generation, but failure is silent: a lost preload
+ * only costs the player a loading screen on the next puzzle, so there is
+ * nothing worth interrupting them about.
+ */
+const runPreloadAttempt = (attempt: number) => {
+  cancelPreload();
+
+  const worker = createGeneratorWorker();
+  preloadWorker = worker;
+
+  const release = () => {
+    worker.terminate();
+    if (preloadWorker === worker) preloadWorker = null;
+  };
+
+  const fail = (reason: string, diagnostics?: GenerationDiagnostics) => {
+    release();
+    logFailure(
+      `Puzzle preload attempt ${attempt}/${MAX_PRELOAD_ATTEMPTS} failed`,
+      reason,
+      diagnostics,
+    );
+
+    if (attempt >= MAX_PRELOAD_ATTEMPTS) {
+      useGameStore.setState({ isPreloading: false });
+      return;
+    }
+
+    preloadRetryTimer = setTimeout(
+      () => runPreloadAttempt(attempt + 1),
+      backoffMs(PRELOAD_RETRY_BASE_MS, attempt),
+    );
+  };
+
+  worker.onmessage = (e: MessageEvent<GenerationResult>) => {
+    if (!e.data.success) {
+      fail(e.data.error, e.data.diagnostics);
+      return;
+    }
+
+    const { regions, solution, size } = e.data;
+    release();
+    useGameStore.setState({
+      preloadedPuzzle: { regions, solution, size },
+      isPreloading: false,
+    });
+  };
+
+  worker.onerror = (event) => {
+    fail(event.message || "Worker error");
+  };
+
+  worker.postMessage({ size: useGameStore.getState().gridSize });
+};
 
 export const useGameStore = create<GameState>((set, get) => ({
   gridSize: 9,
@@ -148,6 +328,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   generatePuzzle: () => {
     const { preloadedPuzzle, gridSize } = get();
 
+    // Drop any generation still in flight or waiting out a backoff. Nothing
+    // reaches this call mid-retry today, but a stale attempt that resolved
+    // later would swap the board out from under a game in progress.
+    cancelGeneration();
+
     // Reset game stats
     set({
       timer: 0,
@@ -183,60 +368,17 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Otherwise, generate one now (shows loading screen)
     set({ status: "generating" });
-
-    const worker = new Worker(
-      new URL("../workers/puzzleGenerator.worker.ts", import.meta.url),
-    );
-
-    worker.onmessage = (e) => {
-      if (e.data.success) {
-        set({
-          regions: e.data.regions,
-          solution: e.data.solution,
-          cells: new Array(e.data.size * e.data.size).fill(0),
-          status: "playing",
-          theme: getCurrentTheme(),
-        });
-        // Start preloading the next one
-        get().preloadNextPuzzle();
-      } else {
-        console.error(e.data.error);
-        set({ status: "idle" });
-      }
-      worker.terminate();
-    };
-
-    worker.postMessage({ size: gridSize });
+    runGenerationAttempt(1);
   },
 
   preloadNextPuzzle: () => {
-    const { isPreloading, gridSize } = get();
+    const { isPreloading } = get();
     if (isPreloading) return;
 
+    // isPreloading stays true across the whole retry sequence, so a queued
+    // backoff is not mistaken for "no preload running".
     set({ isPreloading: true });
-
-    const worker = new Worker(
-      new URL("../workers/puzzleGenerator.worker.ts", import.meta.url),
-    );
-
-    worker.onmessage = (e) => {
-      if (e.data.success) {
-        set({
-          preloadedPuzzle: {
-            regions: e.data.regions,
-            solution: e.data.solution,
-            size: e.data.size,
-          },
-          isPreloading: false,
-        });
-      } else {
-        console.error("Failed to preload puzzle:", e.data.error);
-        set({ isPreloading: false });
-      }
-      worker.terminate();
-    };
-
-    worker.postMessage({ size: gridSize });
+    runPreloadAttempt(1);
   },
 
   toggleCell: (index) => {
@@ -252,7 +394,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       scoredQueens,
       combo,
       lastCorrectMoveTime,
-      lastMoveTime,
       movesCount,
       timer,
     } = get();
@@ -268,11 +409,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newScore = score;
     let newGrossScore = grossScore;
     let newTotalPenalties = totalPenalties;
-    let newScoredQueens = [...scoredQueens];
+    const newScoredQueens = [...scoredQueens];
     let newCombo = combo;
     let newLastCorrectMoveTime = lastCorrectMoveTime;
-    let newLastMoveTime = timer;
-    let newMovesCount = movesCount + 1;
+    const newLastMoveTime = timer;
+    const newMovesCount = movesCount + 1;
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
@@ -440,11 +581,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentWinId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       savedWinId: null,
     });
-  },
-
-  hasSavedCurrentWin: () => {
-    const { currentWinId, savedWinId } = get();
-    return Boolean(currentWinId && savedWinId === currentWinId);
   },
 
   markCurrentWinSaved: () => {

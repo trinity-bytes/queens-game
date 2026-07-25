@@ -47,8 +47,12 @@ function getConflictingQueens(
 }
 
 export default function Board() {
-  const { gridSize, regions, cells, status, generatePuzzle, locale } =
-    useGameStore();
+  const gridSize = useGameStore((state) => state.gridSize);
+  const regions = useGameStore((state) => state.regions);
+  const cells = useGameStore((state) => state.cells);
+  const status = useGameStore((state) => state.status);
+  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const locale = useGameStore((state) => state.locale);
 
   const conflicting = useMemo(
     () => getConflictingQueens(cells, regions, gridSize),
@@ -60,6 +64,31 @@ export default function Board() {
       generatePuzzle();
     }
   }, [status, generatePuzzle]);
+
+  if (status === "error") {
+    return (
+      <div
+        className="w-full max-w-md aspect-square bg-card rounded-[28px] flex items-center justify-center shadow-[0_14px_30px_rgba(18,58,94,0.18)] p-6"
+        role="alert"
+      >
+        <div className="flex flex-col items-center gap-4 text-center">
+          <p className="text-lg font-extrabold">
+            {t(locale, "board.errorTitle")}
+          </p>
+          <p className="text-muted font-semibold text-sm max-w-xs">
+            {t(locale, "board.errorText")}
+          </p>
+          <button
+            type="button"
+            onClick={generatePuzzle}
+            className="px-5 py-2.5 bg-accent text-white rounded-2xl font-extrabold hover:brightness-95 transition-all active:scale-95"
+          >
+            {t(locale, "board.errorRetry")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (status === "generating") {
     return (

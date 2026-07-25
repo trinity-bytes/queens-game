@@ -1,6 +1,5 @@
 "use client";
 
-import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { useGameStore } from "@/store/gameStore";
 import { ThemeScript } from "@/components/ThemeScript";

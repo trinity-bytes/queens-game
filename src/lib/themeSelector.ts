@@ -21,7 +21,7 @@ function mulberry32(seed: number) {
   a = t ^ (t >>> 15);
 
   return function () {
-    var t = (a += 0x6d2b79f5);
+    let t = (a += 0x6d2b79f5);
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -57,7 +57,7 @@ export function getThemeForPeriod(periodIndex: number): Theme {
   const indexWithinBag = periodIndex % bagSize;
 
   // Generate the current bag
-  let currentBag = shuffle(THEMES, currentBagIndex);
+  const currentBag = shuffle(THEMES, currentBagIndex);
 
   // Prevent consecutive repeats between bags
   if (currentBagIndex > 0) {

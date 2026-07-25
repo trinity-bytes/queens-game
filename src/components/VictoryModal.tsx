@@ -1,8 +1,8 @@
 import { useGameStore } from "@/store/gameStore";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { submitScore } from "@/lib/leaderboard";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
 import { getVictoryMessage, t } from "@/lib/i18n";
@@ -11,7 +11,7 @@ import { playButton, playVictory } from "@/lib/sound";
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 /** Stamped on every leaderboard row. Keep in sync with package.json. */
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.3.0";
 
 /**
  * Checks if user prefers reduced motion.
@@ -22,28 +22,29 @@ function prefersReducedMotion(): boolean {
 }
 
 export default function VictoryModal() {
-  const {
-    status,
-    timer,
-    mistakes,
-    xPenalties,
-    theme,
-    generatePuzzle,
-    score,
-    grossScore,
-    totalPenalties,
-    movesCount,
-    locale,
-    currentWinId,
-    hasSavedCurrentWin,
-    markCurrentWinSaved,
-  } = useGameStore();
+  const status = useGameStore((state) => state.status);
+  const timer = useGameStore((state) => state.timer);
+  const mistakes = useGameStore((state) => state.mistakes);
+  const theme = useGameStore((state) => state.theme);
+  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const score = useGameStore((state) => state.score);
+  const grossScore = useGameStore((state) => state.grossScore);
+  const totalPenalties = useGameStore((state) => state.totalPenalties);
+  const movesCount = useGameStore((state) => state.movesCount);
+  const locale = useGameStore((state) => state.locale);
+  const currentWinId = useGameStore((state) => state.currentWinId);
+  const savedWinId = useGameStore((state) => state.savedWinId);
+  const markCurrentWinSaved = useGameStore((state) => state.markCurrentWinSaved);
+
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
   const nickSuggestions = getSavedNicks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const saved = hasSavedCurrentWin();
+
+  // Derived here rather than read through a store method: a method would call
+  // get() without subscribing, so the "saved" badge would never appear.
+  const saved = Boolean(currentWinId && savedWinId === currentWinId);
 
   useEffect(() => {
     if (status === "won") {
@@ -70,34 +71,35 @@ export default function VictoryModal() {
     }
   }, [status]);
 
+  /**
+   * Sends the run to the database. The server re-validates every field and
+   * dedupes on the win id, so calling this twice for the same win is safe.
+   */
+  const persistScore = async (playerName: string) => {
+    if (!currentWinId) return;
+
+    await submitScore({
+      winId: currentWinId,
+      playerName,
+      score,
+      timeMs: timer,
+      mistakes,
+      movesCount,
+      themeUsed: theme,
+      locale,
+      appVersion: APP_VERSION,
+    });
+    markCurrentWinSaved();
+  };
+
   const handlePlayAgain = async () => {
     if (saving) return;
     playButton();
 
     if (!saved) {
       setSaving(true);
-      const finalName = name.trim() || t(locale, "victory.unknown");
       try {
-        const { error } = await supabase.from("leaderboard").insert([
-          {
-            player_name: finalName,
-            time_ms: timer,
-            grid_size: 9,
-            theme_used: theme,
-            mistakes: mistakes,
-            score: score,
-            win_id: currentWinId,
-            device_local_time: new Date().toISOString(),
-            user_agent: navigator.userAgent,
-            device_type: window.innerWidth < 768 ? "mobile" : "desktop",
-            moves_count: movesCount,
-            app_version: APP_VERSION,
-            locale,
-          },
-        ]);
-
-        if (error) throw error;
-        markCurrentWinSaved();
+        await persistScore(name.trim() || t(locale, "victory.unknown"));
         if (name.trim()) {
           saveNick(name.trim());
         }
@@ -112,41 +114,42 @@ export default function VictoryModal() {
     generatePuzzle();
   };
 
-  // Focus trap: keep Tab/Shift+Tab inside modal
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handlePlayAgain();
-        return;
+  // Focus trap: keep Tab/Shift+Tab inside modal.
+  //
+  // Not memoised: it depends on handlePlayAgain, which is rebuilt every render,
+  // so a useCallback here never returned a stable reference. It is only ever
+  // attached to a plain DOM element, so there is nothing to gain from one.
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handlePlayAgain();
+      return;
+    }
+
+    if (e.key !== "Tab") return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
       }
-
-      if (e.key !== "Tab") return;
-
-      const modal = modalRef.current;
-      if (!modal) return;
-
-      const focusable = modal.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
-    },
-    [handlePlayAgain],
-  );
+    }
+  };
 
   if (status !== "won") return null;
 
@@ -164,27 +167,8 @@ export default function VictoryModal() {
     playButton();
     setSaving(true);
     try {
-      const { error } = await supabase.from("leaderboard").insert([
-        {
-          player_name: name.trim(),
-          time_ms: timer,
-          grid_size: 9,
-          theme_used: theme,
-          mistakes: mistakes,
-          score: score,
-          win_id: currentWinId,
-          device_local_time: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-          device_type: window.innerWidth < 768 ? "mobile" : "desktop",
-          moves_count: movesCount,
-          app_version: APP_VERSION,
-          locale,
-        },
-      ]);
-
-      if (error) throw error;
+      await persistScore(name.trim());
       saveNick(name.trim());
-      markCurrentWinSaved();
     } catch (error) {
       console.error("Error saving score:", error);
       alert(t(locale, "victory.saveError"));

@@ -12,7 +12,8 @@ import { t } from "@/lib/i18n";
  * move-by-move oracle that sighted players no longer have.
  */
 export default function LiveAnnouncer() {
-  const { status, locale } = useGameStore();
+  const status = useGameStore((state) => state.status);
+  const locale = useGameStore((state) => state.locale);
   const [message, setMessage] = useState("");
   const prevStatus = useRef(status);
 
@@ -29,6 +30,9 @@ export default function LiveAnnouncer() {
           break;
         case "won":
           setMessage(t(locale, "announcer.won"));
+          break;
+        case "error":
+          setMessage(t(locale, "announcer.error"));
           break;
       }
     }
