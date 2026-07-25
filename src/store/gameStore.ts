@@ -1,26 +1,16 @@
 import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
 import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
-import type { FeedbackType } from "@/lib/designTokens";
+import { setSoundEnabled } from "@/lib/sound";
 
 export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
 
-/** A transient floating +/- points indicator, keyed by id so the UI re-triggers. */
-export interface ScoreDelta {
-  value: number;
-  id: number;
-}
-
-/** A transient contextual message shown in the game message strip. */
-export interface GameMessage {
-  type: FeedbackType;
-  textKey: string;
-  vars?: Record<string, string | number>;
-  id: number;
-}
-
-let eventSeq = 0;
-const nextEventId = () => ++eventSeq;
+/**
+ * Scoring is computed silently while playing and only revealed once the puzzle
+ * is solved. Any live score/combo/penalty signal would act as an oracle: the
+ * player could read the sign of a score change to learn whether a queen sits on
+ * the stored solution, and brute-force the board cell by cell.
+ */
 export type GameStatus = "idle" | "generating" | "playing" | "won";
 export type Theme = "dino" | "dog" | "cow" | "potato" | "starwars" | "elephant";
 
@@ -47,13 +37,12 @@ interface GameState {
   lastCorrectMoveTime: number;
   lastMoveTime: number;
   movesCount: number;
-  lastDelta: ScoreDelta | null;
-  lastMessage: GameMessage | null;
   status: GameStatus;
   currentWinId: string | null;
   savedWinId: string | null;
   darkMode: boolean;
   locale: Locale;
+  soundEnabled: boolean;
   preloadedPuzzle: PreloadedPuzzle | null;
   isPreloading: boolean;
 
@@ -62,6 +51,7 @@ interface GameState {
   setTheme: (theme: Theme) => void;
   setLocale: (locale: Locale) => void;
   toggleDarkMode: () => void;
+  toggleSound: () => void;
   generatePuzzle: () => void;
   preloadNextPuzzle: () => void;
   toggleCell: (index: number) => void;
@@ -82,6 +72,14 @@ const THEMES: Theme[] = [
   "elephant",
 ];
 
+const SOUND_STORAGE_KEY = "sound-enabled";
+
+// Sound is opt-in: a page that makes noise on first load is never forgiven.
+const getInitialSound = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(SOUND_STORAGE_KEY) === "true";
+};
+
 // Helper to detect system dark mode preference
 const getInitialDarkMode = (): boolean => {
   if (typeof window === "undefined") return false;
@@ -95,6 +93,9 @@ const getInitialDarkMode = (): boolean => {
   // Otherwise, use system preference
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 };
+
+const initialSound = getInitialSound();
+setSoundEnabled(initialSound);
 
 export const useGameStore = create<GameState>((set, get) => ({
   gridSize: 9,
@@ -113,13 +114,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastCorrectMoveTime: 0,
   lastMoveTime: 0,
   movesCount: 0,
-  lastDelta: null,
-  lastMessage: null,
   status: "idle",
   currentWinId: null,
   savedWinId: null,
   darkMode: getInitialDarkMode(),
   locale: getInitialLocale(),
+  soundEnabled: initialSound,
   preloadedPuzzle: null,
   isPreloading: false,
 
@@ -138,6 +138,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     localStorage.setItem("dark-mode-override", String(newMode));
   },
 
+  toggleSound: () => {
+    const newValue = !get().soundEnabled;
+    set({ soundEnabled: newValue });
+    setSoundEnabled(newValue);
+    localStorage.setItem(SOUND_STORAGE_KEY, String(newValue));
+  },
+
   generatePuzzle: () => {
     const { preloadedPuzzle, gridSize } = get();
 
@@ -154,8 +161,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
       movesCount: 0,
-      lastDelta: null,
-      lastMessage: null,
       cells: [],
       currentWinId: null,
       savedWinId: null,
@@ -268,8 +273,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newLastCorrectMoveTime = lastCorrectMoveTime;
     let newLastMoveTime = timer;
     let newMovesCount = movesCount + 1;
-    let newDelta: ScoreDelta | null = get().lastDelta;
-    let newMessage: GameMessage | null = get().lastMessage;
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
@@ -280,13 +283,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         newScore = Math.max(0, newScore - penalty);
         newTotalPenalties += penalty;
         newCombo = 1;
-        newDelta = { value: -penalty, id: nextEventId() };
-        newMessage = {
-          type: "bad",
-          textKey: "msg.attack",
-          vars: { penalty },
-          id: nextEventId(),
-        };
       } else {
         // Correct placement
         if (!newScoredQueens.includes(index)) {
@@ -306,15 +302,6 @@ export const useGameStore = create<GameState>((set, get) => ({
           newGrossScore += pointsEarned;
           newScoredQueens.push(index);
           newLastCorrectMoveTime = timer;
-          newDelta = { value: pointsEarned, id: nextEventId() };
-          if (newCombo >= 2) {
-            newMessage = {
-              type: "good",
-              textKey: "msg.combo",
-              vars: { combo: newCombo, points: pointsEarned },
-              id: nextEventId(),
-            };
-          }
         }
       }
     }
@@ -330,8 +317,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastCorrectMoveTime: newLastCorrectMoveTime,
       lastMoveTime: newLastMoveTime,
       movesCount: newMovesCount,
-      lastDelta: newDelta,
-      lastMessage: newMessage,
     });
     get().checkWinCondition();
   },
@@ -345,13 +330,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         totalPenalties: state.totalPenalties + penalty,
         lastMoveTime: state.timer,
         movesCount: state.movesCount + 1,
-        lastDelta: { value: -penalty, id: nextEventId() },
-        lastMessage: {
-          type: "warn" as const,
-          textKey: "msg.xUnsolved",
-          vars: { penalty },
-          id: nextEventId(),
-        },
       };
     });
   },
@@ -371,8 +349,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
       movesCount: 0,
-      lastDelta: null,
-      lastMessage: null,
       status: "playing",
       currentWinId: null,
       savedWinId: null,

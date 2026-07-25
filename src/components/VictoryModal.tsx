@@ -6,8 +6,12 @@ import { supabase } from "@/lib/supabase";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
 import { getVictoryMessage, t } from "@/lib/i18n";
+import { playButton, playVictory } from "@/lib/sound";
 
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
+
+/** Stamped on every leaderboard row. Keep in sync with package.json. */
+const APP_VERSION = "1.2.0";
 
 /**
  * Checks if user prefers reduced motion.
@@ -43,6 +47,8 @@ export default function VictoryModal() {
 
   useEffect(() => {
     if (status === "won") {
+      playVictory();
+
       if (!prefersReducedMotion()) {
         confetti({
           particleCount: 150,
@@ -66,6 +72,7 @@ export default function VictoryModal() {
 
   const handlePlayAgain = async () => {
     if (saving) return;
+    playButton();
 
     if (!saved) {
       setSaving(true);
@@ -84,7 +91,7 @@ export default function VictoryModal() {
             user_agent: navigator.userAgent,
             device_type: window.innerWidth < 768 ? "mobile" : "desktop",
             moves_count: movesCount,
-            app_version: "1.1.0",
+            app_version: APP_VERSION,
             locale,
           },
         ]);
@@ -154,6 +161,7 @@ export default function VictoryModal() {
     e.preventDefault();
     if (saving || saved || !name.trim()) return;
 
+    playButton();
     setSaving(true);
     try {
       const { error } = await supabase.from("leaderboard").insert([
@@ -169,7 +177,7 @@ export default function VictoryModal() {
           user_agent: navigator.userAgent,
           device_type: window.innerWidth < 768 ? "mobile" : "desktop",
           moves_count: movesCount,
-          app_version: "1.1.0",
+          app_version: APP_VERSION,
           locale,
         },
       ]);

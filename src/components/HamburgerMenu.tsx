@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getLanguageOptions, t } from "@/lib/i18n";
+import { playButton } from "@/lib/sound";
 
 interface HamburgerMenuProps {
   inHeader?: boolean;
@@ -20,10 +22,26 @@ function Bars() {
 export default function HamburgerMenu({
   inHeader = false,
 }: HamburgerMenuProps) {
-  const { locale, setLocale } = useGameStore();
+  const { locale, setLocale, soundEnabled, toggleSound } = useGameStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const languageOptions = getLanguageOptions();
+
+  // The stored preference is only known on the client, so the switch renders
+  // in its "off" state until after hydration.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const soundOn = mounted && soundEnabled;
+
+  const handleToggleSound = () => {
+    toggleSound();
+    // Play the confirmation only when turning it on, and after the store has
+    // enabled playback, so the user hears exactly what they just opted into.
+    if (!soundEnabled) playButton();
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -59,11 +77,18 @@ export default function HamburgerMenu({
 
   return (
     <div
-      className={`${inHeader ? "relative" : "fixed top-4 left-4 z-50"}`}
+      className={
+        inHeader
+          ? "relative"
+          : "fixed z-50 top-[calc(env(safe-area-inset-top)+1rem)] left-[calc(env(safe-area-inset-left)+1rem)]"
+      }
       ref={menuRef}
     >
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          playButton();
+          setIsOpen(!isOpen);
+        }}
         className={
           inHeader
             ? "w-[38px] h-[38px] -ml-1.5 rounded-xl flex items-center justify-center hover:bg-icon-bg transition-colors active:opacity-50"
@@ -108,6 +133,33 @@ export default function HamburgerMenu({
               {t(locale, "menu.credits")}
             </span>
           </Link>
+          <button
+            type="button"
+            onClick={handleToggleSound}
+            role="switch"
+            aria-checked={soundOn}
+            className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors text-left"
+          >
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-ink">
+              {soundOn ? (
+                <Volume2 className="w-4 h-4" />
+              ) : (
+                <VolumeX className="w-4 h-4" />
+              )}
+            </span>
+            <span className="font-extrabold text-ink text-sm">
+              {t(locale, "menu.sound")}
+            </span>
+            <span
+              className={`ml-auto text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg ${
+                soundOn
+                  ? "bg-[#e3f9ec] text-[#1f9d5f] dark:bg-[rgba(31,157,95,0.16)] dark:text-[#6fe0ac]"
+                  : "bg-chip-bg text-muted"
+              }`}
+            >
+              {t(locale, soundOn ? "menu.soundOn" : "menu.soundOff")}
+            </span>
+          </button>
           <div className="px-4 py-[15px]">
             <label
               htmlFor="language-select"
