@@ -100,12 +100,12 @@ const initialSound = getInitialSound();
 setSoundEnabled(initialSound);
 
 /**
- * The generator is probabilistic and fails a meaningful share of the time:
- * measured over 250k candidates at size 9 it accepts roughly 1 layout per
- * 12,500, against a budget of 15,000 candidates per phase. That puts a single
- * worker's failure rate near 9%, so one failure is routine and worth retrying —
- * but the retries have to be bounded, or a genuinely impossible configuration
- * pins a core indefinitely.
+ * The generator is probabilistic and does fail: measured over 250 runs at size
+ * 9 (~2M candidates) it accepts roughly 1 layout per 8,000, against a budget of
+ * 15,000 candidates per phase, which leaves a single worker failing about 1.2%
+ * of the time. Rare, but every puzzle spawns two workers, so it is worth
+ * retrying — and the retries have to be bounded, or a genuinely impossible
+ * configuration pins a core indefinitely.
  */
 const MAX_GENERATION_ATTEMPTS = 3;
 const GENERATION_RETRY_BASE_MS = 400;
