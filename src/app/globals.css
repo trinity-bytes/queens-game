@@ -318,6 +318,29 @@ body {
   animation: dotb 1s ease infinite;
 }
 
+/* ===== Page shell =====
+   The viewport is declared with `viewport-fit=cover`, so pages render under
+   notches, punch holes and curved edges. Every page must pay back the safe
+   area insets on all four sides, not just the top.
+   `--page-pt` adds extra top offset for pages with a floating header button,
+   without having to redeclare the insets. */
+.page-shell {
+  --page-gutter: 1rem;
+  --page-pt: 0rem;
+  padding-left: calc(env(safe-area-inset-left) + var(--page-gutter));
+  padding-right: calc(env(safe-area-inset-right) + var(--page-gutter));
+  padding-top: calc(
+    env(safe-area-inset-top) + var(--page-gutter) + var(--page-pt)
+  );
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--page-gutter));
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    --page-gutter: 2rem;
+  }
+}
+
 /* Accessibility: visible focus indicators */
 *:focus-visible {
   outline: 3px solid var(--accent, #0284c7);

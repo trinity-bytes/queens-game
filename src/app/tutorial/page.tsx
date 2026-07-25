@@ -54,7 +54,10 @@ export default function TutorialPage() {
   ];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:p-8 sm:pt-[calc(env(safe-area-inset-top)+6rem)] bg-theme-bg transition-colors duration-300 relative z-0">
+    <main
+      className="page-shell flex min-h-screen flex-col items-center justify-start bg-theme-bg transition-colors duration-300 relative z-0"
+      style={{ "--page-pt": "4rem" } as React.CSSProperties}
+    >
       <BackgroundPattern />
       <HamburgerMenu />
 

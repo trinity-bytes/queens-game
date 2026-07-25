@@ -28,7 +28,7 @@ export default function Home() {
   return (
     <main
       id="main-content"
-      className="flex min-h-screen flex-col items-center justify-start p-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:p-8 sm:pt-[calc(env(safe-area-inset-top)+2rem)] bg-theme-bg transition-colors duration-300 relative z-0"
+      className="page-shell flex min-h-screen flex-col items-center justify-start bg-theme-bg transition-colors duration-300 relative z-0"
     >
       <BackgroundPattern />
       <LiveAnnouncer />
