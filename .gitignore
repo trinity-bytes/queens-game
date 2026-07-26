@@ -49,12 +49,6 @@ Thumbs.db
 Desktop.ini
 ehthumbs.db
 
-# PWA generated files (next-pwa)
-public/sw.js
-public/sw.js.map
-public/workbox-*.js
-public/worker-*.js
-
 # ESLint
 .eslintcache
 
