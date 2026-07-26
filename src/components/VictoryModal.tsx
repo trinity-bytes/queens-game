@@ -1,4 +1,5 @@
-import { useGameStore } from "@/store/gameStore";
+import { BAND_MULTIPLIER, useGameStore } from "@/store/gameStore";
+import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
 import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { AlertCircle } from "lucide-react";
@@ -12,6 +13,14 @@ const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 /** Stamped on every leaderboard row. Inlined from package.json at build time. */
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
+
+/** Cool to hot, so the badge reads as difficulty before the words are parsed. */
+const BAND_STYLES: Record<DifficultyBand, string> = {
+  gentle: "bg-[#e3f9ec] text-[#1f7a4d] dark:bg-[rgba(31,157,95,0.16)] dark:text-[#6fe0ac]",
+  tricky:
+    "bg-[#fff6da] text-[#946a0f] dark:bg-[rgba(201,150,44,0.16)] dark:text-[#f0c96b]",
+  brutal: "bg-[#fbdad9] text-[#b83a45] dark:bg-[rgba(225,92,103,0.16)] dark:text-[#ff9aa2]",
+};
 
 /**
  * Checks if user prefers reduced motion.
@@ -215,6 +224,29 @@ export default function VictoryModal() {
           <p className="text-muted font-bold mt-1 text-sm">
             {getVictoryMessage(locale, theme, currentWinId)}
           </p>
+
+          {/* The multiplier is shown alongside the band because it is the
+              whole reason the points below are what they are. A player who
+              only sees "Brutal" learns nothing about their score. */}
+          {difficulty && (
+            <div
+              className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-xl text-[11px] font-extrabold uppercase tracking-wider ${BAND_STYLES[difficulty.band]}`}
+              aria-label={t(locale, "victory.difficultyAria", {
+                band: t(locale, `difficulty.${difficulty.band}`),
+                // One decimal throughout, so x1.0 lines up with x1.6 and x2.4
+                // instead of rendering as a bare "x1".
+                multiplier: `x${BAND_MULTIPLIER[difficulty.band].toFixed(1)}`,
+              })}
+            >
+              <span aria-hidden="true">
+                {t(locale, "victory.difficulty")}:{" "}
+                {t(locale, `difficulty.${difficulty.band}`)}
+              </span>
+              <span aria-hidden="true" className="opacity-70">
+                ×{BAND_MULTIPLIER[difficulty.band].toFixed(1)}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-2.5 my-[18px]">

@@ -127,7 +127,7 @@ interface GameState {
  */
 const BASE_POINTS_PER_QUEEN = 2000;
 
-const BAND_MULTIPLIER: Record<DifficultyBand, number> = {
+export const BAND_MULTIPLIER: Record<DifficultyBand, number> = {
   gentle: 1,
   tricky: 1.6,
   brutal: 2.4,
