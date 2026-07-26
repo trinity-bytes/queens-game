@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 
@@ -14,30 +13,29 @@ import { t } from "@/lib/i18n";
 export default function LiveAnnouncer() {
   const status = useGameStore((state) => state.status);
   const locale = useGameStore((state) => state.locale);
-  const [message, setMessage] = useState("");
-  const prevStatus = useRef(status);
 
-  useEffect(() => {
-    if (status !== prevStatus.current) {
-      switch (status) {
-        case "generating":
-          setMessage(t(locale, "announcer.generating"));
-          break;
-        case "playing":
-          if (prevStatus.current === "generating") {
-            setMessage(t(locale, "announcer.ready"));
-          }
-          break;
-        case "won":
-          setMessage(t(locale, "announcer.won"));
-          break;
-        case "error":
-          setMessage(t(locale, "announcer.error"));
-          break;
-      }
-    }
-    prevStatus.current = status;
-  }, [status, locale]);
+  // Derived in render rather than pushed in from an effect: the announcement
+  // *is* the status, so there is no second copy of it to keep in sync. The
+  // live region fires on any text change, which is exactly a status change.
+  //
+  // Entering "playing" now always announces, including the preloaded path
+  // straight out of "won" — that jump used to leave the previous
+  // announcement standing and tell the player nothing about the new board.
+  let message = "";
+  switch (status) {
+    case "generating":
+      message = t(locale, "announcer.generating");
+      break;
+    case "playing":
+      message = t(locale, "announcer.ready");
+      break;
+    case "won":
+      message = t(locale, "announcer.won");
+      break;
+    case "error":
+      message = t(locale, "announcer.error");
+      break;
+  }
 
   return (
     <div

@@ -1,9 +1,10 @@
 import { useGameStore } from "@/store/gameStore";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import HamburgerMenu from "./HamburgerMenu";
 import { t } from "@/lib/i18n";
 import { playButton } from "@/lib/sound";
+import { useHydrated } from "@/lib/useHydrated";
 
 /**
  * Game header. Deliberately shows the elapsed time only: score, combo and
@@ -18,11 +19,9 @@ export default function Header() {
   const darkMode = useGameStore((state) => state.darkMode);
   const toggleDarkMode = useGameStore((state) => state.toggleDarkMode);
   const locale = useGameStore((state) => state.locale);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // The dark-mode override comes from localStorage, so the toggle renders in
+  // its light state until hydration catches up.
+  const mounted = useHydrated();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;

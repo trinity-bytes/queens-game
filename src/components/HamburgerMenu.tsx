@@ -4,6 +4,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getLanguageOptions, t } from "@/lib/i18n";
 import { playButton } from "@/lib/sound";
+import { useHydrated } from "@/lib/useHydrated";
 
 interface HamburgerMenuProps {
   inHeader?: boolean;
@@ -27,17 +28,12 @@ export default function HamburgerMenu({
   const soundEnabled = useGameStore((state) => state.soundEnabled);
   const toggleSound = useGameStore((state) => state.toggleSound);
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const languageOptions = getLanguageOptions();
 
   // The stored preference is only known on the client, so the switch renders
   // in its "off" state until after hydration.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const soundOn = mounted && soundEnabled;
+  const soundOn = useHydrated() && soundEnabled;
 
   const handleToggleSound = () => {
     toggleSound();

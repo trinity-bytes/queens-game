@@ -1,4 +1,5 @@
 import { Theme } from "@/store/gameStore";
+import { mulberry32 } from "@/lib/random";
 
 const THEMES: Theme[] = [
   "dino",
@@ -8,25 +9,6 @@ const THEMES: Theme[] = [
   "starwars",
   "elephant",
 ];
-
-// Seeded random number generator (Mulberry32)
-function mulberry32(seed: number) {
-  // Hash the sequential seed to destroy linear correlations before starting PRNG
-  let a = seed;
-  a = (a + 0x9e3779b9) | 0;
-  let t = a ^ (a >>> 16);
-  t = Math.imul(t, 0x21f0aaad);
-  t = t ^ (t >>> 15);
-  t = Math.imul(t, 0x735a2d97);
-  a = t ^ (t >>> 15);
-
-  return function () {
-    let t = (a += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 // Deterministic Fisher-Yates shuffle
 function shuffle<T>(array: T[], seed: number): T[] {

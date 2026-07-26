@@ -1,5 +1,7 @@
 import { useGameStore } from "@/store/gameStore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { mulberry32 } from "@/lib/random";
+import { useHydrated } from "@/lib/useHydrated";
 
 const THEME_PATTERNS: Record<string, string[]> = {
   dino: [
@@ -40,19 +42,67 @@ const GRID_BY_BREAKPOINT = {
   desktop: { cols: 8, rows: 5, minSize: 40, sizeRange: 30, jitter: 10 },
 } as const;
 
+interface Pattern {
+  id: number;
+  src: string;
+  top: string;
+  left: string;
+  size: string;
+  rotation: string;
+}
+
+/**
+ * Lays the decorative shapes out on a grid, one per cell, so they stay evenly
+ * spread instead of clumping the way free placement would.
+ *
+ * Driven by a seeded PRNG rather than Math.random so the result is a pure
+ * function of its arguments: React may throw the memo below away and call
+ * this again at any time, and the background must not shuffle when it does.
+ */
+function buildPatterns(
+  theme: string,
+  isMobile: boolean,
+  seed: number,
+): Pattern[] {
+  const themeKey = THEME_PATTERNS[theme] ? theme : "default";
+  const availablePatterns = THEME_PATTERNS[themeKey];
+  const { cols, rows, minSize, sizeRange, jitter } =
+    GRID_BY_BREAKPOINT[isMobile ? "mobile" : "desktop"];
+
+  const random = mulberry32(seed);
+  const patterns: Pattern[] = [];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const shape =
+        availablePatterns[Math.floor(random() * availablePatterns.length)];
+
+      // Slight offsets so the grid does not read as a grid
+      const offsetX = (random() - 0.5) * jitter;
+      const offsetY = (random() - 0.5) * jitter;
+
+      patterns.push({
+        id: r * cols + c,
+        src: `/assets/patterns/${themeKey}/${shape}`,
+        top: `${((r + 0.5) / rows) * 100 + offsetY}%`, // Cell center + offset
+        left: `${((c + 0.5) / cols) * 100 + offsetX}%`, // Cell center + offset
+        size: `${random() * sizeRange + minSize}px`,
+        rotation: `${random() * 360}deg`,
+      });
+    }
+  }
+
+  return patterns;
+}
+
 export default function BackgroundPattern() {
   const theme = useGameStore((state) => state.theme);
+  const hydrated = useHydrated();
   const [isMobile, setIsMobile] = useState(false);
-  const [patterns, setPatterns] = useState<
-    {
-      id: number;
-      src: string;
-      top: string;
-      left: string;
-      size: string;
-      rotation: string;
-    }[]
-  >([]);
+
+  // One seed per mount: the layout still varies between visits, but it holds
+  // still for the life of the component.
+  const [seed] = useState(() => (Math.random() * 0x100000000) >>> 0);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
@@ -64,39 +114,13 @@ export default function BackgroundPattern() {
     return () => mediaQuery.removeEventListener("change", syncBreakpoint);
   }, []);
 
-  useEffect(() => {
-    const themeKey = THEME_PATTERNS[theme] ? theme : "default";
-    const availablePatterns = THEME_PATTERNS[themeKey];
-
-    // Generate a grid of patterns for uniform distribution
-    const { cols, rows, minSize, sizeRange, jitter } =
-      GRID_BY_BREAKPOINT[isMobile ? "mobile" : "desktop"];
-    const newPatterns = [];
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const randomPattern =
-          availablePatterns[
-            Math.floor(Math.random() * availablePatterns.length)
-          ];
-
-        // Add slight random offsets to make it look more organic
-        const offsetX = (Math.random() - 0.5) * jitter;
-        const offsetY = (Math.random() - 0.5) * jitter;
-
-        newPatterns.push({
-          id: r * cols + c,
-          src: `/assets/patterns/${themeKey}/${randomPattern}`,
-          top: `${((r + 0.5) / rows) * 100 + offsetY}%`, // Cell center + offset
-          left: `${((c + 0.5) / cols) * 100 + offsetX}%`, // Cell center + offset
-          size: `${Math.random() * sizeRange + minSize}px`,
-          rotation: `${Math.random() * 360}deg`,
-        });
-      }
-    }
-
-    setPatterns(newPatterns);
-  }, [theme, isMobile]);
+  // Nothing is painted until hydration: the prerendered HTML is built with
+  // whatever theme the clock said at build time and a desktop viewport, and
+  // neither survives to the browser.
+  const patterns = useMemo(
+    () => (hydrated ? buildPatterns(theme, isMobile, seed) : []),
+    [hydrated, theme, isMobile, seed],
+  );
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 opacity-10">
