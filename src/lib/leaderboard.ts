@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 import type { Locale } from "./i18n";
+import type { SolveLog } from "@/store/gameStore";
+import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
 
 /**
  * Data access for the leaderboard.
@@ -37,9 +39,19 @@ export interface ScoreSubmission {
   timeMs: number;
   mistakes: number;
   movesCount: number;
+  gridSize: number;
   themeUsed: string;
   locale: Locale;
   appVersion: string;
+  /**
+   * The puzzle's rating. Not decoration: submit_score recomputes the score
+   * from the band and the mistake count and rejects anything that disagrees,
+   * so this is what makes the submission checkable at all.
+   */
+  difficultyBand: DifficultyBand;
+  difficultyScore: number;
+  /** Behavioural record, kept for calibrating scoring against real play. */
+  solveLog: SolveLog;
 }
 
 export async function fetchTopScores(
@@ -89,6 +101,13 @@ export async function submitScore(entry: ScoreSubmission): Promise<void> {
     p_moves_count: entry.movesCount,
     p_theme_used: entry.themeUsed,
     p_locale: entry.locale,
+    p_difficulty_band: entry.difficultyBand,
+    p_difficulty_score: entry.difficultyScore,
+    p_grid_size: entry.gridSize,
+    p_placements: entry.solveLog.placements,
+    p_x_marks_placed: entry.solveLog.xMarksPlaced,
+    p_peak_x_marks: entry.solveLog.peakXMarks,
+    p_abandoned: entry.solveLog.puzzlesAbandoned,
     p_user_agent: navigator.userAgent,
     p_device_type: window.innerWidth < 768 ? "mobile" : "desktop",
     p_app_version: entry.appVersion,

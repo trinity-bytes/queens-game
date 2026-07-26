@@ -8,7 +8,16 @@ import type {
   GenerationResult,
   GenerationSuccess,
   PhaseStats,
+  PuzzleDifficulty,
 } from "./puzzleGenerator.types";
+// Explicit extension so the same module resolves both under Turbopack and
+// under `node --experimental-strip-types`, which does no resolution of its own
+// and is how scripts/measure-difficulty.ts reaches this code.
+import {
+  MIN_INTERESTING_LOOKAHEADS,
+  bandFor,
+  rateDifficulty,
+} from "./puzzleSolver.ts";
 
 /**
  * Checks a queen against the ones already placed, under the rules the game
@@ -341,30 +350,44 @@ function hasUniqueSolution(regions: number[], size: number): boolean {
   return solutions === 1;
 }
 
-const MAX_SEEDS = 1000;
+// Roughly one candidate in 8,000 survives the uniqueness check, so this budget
+// only expects to see a handful of valid layouts — barely enough to be choosy
+// about difficulty. It is set well above what a typical run consumes because
+// almost every run succeeds early; the size only shows up in the tail, and the
+// preloader absorbs that.
+const MAX_SEEDS = 2500;
 const REGIONS_PER_SEED = 15;
 
 /**
- * Decides whether a layout that is already legal and uniquely solvable is also
- * interesting enough to ship. Returning false costs a candidate, so a strict
- * predicate trades generation budget for puzzle quality.
- */
-export type DifficultyFilter = (regions: number[], size: number) => boolean;
-
-/**
- * Searches for an acceptable layout, counting every rejection by cause.
+ * Searches for a layout worth shipping, counting every rejection by cause.
  *
- * Both phases share this body and differ only in the filter they pass: the
- * "strict" pass may demand a difficulty floor, and "relaxed" passes null so
- * generation still succeeds when no interesting layout turned up in budget.
- * The counters keep every claim about rejection rates checkable rather than
- * assumed.
+ * `minLookaheads` is a target, not a gate. Roughly one candidate in 8,000
+ * survives the uniqueness check, so a 15,000-candidate budget only ever gets
+ * to look at one or two — far too few to hold out for a rating. An earlier
+ * version treated the floor as a hard filter with an unfiltered second phase
+ * behind it, which meant that whenever the floor bit, the fallback shipped
+ * whatever it found next: the strictest setting produced the most trivial
+ * puzzles.
+ *
+ * So the phase keeps the best layout it has seen and returns that when the
+ * budget runs out. The result is never worse than everything examined, and a
+ * strict floor can no longer make the output worse than a loose one.
  */
+interface PhaseResult {
+  solution: number[] | null;
+  regions: number[] | null;
+  /** Rating of the returned layout, -1 when nothing was found. */
+  rating: number;
+  /** True when the layout cleared the target rather than being a fallback. */
+  met: boolean;
+  stats: PhaseStats;
+}
+
 function runPhase(
   phase: GenerationPhase,
   size: number,
-  accept: DifficultyFilter | null,
-): { solution: number[] | null; regions: number[] | null; stats: PhaseStats } {
+  minLookaheads: number | null,
+): PhaseResult {
   const startedAt = Date.now();
   const stats: PhaseStats = {
     phase,
@@ -377,10 +400,21 @@ function runPhase(
     elapsedMs: 0,
   };
 
-  const finish = (solution: number[] | null, regions: number[] | null) => {
+  const finish = (
+    solution: number[] | null,
+    regions: number[] | null,
+    rating: number,
+    met: boolean,
+  ): PhaseResult => {
     stats.elapsedMs = Date.now() - startedAt;
-    return { solution, regions, stats };
+    return { solution, regions, rating, met, stats };
   };
+
+  // Best layout seen so far, kept so exhausting the budget still ships the
+  // pick of everything examined rather than nothing.
+  let bestSeed: number[] | null = null;
+  let bestRegions: number[] | null = null;
+  let bestRating = -1;
 
   for (let s = 0; s < MAX_SEEDS; s++) {
     stats.seedsTried++;
@@ -407,51 +441,87 @@ function runPhase(
         continue;
       }
 
-      if (accept !== null && !accept(regions, size)) {
-        stats.rejectedTrivial++;
-        continue;
-      }
+      // No target: the first unique layout wins, which is what the
+      // measurement harness samples.
+      if (minLookaheads === null) return finish(seed, regions, -1, true);
 
-      return finish(seed, regions);
+      const rating = rateDifficulty(regions, size).steps.lookahead;
+      if (rating >= minLookaheads) return finish(seed, regions, rating, true);
+
+      stats.rejectedTrivial++;
+      if (rating > bestRating) {
+        bestRating = rating;
+        bestSeed = seed;
+        bestRegions = regions;
+      }
     }
   }
 
-  return finish(null, null);
+  return finish(bestSeed, bestRegions, bestRating, false);
 }
 
 /**
- * Runs the phases in order and returns the first layout that survives one.
+ * Produces a puzzle, rated.
  *
- * `strictFilter` is injected rather than hardcoded so the measurement harness
- * can sample the natural difficulty distribution with no filter at all, and so
- * the caller decides how much budget to trade for a harder puzzle.
+ * `minLookaheads` is exposed so the measurement harness can pass null and
+ * sample the untouched distribution — the same distribution the default floor
+ * was chosen against.
+ *
+ * Both phases hold the same target and the best layout is carried *across*
+ * them. Settling for a fallback inside the first phase would mean the second
+ * never ran, which is how an earlier version still shipped the occasional
+ * puzzle that solves itself: it stopped looking after one weak candidate.
  */
 export function generatePuzzle(
   size: number,
-  strictFilter: DifficultyFilter | null = null,
+  minLookaheads: number | null = MIN_INTERESTING_LOOKAHEADS,
 ): GenerationResult {
   const startedAt = Date.now();
   const phases: PhaseStats[] = [];
 
-  const phaseConfigs: [GenerationPhase, DifficultyFilter | null][] = [
-    ["strict", strictFilter],
-    ["relaxed", null],
-  ];
+  const phaseOrder: GenerationPhase[] = ["strict", "relaxed"];
 
-  for (const [phase, accept] of phaseConfigs) {
-    const { solution, regions, stats } = runPhase(phase, size, accept);
-    phases.push(stats);
+  let bestSolution: number[] | null = null;
+  let bestRegions: number[] | null = null;
+  let bestRating = -1;
 
-    if (solution && regions) {
-      const success: GenerationSuccess = {
-        success: true,
-        regions,
-        size,
-        solution,
-        diagnostics: { size, elapsedMs: Date.now() - startedAt, phases },
-      };
-      return success;
+  for (const phase of phaseOrder) {
+    const result = runPhase(phase, size, minLookaheads);
+    phases.push(result.stats);
+
+    // `met` wins outright: the unfiltered path reports a rating of -1, which
+    // would otherwise never beat the initial best.
+    if (
+      result.solution &&
+      result.regions &&
+      (result.met || result.rating > bestRating)
+    ) {
+      bestSolution = result.solution;
+      bestRegions = result.regions;
+      bestRating = result.rating;
     }
+
+    // Only a layout that actually cleared the target ends the search early.
+    if (result.met && result.solution && result.regions) break;
+  }
+
+  if (bestSolution && bestRegions) {
+    const report = rateDifficulty(bestRegions, size);
+    const difficulty: PuzzleDifficulty = {
+      lookaheads: report.steps.lookahead,
+      band: bandFor(report.steps.lookahead),
+      technique: report.tier,
+    };
+
+    const success: GenerationSuccess = {
+      success: true,
+      regions: bestRegions,
+      size,
+      solution: bestSolution,
+      difficulty,
+      diagnostics: { size, elapsedMs: Date.now() - startedAt, phases },
+    };
+    return success;
   }
 
   const failure: GenerationFailure = {

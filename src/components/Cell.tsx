@@ -1,5 +1,5 @@
 import { useGameStore } from "@/store/gameStore";
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback } from "react";
 import { getRegionName, t } from "@/lib/i18n";
 import { playTap } from "@/lib/sound";
 import {
@@ -26,33 +26,9 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
   // a second whether or not anything on the board changed.
   // `store` rather than the usual `state`, which is already a prop here.
   const toggleCell = useGameStore((store) => store.toggleCell);
-  const incrementXPenalty = useGameStore((store) => store.incrementXPenalty);
   const theme = useGameStore((store) => store.theme);
   const locale = useGameStore((store) => store.locale);
   const darkMode = useGameStore((store) => store.darkMode);
-
-  const xTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (state === 1) {
-      // Start 2-second timer when cell becomes 'X'
-      xTimeoutRef.current = setTimeout(() => {
-        incrementXPenalty();
-      }, 2000);
-    } else {
-      // Clear timer if state changes before 2 seconds
-      if (xTimeoutRef.current) {
-        clearTimeout(xTimeoutRef.current);
-        xTimeoutRef.current = null;
-      }
-    }
-
-    return () => {
-      if (xTimeoutRef.current) {
-        clearTimeout(xTimeoutRef.current);
-      }
-    };
-  }, [state, incrementXPenalty]);
 
   const row = Math.floor(index / gridSize);
   const col = index % gridSize;

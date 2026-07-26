@@ -38,7 +38,9 @@ const effortSamples: number[] = [];
 
 for (let n = 0; n < count; n++) {
   const genStart = Date.now();
-  const result = generatePuzzle(size);
+  // Explicitly unfiltered: this samples the natural distribution, which is
+  // what the floor in generatePuzzle was chosen against in the first place.
+  const result = generatePuzzle(size, null);
   totalGenMs += Date.now() - genStart;
 
   if (!result.success) {

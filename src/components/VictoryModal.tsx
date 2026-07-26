@@ -32,6 +32,9 @@ export default function VictoryModal() {
   const totalPenalties = useGameStore((state) => state.totalPenalties);
   const movesCount = useGameStore((state) => state.movesCount);
   const locale = useGameStore((state) => state.locale);
+  const gridSize = useGameStore((state) => state.gridSize);
+  const difficulty = useGameStore((state) => state.difficulty);
+  const solveLog = useGameStore((state) => state.solveLog);
   const currentWinId = useGameStore((state) => state.currentWinId);
   const savedWinId = useGameStore((state) => state.savedWinId);
   const markCurrentWinSaved = useGameStore((state) => state.markCurrentWinSaved);
@@ -76,7 +79,10 @@ export default function VictoryModal() {
    * dedupes on the win id, so calling this twice for the same win is safe.
    */
   const persistScore = async (playerName: string) => {
-    if (!currentWinId) return;
+    // Without a rating the server cannot reproduce the score, so it would
+    // reject the row anyway. Skipping here keeps the failure quiet instead of
+    // showing the player an error for a puzzle that arrived unrated.
+    if (!currentWinId || !difficulty) return;
 
     await submitScore({
       winId: currentWinId,
@@ -85,9 +91,13 @@ export default function VictoryModal() {
       timeMs: timer,
       mistakes,
       movesCount,
+      gridSize,
       themeUsed: theme,
       locale,
       appVersion: APP_VERSION,
+      difficultyBand: difficulty.band,
+      difficultyScore: difficulty.lookaheads,
+      solveLog,
     });
     markCurrentWinSaved();
   };

@@ -36,8 +36,27 @@ export interface GenerationSuccess {
   regions: number[];
   size: number;
   solution: number[];
+  /** How hard the layout is to reason through, from the logical solver. */
+  difficulty: PuzzleDifficulty;
   diagnostics: GenerationDiagnostics;
 }
+
+/**
+ * The rating that ships with a puzzle.
+ *
+ * `lookaheads` is the raw signal — how many squares could only be ruled out by
+ * playing a queen forward and watching a unit die. `band` is that number cut
+ * into the thirds the generator actually produces, which is what the player
+ * sees and what the score multiplies by.
+ */
+export interface PuzzleDifficulty {
+  lookaheads: number;
+  band: DifficultyBand;
+  /** Hardest technique the solver needed; "search" means its ladder stalled. */
+  technique: string;
+}
+
+export type DifficultyBand = "gentle" | "tricky" | "brutal";
 
 export interface GenerationFailure {
   success: false;

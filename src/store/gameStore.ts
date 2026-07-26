@@ -4,8 +4,10 @@ import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
 import { setSoundEnabled } from "@/lib/sound";
 import {
   summarizeDiagnostics,
+  type DifficultyBand,
   type GenerationDiagnostics,
   type GenerationResult,
+  type PuzzleDifficulty,
 } from "@/workers/puzzleGenerator.types";
 
 export type CellState = 0 | 1 | 2; // 0: empty, 1: X, 2: Queen
@@ -30,6 +32,31 @@ interface PreloadedPuzzle {
   regions: number[];
   solution: number[];
   size: number;
+  difficulty: PuzzleDifficulty;
+}
+
+/**
+ * What the player did, not just how they finished.
+ *
+ * Scoring currently rewards difficulty and accuracy only, because how long a
+ * human *should* take on a given rating is not something anyone has measured
+ * yet. This is the record that will answer it: the gaps between placements
+ * describe the shape of a solve — steady, or stuck then sudden — which is the
+ * part that separates skill from luck.
+ */
+export interface SolveLog {
+  /** Elapsed ms at each queen placed, right or wrong, in order. */
+  placements: { atMs: number; correct: boolean }[];
+  /** Times a cell was marked X, the notation this game no longer punishes. */
+  xMarksPlaced: number;
+  /** Most X marks standing at once — how heavily the player annotated. */
+  peakXMarks: number;
+  /**
+   * Puzzles walked away from mid-play before this win, persisted across
+   * reloads. Without it a player rerolling for an easy board looks identical
+   * to one who sat down and solved the first thing they saw.
+   */
+  puzzlesAbandoned: number;
 }
 
 interface GameState {
@@ -45,10 +72,13 @@ interface GameState {
   grossScore: number;
   totalPenalties: number;
   scoredQueens: number[];
-  combo: number;
   lastCorrectMoveTime: number;
   lastMoveTime: number;
   movesCount: number;
+  /** Rating of the puzzle in play, null until one is loaded. */
+  difficulty: PuzzleDifficulty | null;
+  /** Behavioural record of the current solve, for calibrating scoring later. */
+  solveLog: SolveLog;
   status: GameStatus;
   currentWinId: string | null;
   savedWinId: string | null;
@@ -67,12 +97,68 @@ interface GameState {
   generatePuzzle: () => void;
   preloadNextPuzzle: () => void;
   toggleCell: (index: number) => void;
-  incrementXPenalty: () => void;
   resetBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
   markCurrentWinSaved: () => void;
 }
+
+/**
+ * Scoring.
+ *
+ * The old engine paid per queen for speed: a bonus that expired after five
+ * seconds, a combo that reset after five, a final bonus that vanished after
+ * 135, and a fine for leaving an X on the board more than two. Every one of
+ * them was a proxy for skill, chosen when nothing could measure how hard a
+ * puzzle actually was. All four punished the player for thinking, and none of
+ * them knew the difference between a board solved on sight and one that took
+ * real deduction — so reloading until an easy puzzle appeared was the single
+ * most profitable strategy in the game.
+ *
+ * Difficulty is measurable now, so it carries the reward instead. A puzzle is
+ * worth what its rating says, reduced by the queens the player got wrong.
+ * Rerolling for an easy board lowers your own ceiling, which retires the
+ * exploit without needing to detect it.
+ *
+ * Time is deliberately absent. It is the sharpest skill signal there is, but
+ * only against a reference for how long a given rating *should* take, and that
+ * reference does not exist yet — SolveLog is being collected to build it.
+ * Inventing the constant now would just be the old bias with new arithmetic.
+ */
+const BASE_POINTS_PER_QUEEN = 2000;
+
+const BAND_MULTIPLIER: Record<DifficultyBand, number> = {
+  gentle: 1,
+  tricky: 1.6,
+  brutal: 2.4,
+};
+
+/** Share of the puzzle's value forfeited per wrong queen. */
+const MISTAKE_COST = 0.08;
+
+/** However bad it goes, finishing a hard board is worth something. */
+const MIN_ACCURACY = 0.2;
+
+/** What a flawless solve of this puzzle pays. */
+const puzzleValue = (gridSize: number, band: DifficultyBand): number =>
+  Math.round(BASE_POINTS_PER_QUEEN * gridSize * BAND_MULTIPLIER[band]);
+
+const ABANDONED_STORAGE_KEY = "puzzles-abandoned";
+
+// Persisted because reloading the page is the cheapest way to reroll a puzzle,
+// and an in-memory counter would reset on exactly the action worth counting.
+const getAbandonedCount = (): number => {
+  if (typeof window === "undefined") return 0;
+  const stored = Number(localStorage.getItem(ABANDONED_STORAGE_KEY));
+  return Number.isFinite(stored) && stored > 0 ? stored : 0;
+};
+
+const emptySolveLog = (): SolveLog => ({
+  placements: [],
+  xMarksPlaced: 0,
+  peakXMarks: 0,
+  puzzlesAbandoned: getAbandonedCount(),
+});
 
 const SOUND_STORAGE_KEY = "sound-enabled";
 
@@ -200,11 +286,12 @@ const runGenerationAttempt = (attempt: number) => {
       return;
     }
 
-    const { regions, solution, size } = e.data;
+    const { regions, solution, size, difficulty } = e.data;
     release();
     useGameStore.setState({
       regions,
       solution,
+      difficulty,
       cells: new Array(size * size).fill(0),
       status: "playing",
       theme: getCurrentTheme(),
@@ -262,10 +349,10 @@ const runPreloadAttempt = (attempt: number) => {
       return;
     }
 
-    const { regions, solution, size } = e.data;
+    const { regions, solution, size, difficulty } = e.data;
     release();
     useGameStore.setState({
-      preloadedPuzzle: { regions, solution, size },
+      preloadedPuzzle: { regions, solution, size, difficulty },
       isPreloading: false,
     });
   };
@@ -290,10 +377,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   grossScore: 0,
   totalPenalties: 0,
   scoredQueens: [],
-  combo: 1,
   lastCorrectMoveTime: 0,
   lastMoveTime: 0,
   movesCount: 0,
+  difficulty: null,
+  solveLog: emptySolveLog(),
   status: "idle",
   currentWinId: null,
   savedWinId: null,
@@ -326,7 +414,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   generatePuzzle: () => {
-    const { preloadedPuzzle, gridSize } = get();
+    const { preloadedPuzzle, gridSize, status } = get();
+
+    // Leaving a game in progress is the reroll this counter exists to see. A
+    // puzzle left at move zero still counts: walking away before touching the
+    // board is the cheapest reroll of all.
+    if (status === "playing") {
+      const abandoned = getAbandonedCount() + 1;
+      localStorage.setItem(ABANDONED_STORAGE_KEY, String(abandoned));
+    }
 
     // Drop any generation still in flight or waiting out a backoff. Nothing
     // reaches this call mid-retry today, but a stale attempt that resolved
@@ -337,16 +433,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       timer: 0,
       mistakes: 0,
-      xPenalties: 0,
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
       scoredQueens: [],
-      combo: 1,
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
       movesCount: 0,
       cells: [],
+      difficulty: null,
+      solveLog: emptySolveLog(),
       currentWinId: null,
       savedWinId: null,
     });
@@ -356,6 +452,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({
         regions: preloadedPuzzle.regions,
         solution: preloadedPuzzle.solution,
+        difficulty: preloadedPuzzle.difficulty,
         cells: new Array(gridSize * gridSize).fill(0),
         status: "playing",
         theme: getCurrentTheme(),
@@ -388,11 +485,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       solution,
       gridSize,
       mistakes,
-      score,
-      grossScore,
-      totalPenalties,
       scoredQueens,
-      combo,
+      solveLog,
       lastCorrectMoveTime,
       movesCount,
       timer,
@@ -406,73 +500,46 @@ export const useGameStore = create<GameState>((set, get) => ({
     newCells[index] = newState as CellState;
 
     let newMistakes = mistakes;
-    let newScore = score;
-    let newGrossScore = grossScore;
-    let newTotalPenalties = totalPenalties;
     const newScoredQueens = [...scoredQueens];
-    let newCombo = combo;
     let newLastCorrectMoveTime = lastCorrectMoveTime;
     const newLastMoveTime = timer;
     const newMovesCount = movesCount + 1;
+    const newLog: SolveLog = { ...solveLog };
+
+    if (newState === 1) {
+      // Marking a cell is how the puzzle is meant to be worked. It used to
+      // cost 50 points if the mark stood for two seconds; now it is simply
+      // recorded, because how heavily a player annotates is a skill signal.
+      newLog.xMarksPlaced = solveLog.xMarksPlaced + 1;
+      const standing = newCells.filter((cell) => cell === 1).length;
+      newLog.peakXMarks = Math.max(solveLog.peakXMarks, standing);
+    }
 
     if (newState === 2) {
       const row = Math.floor(index / gridSize);
       const col = index % gridSize;
-      if (solution[row] !== col) {
+      const correct = solution[row] === col;
+
+      newLog.placements = [...solveLog.placements, { atMs: timer, correct }];
+
+      if (!correct) {
         newMistakes++;
-        const penalty = 200;
-        newScore = Math.max(0, newScore - penalty);
-        newTotalPenalties += penalty;
-        newCombo = 1;
-      } else {
-        // Correct placement
-        if (!newScoredQueens.includes(index)) {
-          const timeSinceLastCorrect = timer - lastCorrectMoveTime;
-
-          if (timeSinceLastCorrect <= 5000 && lastCorrectMoveTime !== 0) {
-            newCombo = Math.min(5, newCombo + 1);
-          } else {
-            newCombo = 1;
-          }
-
-          const secondsTaken = timeSinceLastCorrect / 1000;
-          const speedBonus = Math.max(0, 1000 - secondsTaken * 200);
-          const pointsEarned = Math.floor((500 + speedBonus) * newCombo);
-
-          newScore += pointsEarned;
-          newGrossScore += pointsEarned;
-          newScoredQueens.push(index);
-          newLastCorrectMoveTime = timer;
-        }
+      } else if (!newScoredQueens.includes(index)) {
+        newScoredQueens.push(index);
+        newLastCorrectMoveTime = timer;
       }
     }
 
     set({
       cells: newCells,
       mistakes: newMistakes,
-      score: newScore,
-      grossScore: newGrossScore,
-      totalPenalties: newTotalPenalties,
       scoredQueens: newScoredQueens,
-      combo: newCombo,
+      solveLog: newLog,
       lastCorrectMoveTime: newLastCorrectMoveTime,
       lastMoveTime: newLastMoveTime,
       movesCount: newMovesCount,
     });
     get().checkWinCondition();
-  },
-
-  incrementXPenalty: () => {
-    set((state) => {
-      const penalty = 50;
-      return {
-        xPenalties: state.xPenalties + 1,
-        score: Math.max(0, state.score - penalty),
-        totalPenalties: state.totalPenalties + penalty,
-        lastMoveTime: state.timer,
-        movesCount: state.movesCount + 1,
-      };
-    });
   },
 
   resetBoard: () => {
@@ -481,12 +548,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       cells: new Array(cells.length).fill(0),
       timer: 0,
       mistakes: 0,
-      xPenalties: 0,
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
       scoredQueens: [],
-      combo: 1,
+      solveLog: emptySolveLog(),
       lastCorrectMoveTime: 0,
       lastMoveTime: 0,
       movesCount: 0,
@@ -496,39 +562,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
 
+  /**
+   * Advances the clock, and nothing else.
+   *
+   * This used to bleed points every second at a rate that grew with the time
+   * since the last move — 5 points, then 10, then 15 — so a minute spent
+   * studying the board cost around 9,450. It was the harshest of the old
+   * speed proxies and the reason the database still assumes a long game and a
+   * high score are mutually exclusive. The clock is now recorded, not charged
+   * for.
+   */
   tickTimer: () => {
-    const {
-      status,
-      timer,
-      lastCorrectMoveTime,
-      lastMoveTime,
-      combo,
-      score,
-      totalPenalties,
-    } = get();
-    if (status === "playing") {
-      const newTimer = timer + 1000;
-      let newCombo = combo;
-
-      // Lose combo if 10 seconds pass without a correct move
-      if (newTimer - lastCorrectMoveTime > 10000 && lastCorrectMoveTime !== 0) {
-        newCombo = 1;
-      }
-
-      const timeSinceLastMove = newTimer - lastMoveTime;
-      const penalty = 5 + Math.floor(timeSinceLastMove / 1000) * 5;
-
-      set({
-        timer: newTimer,
-        combo: newCombo,
-        score: Math.max(0, score - penalty),
-        totalPenalties: totalPenalties + penalty,
-      });
-    }
+    if (get().status !== "playing") return;
+    set((state) => ({ timer: state.timer + 1000 }));
   },
 
   checkWinCondition: () => {
-    const { cells, gridSize, regions, timer, score, grossScore } = get();
+    const { cells, gridSize, regions, mistakes, difficulty } = get();
 
     // Count queens
     const queens = cells.reduce((acc, cell, idx) => {
@@ -564,20 +614,24 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
-    // Calculate final speed bonus
-    const maxTimeForBonus = gridSize * 15; // e.g., 135 seconds for 9x9
-    const secondsTaken = timer / 1000;
-    const bonusPercentage = Math.max(
-      0,
-      0.1 * (1 - secondsTaken / maxTimeForBonus),
-    );
-    const bonusPoints = Math.floor(score * bonusPercentage);
+    // Scored here rather than move by move: nothing is shown until the puzzle
+    // is solved anyway, and a single formula over the finished game is easier
+    // to reason about — and to re-check on the server.
+    //
+    // The band falls back to the cheapest one if a puzzle somehow arrived
+    // unrated, so a missing rating can never inflate a score.
+    const value = puzzleValue(gridSize, difficulty?.band ?? "gentle");
+    const accuracy = Math.max(MIN_ACCURACY, 1 - MISTAKE_COST * mistakes);
+    const finalScore = Math.round(value * accuracy);
 
-    // If we reach here, it's a win!
+    // A win ends the reroll streak: the count belongs to the game it produced.
+    localStorage.removeItem(ABANDONED_STORAGE_KEY);
+
     set({
       status: "won",
-      score: score + bonusPoints,
-      grossScore: grossScore + bonusPoints,
+      score: finalScore,
+      grossScore: value,
+      totalPenalties: value - finalScore,
       currentWinId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       savedWinId: null,
     });
