@@ -4,6 +4,7 @@ import "./globals.css";
 import { useGameStore } from "@/store/gameStore";
 import { ThemeScript } from "@/components/ThemeScript";
 import LoadingScreen from "@/components/LoadingScreen";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import { t } from "@/lib/i18n";
 
 export default function RootLayout({
@@ -56,6 +57,7 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
+        <ServiceWorkerRegistrar />
         <LoadingScreen />
         <a href="#main-content" className="skip-to-content">
           {t(locale, "skip.content")}
