@@ -10,8 +10,8 @@ import { playButton, playVictory } from "@/lib/sound";
 
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
-/** Stamped on every leaderboard row. Keep in sync with package.json. */
-const APP_VERSION = "1.3.0";
+/** Stamped on every leaderboard row. Inlined from package.json at build time. */
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 
 /**
  * Checks if user prefers reduced motion.
