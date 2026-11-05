@@ -1,4 +1,5 @@
-import { BAND_MULTIPLIER, useGameStore } from "@/store/gameStore";
+import { useGameStore } from "@/store/gameStore";
+import { BAND_MULTIPLIER } from "@/domain/scoring";
 import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
 import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";

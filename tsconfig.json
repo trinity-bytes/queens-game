@@ -41,6 +41,8 @@
   ],
   "exclude": [
     "node_modules",
-    "docs"
+    "docs",
+    // Runs on Workers, not in the browser: its own tsconfig carries those types.
+    "api"
   ]
 }
