@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://queens.jahattrinidad.com/:path*",
+      "permanent": true
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "queens",
+  "account_id": "db1565ec7c4461765cfe458ae6b363a8",
   "main": "api/index.ts",
   "compatibility_date": "2026-11-01",
   "routes": [

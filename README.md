@@ -31,14 +31,11 @@ npm run lint
 
 ## Deployment
 
-One-time setup:
+Every push to `main` runs lint, typecheck and tests, then deploys to [queens.jahattrinidad.com](https://queens.jahattrinidad.com) (see `.github/workflows/deploy.yml`). Releases follow git flow: `release/x.y.z` merges into `main` and `develop`, and the merge to `main` is what ships.
 
-```bash
-npx wrangler login
-npx wrangler d1 create queens   # put the printed id in wrangler.jsonc
-```
+The workflow needs a `CLOUDFLARE_API_TOKEN` repository secret: a token from the "Edit Cloudflare Workers" template, with Account > D1 > Edit added.
 
-Then, for each release:
+To deploy by hand, after `npx wrangler login`:
 
 ```bash
 npm run deploy    # build, apply D1 migrations, deploy the Worker
