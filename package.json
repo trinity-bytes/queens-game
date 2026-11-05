@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p api",
     "test": "vitest run",
     "dev:api": "mkdir -p out && wrangler d1 migrations apply queens --local && wrangler dev --port 8787",
-    "deploy": "npm run build && wrangler d1 migrations apply queens --remote && wrangler deploy"
+    "deploy": "npm run build && wrangler d1 migrations apply queens --remote && wrangler deploy",
+    "preview": "npm run build && wrangler d1 migrations apply queens --local && wrangler dev"
   },
   "keywords": [],
   "author": "",

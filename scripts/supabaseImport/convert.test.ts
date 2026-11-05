@@ -110,6 +110,28 @@ aaaaaaaa-0000-0000-0000-000000000003,win-00003,Old,12000,60000,0,,9,cat,es,2025-
     expect(row).toEqual({ difficulty_band: null });
   });
 
+  it("refuses more runs than the board keeps, rather than losing some", () => {
+    const header = LEADERBOARD.split("\n")[0];
+    const rows = Array.from(
+      { length: 101 },
+      (_, i) => `id-${i},win-0${i},Name,1000,1000,0,,9,cat,es,,,`,
+    );
+
+    expect(() =>
+      toInsertStatements({ leaderboard: [header, ...rows].join("\n") }),
+    ).toThrow("expected at most 100 runs, got 101");
+  });
+
+  it("refuses a timestamp with no offset instead of guessing the zone", () => {
+    const naive = LEADERBOARD.replace(
+      "2025-01-02 03:04:05+00",
+      "2025-01-02 03:04:05",
+    );
+    expect(() => toInsertStatements({ leaderboard: naive })).toThrow(
+      'invalid timestamp: "2025-01-02 03:04:05"',
+    );
+  });
+
   it("refuses a number column holding anything else", () => {
     const hostile = LEADERBOARD.replace("28800", "1); DROP TABLE leaderboard;--");
     expect(() => toInsertStatements({ leaderboard: hostile })).toThrow(

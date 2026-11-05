@@ -21,6 +21,8 @@ npm run dev:api   # Worker and local D1 on :8787
 npm run dev       # Next.js on :3000, proxies /api to the Worker
 ```
 
+`npm run preview` builds and serves the production output from a local Worker, service worker included.
+
 ```bash
 npm test            # runs in workerd against a real local D1
 npm run typecheck

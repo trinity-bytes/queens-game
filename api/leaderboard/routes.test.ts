@@ -160,10 +160,11 @@ describe("POST /api/leaderboard", () => {
     ).first();
     expect(worstSeed).toBeNull();
 
-    // Too low to make the board: accepted, then bounded straight back out,
-    // without leaving private rows behind.
+    // Too low to make the board: valid, but not stored, and the response says
+    // so instead of naming a row that does not exist.
     const outOfBoard = await post(win({ winId: "win-low" }));
-    expect(outOfBoard.status).toBe(201);
+    expect(outOfBoard.status).toBe(200);
+    expect(await outOfBoard.json()).toEqual({ id: null });
     expect(await count("leaderboard")).toBe(100);
     expect(await count("leaderboard_telemetry")).toBe(1);
     expect(await count("leaderboard_solve_log")).toBe(1);
@@ -223,16 +224,27 @@ describe("GET /api/leaderboard", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
-  it.each([
-    ["2", 2],
-    ["0", 3],
-    ["abc", 3],
-    ["1000", 3],
-  ])("honours limit=%s", async (limit, expected) => {
+  it("honours an explicit limit", async () => {
     await seed();
-    const response = await call(`/api/leaderboard?limit=${limit}`);
-    expect(await response.json<unknown[]>()).toHaveLength(expected);
+    const response = await call("/api/leaderboard?limit=2");
+    expect(await response.json<unknown[]>()).toHaveLength(2);
   });
+
+  it("returns the whole board when no limit is given", async () => {
+    await seed();
+    const response = await call("/api/leaderboard");
+    expect(await response.json<unknown[]>()).toHaveLength(3);
+  });
+
+  it.each(["0", "-1", "2.5", "abc", "", "101"])(
+    "rejects limit=%s instead of ignoring it",
+    async (limit) => {
+      const response = await call(`/api/leaderboard?limit=${limit}`);
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "invalid limit" });
+    },
+  );
 });
 
 describe("routing", () => {

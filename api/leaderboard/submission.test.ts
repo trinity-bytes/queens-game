@@ -69,12 +69,21 @@ describe("parseSubmission", () => {
     [{ difficultyBand: "legendary" }, "invalid difficulty band"],
     [{ difficultyBand: "constructor" }, "invalid difficulty band"],
     [{ difficultyScore: -1 }, "invalid difficulty score"],
+    [{ difficultyScore: 2147483648 }, "invalid difficulty score"],
+    [{ gridSize: 12, movesCount: 11, score: 38400 }, "invalid move count"],
+    [{ winId: "👑👑👑👑" }, "invalid win id"],
+    [{ winId: "win\0-12345" }, "invalid win id"],
+    [{ playerName: "Que\0en" }, "invalid name"],
     [{ winId: "abcd" }, "invalid win id"],
     [{ winId: "x".repeat(65) }, "invalid win id"],
     [{ themeUsed: "" }, "invalid theme"],
     [{ locale: "" }, "invalid locale"],
   ])("rejects %j", (patch, error) => {
     expect(errorFor(patch)).toBe(error);
+  });
+
+  it("measures win ids in characters, as the database does", () => {
+    expect(errorFor({ winId: "👑".repeat(64) })).toBeNull();
   });
 
   it("rejects a score the band and mistakes cannot produce", () => {

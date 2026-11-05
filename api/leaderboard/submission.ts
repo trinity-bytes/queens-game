@@ -17,6 +17,8 @@ const MAX_GRID = 12;
 const MIN_WIN_ID_LENGTH = 5;
 const MAX_WIN_ID_LENGTH = 64;
 const MAX_LABEL_LENGTH = 64;
+/** The column was an int4 in Postgres; nothing legitimate comes close. */
+const MAX_DIFFICULTY_SCORE = 2_147_483_647;
 
 export interface SolveRecord {
   placements: unknown[];
@@ -69,11 +71,21 @@ const isBand = (value: unknown): value is DifficultyBand =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** SQLite's length() stops at a NUL, so such a string cannot be measured. */
+const hasNul = (value: string): boolean => value.includes("\0");
+
 /** Counts characters, not UTF-16 units, so an emoji is not cut in half. */
 const normaliseName = (value: unknown): string =>
-  typeof value === "string"
+  typeof value === "string" && !hasNul(value)
     ? Array.from(value.trim()).slice(0, MAX_NAME_LENGTH).join("")
     : "";
+
+/** Measured in characters, as the database's length check does. */
+const isWinId = (value: unknown): value is string =>
+  typeof value === "string" &&
+  !hasNul(value) &&
+  Array.from(value).length >= MIN_WIN_ID_LENGTH &&
+  Array.from(value).length <= MAX_WIN_ID_LENGTH;
 
 const counter = (value: unknown): number =>
   Number.isInteger(value) ? Math.max(0, value as number) : 0;
@@ -111,13 +123,7 @@ export function parseSubmission(body: unknown): ParsedSubmission {
 
   if (playerName === "") return fail("invalid name");
 
-  if (
-    typeof winId !== "string" ||
-    winId.length < MIN_WIN_ID_LENGTH ||
-    winId.length > MAX_WIN_ID_LENGTH
-  ) {
-    return fail("invalid win id");
-  }
+  if (!isWinId(winId)) return fail("invalid win id");
 
   // The game clock only ever advances in whole seconds.
   if (
@@ -127,7 +133,12 @@ export function parseSubmission(body: unknown): ParsedSubmission {
     return fail("invalid time");
   }
 
-  if (!isIntegerBetween(movesCount, MIN_MOVES, MAX_MOVES)) {
+  if (!isIntegerBetween(gridSize, MIN_GRID, MAX_GRID)) {
+    return fail("invalid grid size");
+  }
+
+  // Solving a board takes at least one move per queen.
+  if (!isIntegerBetween(movesCount, Math.max(MIN_MOVES, gridSize), MAX_MOVES)) {
     return fail("invalid move count");
   }
 
@@ -139,13 +150,9 @@ export function parseSubmission(body: unknown): ParsedSubmission {
     return fail("invalid mistake count");
   }
 
-  if (!isIntegerBetween(gridSize, MIN_GRID, MAX_GRID)) {
-    return fail("invalid grid size");
-  }
-
   if (!isBand(difficultyBand)) return fail("invalid difficulty band");
 
-  if (!isIntegerBetween(difficultyScore, 0, Number.MAX_SAFE_INTEGER)) {
+  if (!isIntegerBetween(difficultyScore, 0, MAX_DIFFICULTY_SCORE)) {
     return fail("invalid difficulty score");
   }
 

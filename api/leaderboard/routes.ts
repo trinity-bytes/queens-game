@@ -21,11 +21,13 @@ const json = (body: unknown, status = 200, headers?: HeadersInit): Response =>
     headers: { "cache-control": "no-store", ...headers },
   });
 
-function parseLimit(url: URL): number {
-  const limit = Number(url.searchParams.get("limit"));
-  return Number.isInteger(limit) && limit >= 1 && limit <= MAX_LIMIT
-    ? limit
-    : DEFAULT_LIMIT;
+/** Null when a limit was given but is unusable: it is not silently replaced. */
+function parseLimit(url: URL): number | null {
+  const raw = url.searchParams.get("limit");
+  if (raw === null) return DEFAULT_LIMIT;
+
+  const limit = Number(raw);
+  return /^\d+$/.test(raw) && limit >= 1 && limit <= MAX_LIMIT ? limit : null;
 }
 
 function parseJson(text: string): unknown {
@@ -41,6 +43,8 @@ async function listScores(
   repository: LeaderboardRepository,
 ): Promise<Response> {
   const limit = parseLimit(new URL(request.url));
+  if (limit === null) return json({ error: "invalid limit" }, 400);
+
   return json(await repository.topScores(RANKED_GRID_SIZE, limit));
 }
 
@@ -62,7 +66,7 @@ async function submitScore(
     request.headers.get("user-agent")?.slice(0, MAX_USER_AGENT_LENGTH) ?? null;
 
   const id = await repository.save(parsed.value, userAgent);
-  return json({ id }, 201);
+  return json({ id }, id === null ? 200 : 201);
 }
 
 export async function handleLeaderboard(

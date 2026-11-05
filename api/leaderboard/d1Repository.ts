@@ -85,7 +85,7 @@ export function d1Repository(db: D1Database): LeaderboardRepository {
         .bind(submission.winId)
         .first<{ id: string }>();
 
-      return stored?.id ?? id;
+      return stored?.id ?? null;
     },
   };
 }

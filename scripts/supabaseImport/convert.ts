@@ -16,6 +16,9 @@ export interface SupabaseExport {
 
 type Encoder = (value: string | null) => string;
 
+/** The board's bound, from the cleanup trigger in migrations/. */
+const MAX_RUNS = 100;
+
 /** Parses CSV as Supabase writes it. An empty cell is SQL NULL there. */
 export function parseCsv(csv: string): CsvRow[] {
   const records: string[][] = [];
@@ -71,13 +74,16 @@ const integer =
     return value;
   };
 
-/** Postgres prints `2026-03-01 12:30:45.123456+00`; the schema stores ISO. */
+/**
+ * Postgres prints `2026-03-01 12:30:45.123456+00`; the schema stores ISO. The
+ * offset is required, or the result would depend on this machine's time zone.
+ */
 const timestamp: Encoder = (value) => {
   if (value === null) return "NULL";
 
   const iso = value.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00");
   const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) {
+  if (!/(Z|[+-]\d{2}:\d{2})$/.test(iso) || Number.isNaN(parsed.getTime())) {
     throw new Error(`invalid timestamp: "${value}"`);
   }
   return text(parsed.toISOString());
@@ -130,6 +136,13 @@ const SOLVE_LOG_COLUMNS: Record<string, Encoder> = {
 
 /** Parents first: telemetry and solve logs reference leaderboard rows. */
 export function toInsertStatements(source: SupabaseExport): string[] {
+  // The cleanup trigger also runs during the import, so anything past the
+  // bound would be dropped with no error. Better to stop and look.
+  const runs = parseCsv(source.leaderboard).length;
+  if (runs > MAX_RUNS) {
+    throw new Error(`expected at most ${MAX_RUNS} runs, got ${runs}`);
+  }
+
   return [
     ...inserts("leaderboard", LEADERBOARD_COLUMNS, source.leaderboard),
     ...inserts("leaderboard_telemetry", TELEMETRY_COLUMNS, source.telemetry ?? ""),
