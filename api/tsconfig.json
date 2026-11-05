@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "isolatedModules": true
   },
-  "include": ["./**/*.ts", "../src/domain/**/*.ts"]
+  "include": ["./**/*.ts", "../src/domain/**/*.ts", "../scripts/supabaseImport/*.ts"]
 }
