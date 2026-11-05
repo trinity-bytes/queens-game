@@ -7,7 +7,7 @@ import { useEffect } from "react";
  *
  * Development is deliberately excluded: a worker caching assets in front of
  * hot reload turns every refresh into a coin flip on which build you are
- * looking at. To exercise it, run a production build and `npm start`.
+ * looking at. To exercise it, use `npm run preview`.
  */
 export default function ServiceWorkerRegistrar() {
   useEffect(() => {

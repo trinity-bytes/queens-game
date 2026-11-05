@@ -1,24 +1,15 @@
-import { supabase } from "./supabase";
 import type { Locale } from "./i18n";
 import type { SolveLog } from "@/store/gameStore";
 import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
 
 /**
- * Data access for the leaderboard.
+ * Client for the leaderboard API (see api/leaderboard).
  *
- * Reads are plain selects over the public columns. Writes go through the
- * submit_score() database function, which is the only thing allowed to insert:
- * the client has no INSERT grant on the table. Every field is re-validated
- * server-side there, so nothing here should be treated as a check — it is
- * transport, not enforcement.
+ * The API re-validates every field and recomputes the score, so nothing here
+ * should be treated as a check: it is transport, not enforcement.
  */
 
-/**
- * Columns the UI actually renders. Telemetry (user agent, device type) lives
- * in a separate table the client cannot read.
- */
-const PUBLIC_COLUMNS =
-  "id, player_name, score, time_ms, mistakes, moves_count, grid_size, created_at";
+const ENDPOINT = "/api/leaderboard";
 
 export interface LeaderboardEntry {
   id: string;
@@ -44,7 +35,7 @@ export interface ScoreSubmission {
   locale: Locale;
   appVersion: string;
   /**
-   * The puzzle's rating. Not decoration: submit_score recomputes the score
+   * The puzzle's rating. Not decoration: the API recomputes the score
    * from the band and the mistake count and rejects anything that disagrees,
    * so this is what makes the submission checkable at all.
    */
@@ -54,37 +45,19 @@ export interface ScoreSubmission {
   solveLog: SolveLog;
 }
 
+async function failureReason(response: Response): Promise<string> {
+  const body = (await response.json().catch(() => null)) as {
+    error?: string;
+  } | null;
+  return body?.error ?? `HTTP ${response.status}`;
+}
+
 export async function fetchTopScores(
   limit: number,
 ): Promise<LeaderboardEntry[]> {
-  const { data, error } = await supabase
-    .from("leaderboard")
-    .select(PUBLIC_COLUMNS)
-    .eq("grid_size", 9)
-    .order("score", { ascending: false })
-    .order("time_ms", { ascending: true })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data as LeaderboardEntry[] | null) ?? [];
-}
-
-/** Subscribes to new scores. Returns the unsubscribe function. */
-export function subscribeToNewScores(
-  onInsert: (entry: LeaderboardEntry) => void,
-): () => void {
-  const channel = supabase
-    .channel("public:leaderboard")
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "leaderboard" },
-      (payload) => onInsert(payload.new as LeaderboardEntry),
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
+  const response = await fetch(`${ENDPOINT}?limit=${limit}`);
+  if (!response.ok) throw new Error(await failureReason(response));
+  return response.json();
 }
 
 /**
@@ -92,26 +65,14 @@ export function subscribeToNewScores(
  * returns the original row instead of creating a second one.
  */
 export async function submitScore(entry: ScoreSubmission): Promise<void> {
-  const { error } = await supabase.rpc("submit_score", {
-    p_win_id: entry.winId,
-    p_player_name: entry.playerName,
-    p_score: entry.score,
-    p_time_ms: entry.timeMs,
-    p_mistakes: entry.mistakes,
-    p_moves_count: entry.movesCount,
-    p_theme_used: entry.themeUsed,
-    p_locale: entry.locale,
-    p_difficulty_band: entry.difficultyBand,
-    p_difficulty_score: entry.difficultyScore,
-    p_grid_size: entry.gridSize,
-    p_placements: entry.solveLog.placements,
-    p_x_marks_placed: entry.solveLog.xMarksPlaced,
-    p_peak_x_marks: entry.solveLog.peakXMarks,
-    p_abandoned: entry.solveLog.puzzlesAbandoned,
-    p_user_agent: navigator.userAgent,
-    p_device_type: window.innerWidth < 768 ? "mobile" : "desktop",
-    p_app_version: entry.appVersion,
+  const response = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      ...entry,
+      deviceType: window.innerWidth < 768 ? "mobile" : "desktop",
+    }),
   });
 
-  if (error) throw error;
+  if (!response.ok) throw new Error(await failureReason(response));
 }

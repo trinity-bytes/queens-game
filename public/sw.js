@@ -7,7 +7,7 @@
 //
 // Bump CACHE on any change to this file. The activate handler deletes every
 // cache that does not match, which is what actually retires the old one.
-const CACHE = "queens-v1";
+const CACHE = "queens-v2";
 
 // Fixed-path assets worth holding before the first offline load. Hashed build
 // output is deliberately absent: its names only exist at build time, so it is
@@ -49,13 +49,15 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
-  // Only GETs are cacheable, and only our own origin. Supabase in particular
-  // must never be served from cache: a stale leaderboard is worse than none,
-  // and score submissions are POSTs that have to reach the database.
+  // Only GETs are cacheable, and only our own origin.
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // The API shares this origin but must never be served from cache: a stale
+  // leaderboard is worse than none, and polling would just re-read the copy.
+  if (url.pathname.startsWith("/api/")) return;
 
   // React Server Component payloads are tied to the deployment that produced
   // them. Serving a stale one triggers a version-skew reload, so they always

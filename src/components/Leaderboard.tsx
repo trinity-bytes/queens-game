@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  fetchTopScores,
-  subscribeToNewScores,
-  type LeaderboardEntry,
-} from "@/lib/leaderboard";
+import { fetchTopScores, type LeaderboardEntry } from "@/lib/leaderboard";
+import { pollWhileVisible } from "@/lib/poll";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 import { PODIUM_MEDALS } from "@/lib/designTokens";
+
+/** New scores are rare, so a board half a minute old is still a live board. */
+const REFRESH_INTERVAL_MS = 30_000;
 
 interface LeaderboardProps {
   fullPage?: boolean;
@@ -29,28 +29,27 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   const limit = fullPage ? 50 : 10;
 
   useEffect(() => {
+    let active = true;
+
     const loadLeaderboard = async () => {
       try {
-        setEntries(await fetchTopScores(limit));
+        const top = await fetchTopScores(limit);
+        if (active) setEntries(top);
       } catch (error) {
+        // A failed refresh keeps the board already on screen.
         console.error("Error fetching leaderboard:", error);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     loadLeaderboard();
+    const stopPolling = pollWhileVisible(loadLeaderboard, REFRESH_INTERVAL_MS);
 
-    return subscribeToNewScores((entry) => {
-      setEntries((current) =>
-        [...current, entry]
-          .sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.time_ms - b.time_ms;
-          })
-          .slice(0, limit),
-      );
-    });
+    return () => {
+      active = false;
+      stopPolling();
+    };
   }, [limit]);
 
   if (loading) {
