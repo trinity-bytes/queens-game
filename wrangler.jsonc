@@ -14,8 +14,7 @@
     {
       "binding": "DB",
       "database_name": "queens",
-      // Replace with the id printed by `wrangler d1 create queens`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "e73a3ed6-c598-4ecb-b0b7-6d72d4694069",
       "migrations_dir": "migrations"
     }
   ]
