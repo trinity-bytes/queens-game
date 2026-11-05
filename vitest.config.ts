@@ -16,7 +16,7 @@ export default defineConfig(async () => {
       }),
     ],
     test: {
-      include: ["api/**/*.test.ts", "src/**/*.test.ts", "scripts/**/*.test.ts"],
+      include: ["api/**/*.test.ts", "src/**/*.test.ts"],
       setupFiles: ["./api/test/applyMigrations.ts"],
     },
   };

@@ -44,7 +44,6 @@
     "docs",
     // Runs on Workers, not in the browser: its own tsconfig carries those types.
     "api",
-    "out",
-    "scripts/supabaseImport/*.test.ts"
+    "out"
   ]
 }

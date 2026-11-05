@@ -43,13 +43,3 @@ Then, for each release:
 ```bash
 npm run deploy    # build, apply D1 migrations, deploy the Worker
 ```
-
-## Importing data from Supabase
-
-1. In Supabase, export `leaderboard`, `leaderboard_telemetry` and `leaderboard_solve_log` as CSV into one folder, named after each table.
-2. Convert and load them:
-
-```bash
-node --experimental-strip-types scripts/import-supabase.ts <folder> import.sql
-npx wrangler d1 execute queens --remote --file=import.sql
-```

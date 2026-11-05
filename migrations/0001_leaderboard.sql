@@ -1,4 +1,4 @@
--- Leaderboard schema, ported from supabase/*.sql.
+-- Leaderboard schema.
 --
 -- The Worker validates every submission first, so these constraints are the
 -- second line: they hold even if a future code path forgets to go through it.
@@ -65,7 +65,7 @@ CREATE TABLE leaderboard_solve_log (
 );
 
 -- The board keeps the best 100 runs. A trigger rather than application code,
--- so the bound holds for every writer, the data import included.
+-- so the bound holds for every writer.
 CREATE TRIGGER trigger_cleanup_leaderboard
 AFTER INSERT ON leaderboard
 BEGIN
