@@ -43,6 +43,8 @@
     "node_modules",
     "docs",
     // Runs on Workers, not in the browser: its own tsconfig carries those types.
-    "api"
+    "api",
+    "out",
+    "scripts/supabaseImport/*.test.ts"
   ]
 }

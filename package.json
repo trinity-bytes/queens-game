@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit && tsc --noEmit -p api",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev:api": "mkdir -p out && wrangler d1 migrations apply queens --local && wrangler dev --port 8787",
+    "deploy": "npm run build && wrangler d1 migrations apply queens --remote && wrangler deploy"
   },
   "keywords": [],
   "author": "",
