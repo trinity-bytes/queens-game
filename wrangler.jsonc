@@ -3,6 +3,9 @@
   "name": "queens",
   "main": "api/index.ts",
   "compatibility_date": "2026-11-01",
+  "routes": [
+    { "pattern": "queens.jahattrinidad.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./out",
     "not_found_handling": "404-page",
