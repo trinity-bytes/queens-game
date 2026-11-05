@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: [main]
+  # Redeploys the current main by hand, from the Actions tab or `gh workflow run`.
+  workflow_dispatch:
 
 # A newer release waits for the one in progress instead of cancelling it, so a
 # deploy is never cut off between applying migrations and shipping the Worker.
