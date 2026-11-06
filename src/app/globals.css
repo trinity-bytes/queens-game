@@ -328,11 +328,182 @@ body {
   }
 }
 
-/* ===== Game layout ===== */
+/* ===== Game layout =====
+   Portrait stacks everything and centres the board in whatever height is left.
+   Wider screens put the controls beside the board. The board is always sized
+   from the smaller side, so the game fits with no scroll. */
+.game-shell {
+  --gap: 0.75rem;
+  --panel-width: 330px;
+  --status-height: 2.75rem;
+  display: grid;
+  height: 100dvh;
+  max-width: 36rem;
+  margin-inline: auto;
+  gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "header" "tip" "stage" "dock";
+}
+
+.game-header {
+  grid-area: header;
+}
+.game-tip {
+  grid-area: tip;
+}
+.game-dock {
+  grid-area: dock;
+}
+.game-panel {
+  display: contents;
+}
+.game-panel .game-status {
+  display: none;
+}
+
+.game-stage {
+  grid-area: stage;
+  container-type: size;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+}
+
+.board-frame,
+.game-stage .game-status {
+  width: min(100cqw, 100cqh - var(--status-height));
+  flex: none;
+}
 .board-frame {
-  width: 100%;
-  max-width: 28rem;
   aspect-ratio: 1;
+}
+
+.game-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+/* On the victory screen the board stays at the top to leave room for the sheet. */
+.game-shell[data-status="won"] {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "header" "stage";
+}
+.game-shell[data-status="won"] .game-tip,
+.game-shell[data-status="won"] .game-dock,
+.game-shell[data-status="won"] .game-status {
+  display: none;
+}
+.game-shell[data-status="won"] .game-stage {
+  justify-content: flex-start;
+}
+
+@media (min-aspect-ratio: 1/1) {
+  .game-shell {
+    --status-height: 0px;
+    --board-side: min(
+      720px,
+      100dvh - 2 * var(--page-gutter) - env(safe-area-inset-top) -
+        env(safe-area-inset-bottom),
+      100dvw - var(--panel-width) - var(--gap) - 2 * var(--page-gutter) -
+        env(safe-area-inset-left) - env(safe-area-inset-right)
+    );
+    max-width: none;
+    gap: 1.25rem;
+    justify-content: center;
+    align-content: center;
+    grid-template-columns: var(--board-side) minmax(0, var(--panel-width));
+    grid-template-rows: var(--board-side);
+    grid-template-areas: "stage panel";
+  }
+
+  .game-shell[data-status="won"] {
+    grid-template-rows: var(--board-side);
+    grid-template-areas: "stage panel";
+  }
+
+  .game-stage .game-status {
+    display: none;
+  }
+
+  .game-panel {
+    grid-area: panel;
+    display: grid;
+    min-height: 0;
+    gap: var(--gap);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "header header"
+      "tip tip"
+      "pill link"
+      "dock dock";
+  }
+  .game-panel .game-status {
+    display: contents;
+  }
+  .game-status__pill {
+    grid-area: pill;
+    justify-self: start;
+    align-self: center;
+  }
+  .game-status__link {
+    grid-area: link;
+    align-self: center;
+  }
+  .game-dock {
+    align-self: end;
+  }
+
+  .game-shell[data-status="won"] .game-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "header" "sheet";
+  }
+}
+
+@media (min-aspect-ratio: 1/1) and (max-height: 500px) {
+  .game-shell {
+    --page-gutter: 1rem;
+  }
+}
+
+/* With height to spare the controls sit together at the top of the panel. */
+@media (min-aspect-ratio: 1/1) and (min-height: 600px) {
+  .game-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: start;
+    grid-template-areas: "header" "tip" "pill" "dock" "link";
+  }
+  .game-dock {
+    align-self: auto;
+  }
+}
+
+/* ===== Native modal dialogs ===== */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(18, 58, 94, 0.35);
+}
+.sheet-dialog {
+  width: min(100dvw - 2rem, 24rem);
+  margin: auto auto calc(env(safe-area-inset-bottom) + 1rem);
+}
+@media (min-aspect-ratio: 1/1) {
+  .sheet-dialog {
+    margin: auto;
+  }
 }
 
 /* Region patterns for color-blind users (subtle textures over pastel fills) */

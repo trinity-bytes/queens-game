@@ -90,7 +90,7 @@ export default function HamburgerMenu({
         }}
         className={
           inHeader
-            ? "w-[38px] h-[38px] -ml-1.5 rounded-xl flex items-center justify-center hover:bg-icon-bg transition-colors active:opacity-50"
+            ? "w-11 h-11 -ml-1 rounded-xl flex items-center justify-center hover:bg-icon-bg transition-colors active:opacity-50"
             : "w-11 h-11 rounded-2xl bg-card shadow-[0_6px_18px_rgba(18,58,94,0.1)] flex items-center justify-center hover:brightness-95 transition-all"
         }
         aria-label={isOpen ? t(locale, "menu.close") : t(locale, "menu.open")}

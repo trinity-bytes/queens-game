@@ -3,7 +3,11 @@ import { getCurrentTheme } from "@/lib/themeSelector";
 import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
 import { setSoundEnabled } from "@/lib/sound";
 import { puzzleValue, scoreFor } from "@/domain/scoring";
-import { settleMove, type PendingQueen } from "@/domain/mistakes";
+import {
+  settleMove,
+  WHOLE_BOARD,
+  type PendingQueen,
+} from "@/domain/mistakes";
 import {
   summarizeDiagnostics,
   type GenerationDiagnostics,
@@ -63,6 +67,16 @@ export interface SolveLog {
   puzzlesAbandoned: number;
 }
 
+/** One step Undo can take back. */
+export interface Move {
+  /** The cell the move acted on, or WHOLE_BOARD. */
+  index: number;
+  /** The board as it stood before the move. */
+  cells: CellState[];
+  /** The unsettled queen this move took off, which Undo puts back unsettled. */
+  passed: PendingQueen | null;
+}
+
 interface GameState {
   gridSize: number;
   regions: number[];
@@ -73,6 +87,7 @@ interface GameState {
   mistakes: number;
   /** The queen placed by the last move, which that move's successor settles. */
   pendingQueen: PendingQueen | null;
+  history: Move[];
   xPenalties: number;
   score: number;
   grossScore: number;
@@ -103,7 +118,8 @@ interface GameState {
   generatePuzzle: () => void;
   preloadNextPuzzle: () => void;
   toggleCell: (index: number) => void;
-  resetBoard: () => void;
+  undo: () => void;
+  clearBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
   markCurrentWinSaved: () => void;
@@ -339,6 +355,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   timer: 0,
   mistakes: 0,
   pendingQueen: null,
+  history: [],
   xPenalties: 0,
   score: 0,
   grossScore: 0,
@@ -401,6 +418,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       timer: 0,
       mistakes: 0,
       pendingQueen: null,
+      history: [],
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
@@ -454,6 +472,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       gridSize,
       mistakes,
       pendingQueen,
+      history,
       scoredQueens,
       solveLog,
       lastCorrectMoveTime,
@@ -512,6 +531,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       cells: newCells,
       mistakes: tally.mistakes,
       pendingQueen: tally.pending,
+      history: [
+        ...history,
+        { index, cells, passed: passedThrough ? pendingQueen : null },
+      ],
       scoredQueens: newScoredQueens,
       solveLog: newLog,
       lastCorrectMoveTime: newLastCorrectMoveTime,
@@ -521,24 +544,62 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().checkWinCondition();
   },
 
-  resetBoard: () => {
-    const { cells } = get();
+  /**
+   * Takes back the last change. It is a move like any other: the API requires
+   * every placement to fit within movesCount, so the count only ever grows, and
+   * an error already settled stays on the record.
+   */
+  undo: () => {
+    const { history, status, mistakes, pendingQueen, solveLog, movesCount, timer } =
+      get();
+    const last = history[history.length - 1];
+    if (status !== "playing" || !last) return;
+
+    const { tally, passedThrough } = settleMove(
+      { mistakes, pending: pendingQueen },
+      last.index,
+      null,
+    );
+
+    const placements = passedThrough
+      ? solveLog.placements.slice(0, -1)
+      : solveLog.placements;
+
+    set({
+      cells: last.cells,
+      history: history.slice(0, -1),
+      mistakes: tally.mistakes,
+      pendingQueen: last.passed ?? tally.pending,
+      solveLog: {
+        ...solveLog,
+        placements: last.passed
+          ? [...placements, { atMs: timer, correct: last.passed.correct }]
+          : placements,
+      },
+      movesCount: movesCount + 1,
+      lastMoveTime: timer,
+    });
+  },
+
+  /** Empties the board. The clock keeps running, so it cannot reset a bad time. */
+  clearBoard: () => {
+    const { cells, status, mistakes, pendingQueen, history, movesCount, timer } =
+      get();
+    if (status !== "playing" || cells.every((cell) => cell === 0)) return;
+
+    const { tally } = settleMove(
+      { mistakes, pending: pendingQueen },
+      WHOLE_BOARD,
+      null,
+    );
+
     set({
       cells: new Array(cells.length).fill(0),
-      timer: 0,
-      mistakes: 0,
-      pendingQueen: null,
-      score: 0,
-      grossScore: 0,
-      totalPenalties: 0,
-      scoredQueens: [],
-      solveLog: emptySolveLog(),
-      lastCorrectMoveTime: 0,
-      lastMoveTime: 0,
-      movesCount: 0,
-      status: "playing",
-      currentWinId: null,
-      savedWinId: null,
+      history: [...history, { index: WHOLE_BOARD, cells, passed: null }],
+      mistakes: tally.mistakes,
+      pendingQueen: tally.pending,
+      movesCount: movesCount + 1,
+      lastMoveTime: timer,
     });
   },
 

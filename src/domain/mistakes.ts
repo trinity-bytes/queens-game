@@ -29,6 +29,9 @@ export interface SettledMove {
 
 export const NO_MISTAKES: MistakeTally = { mistakes: 0, pending: null };
 
+/** A move on the whole board, which settles a pending queen like any other. */
+export const WHOLE_BOARD = -1;
+
 /**
  * @param index The cell this move acts on.
  * @param placed The queen this move puts on that cell, or null if it puts none.

@@ -27,6 +27,8 @@ beforeEach(() => {
     difficulty: { band: "gentle", lookaheads: 0 } as never,
     mistakes: 0,
     pendingQueen: null,
+    history: [],
+    timer: 0,
     movesCount: 0,
     solveLog: {
       placements: [],
@@ -71,5 +73,120 @@ describe("toggleCell mistakes", () => {
     expect(status).toBe("won");
     expect(mistakes).toBe(1);
     expect(score).toBe(Math.round(grossScore * 0.92));
+  });
+});
+
+describe("undo", () => {
+  const undo = () => useGameStore.getState().undo();
+
+  it("reverts the last cell change and counts as a move", () => {
+    tap(OTHER_CELL);
+    undo();
+
+    const { cells, movesCount, timer } = useGameStore.getState();
+    expect(cells[OTHER_CELL]).toBe(0);
+    expect(movesCount).toBe(2);
+    expect(timer).toBe(0);
+  });
+
+  it("takes a wrong queen back for free before it is settled", () => {
+    tap(WRONG_CELL, 2);
+    undo();
+    tap(OTHER_CELL);
+
+    const { cells, mistakes, solveLog } = useGameStore.getState();
+    expect(cells[WRONG_CELL]).toBe(1);
+    expect(mistakes).toBe(0);
+    expect(solveLog.placements).toEqual([]);
+  });
+
+  it("never removes an error already committed", () => {
+    tap(WRONG_CELL, 2);
+    tap(OTHER_CELL);
+    undo();
+    undo();
+
+    const { cells, mistakes } = useGameStore.getState();
+    expect(cells[WRONG_CELL]).toBe(1);
+    expect(mistakes).toBe(1);
+  });
+
+  it("brings back a queen that passed through, still unsettled", () => {
+    tap(WRONG_CELL, 3);
+    undo();
+
+    expect(useGameStore.getState().cells[WRONG_CELL]).toBe(2);
+    expect(useGameStore.getState().solveLog.placements).toHaveLength(1);
+
+    tap(OTHER_CELL);
+    expect(useGameStore.getState().mistakes).toBe(1);
+  });
+
+  it("does not charge twice for a settled queen brought back", () => {
+    tap(WRONG_CELL, 2);
+    tap(OTHER_CELL);
+    tap(WRONG_CELL);
+    undo();
+    tap(OTHER_CELL);
+
+    expect(useGameStore.getState().cells[WRONG_CELL]).toBe(2);
+    expect(useGameStore.getState().mistakes).toBe(1);
+  });
+
+  it("does nothing with no history", () => {
+    undo();
+
+    expect(useGameStore.getState().movesCount).toBe(0);
+  });
+
+  it("keeps placements within the move count the API checks", () => {
+    tap(WRONG_CELL, 3);
+    undo();
+    undo();
+    undo();
+
+    const { movesCount, solveLog } = useGameStore.getState();
+    expect(solveLog.placements.length).toBeLessThanOrEqual(movesCount);
+    expect(movesCount).toBe(6);
+  });
+});
+
+describe("clearBoard", () => {
+  const clear = () => useGameStore.getState().clearBoard();
+
+  it("empties the board and keeps the timer and the count of moves", () => {
+    useGameStore.setState({ timer: 5000 });
+    tap(WRONG_CELL);
+    tap(OTHER_CELL, 2);
+    clear();
+
+    const { cells, timer, movesCount } = useGameStore.getState();
+    expect(cells.every((cell) => cell === 0)).toBe(true);
+    expect(timer).toBe(5000);
+    expect(movesCount).toBe(4);
+  });
+
+  it("charges a wrong queen standing when the board is cleared", () => {
+    tap(WRONG_CELL, 2);
+    clear();
+
+    expect(useGameStore.getState().mistakes).toBe(1);
+  });
+
+  it("can be undone without charging again", () => {
+    tap(WRONG_CELL, 2);
+    clear();
+    useGameStore.getState().undo();
+    tap(OTHER_CELL);
+
+    const { cells, mistakes } = useGameStore.getState();
+    expect(cells[WRONG_CELL]).toBe(2);
+    expect(mistakes).toBe(1);
+  });
+
+  it("does nothing on an empty board", () => {
+    clear();
+
+    expect(useGameStore.getState().movesCount).toBe(0);
   });
 });

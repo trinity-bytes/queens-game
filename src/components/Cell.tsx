@@ -142,13 +142,12 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
       aria-label={ariaLabel}
       aria-pressed={state === 2}
       tabIndex={index === 0 ? 0 : -1}
-      className={`relative w-full aspect-square flex items-center justify-center cursor-pointer select-none transition-colors duration-200 hover:brightness-95 active:scale-90 focus-visible:z-30 ${isConflicting ? "z-20" : ""} ${cornerClass} ${patternClass}`}
+      className={`relative w-full aspect-square flex items-center justify-center cursor-pointer select-none touch-manipulation transition-colors duration-200 hover:brightness-95 active:scale-90 focus-visible:z-30 ${isConflicting ? "z-20" : ""} ${cornerClass} ${patternClass}`}
       style={{
         backgroundColor: bgColor,
         border: `1px solid ${edge}`,
       }}
-      onPointerDown={(e) => {
-        e.preventDefault();
+      onClick={() => {
         playTap();
         toggleCell(index);
       }}
