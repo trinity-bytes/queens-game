@@ -506,6 +506,21 @@ dialog::backdrop {
   }
 }
 
+/* The walkthrough replaces the page, so the backdrop is the page's own colour. */
+.first-run {
+  width: min(100dvw - 2rem, 22rem);
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  overflow: auto;
+}
+.first-run::backdrop {
+  background: var(--theme-bg);
+}
+.first-run__board {
+  width: min(100%, 36dvh);
+  margin-inline: auto;
+}
+
 /* Region patterns for color-blind users (subtle textures over pastel fills) */
 .region-pattern-0 {
   background-image: url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='4' r='1' fill='rgba(0,0,0,0.08)'/%3E%3C/svg%3E");

@@ -108,6 +108,8 @@ interface GameState {
   soundEnabled: boolean;
   preloadedPuzzle: PreloadedPuzzle | null;
   isPreloading: boolean;
+  /** The walkthrough is up, so the clock has not started. */
+  firstRunOpen: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
@@ -123,6 +125,7 @@ interface GameState {
   tickTimer: () => void;
   checkWinCondition: () => void;
   markCurrentWinSaved: () => void;
+  closeFirstRun: () => void;
 }
 
 const ABANDONED_STORAGE_KEY = "puzzles-abandoned";
@@ -141,6 +144,13 @@ const emptySolveLog = (): SolveLog => ({
   peakXMarks: 0,
   puzzlesAbandoned: getAbandonedCount(),
 });
+
+const FIRST_RUN_STORAGE_KEY = "first-run-done";
+
+const getInitialFirstRun = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(FIRST_RUN_STORAGE_KEY) === null;
+};
 
 const SOUND_STORAGE_KEY = "sound-enabled";
 
@@ -374,6 +384,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   soundEnabled: initialSound,
   preloadedPuzzle: null,
   isPreloading: false,
+  firstRunOpen: getInitialFirstRun(),
 
   setGridSize: (size) => {
     set({ gridSize: size, preloadedPuzzle: null }); // Invalidate preloaded puzzle if size changes
@@ -614,7 +625,8 @@ export const useGameStore = create<GameState>((set, get) => ({
    * for.
    */
   tickTimer: () => {
-    if (get().status !== "playing") return;
+    const { status, firstRunOpen } = get();
+    if (status !== "playing" || firstRunOpen) return;
     set((state) => ({ timer: state.timer + 1000 }));
   },
 
@@ -682,5 +694,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { currentWinId } = get();
     if (!currentWinId) return;
     set({ savedWinId: currentWinId });
+  },
+
+  closeFirstRun: () => {
+    localStorage.setItem(FIRST_RUN_STORAGE_KEY, "1");
+    set({ firstRunOpen: false });
   },
 }));

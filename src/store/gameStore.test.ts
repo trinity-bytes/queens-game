@@ -28,6 +28,7 @@ beforeEach(() => {
     mistakes: 0,
     pendingQueen: null,
     history: [],
+    firstRunOpen: false,
     timer: 0,
     movesCount: 0,
     solveLog: {
@@ -188,5 +189,26 @@ describe("clearBoard", () => {
     clear();
 
     expect(useGameStore.getState().movesCount).toBe(0);
+  });
+});
+
+describe("first run", () => {
+  it("holds the clock until the walkthrough closes", () => {
+    useGameStore.setState({ firstRunOpen: true });
+    useGameStore.getState().tickTimer();
+    expect(useGameStore.getState().timer).toBe(0);
+
+    useGameStore.getState().closeFirstRun();
+    useGameStore.getState().tickTimer();
+    expect(useGameStore.getState().timer).toBe(1000);
+  });
+
+  it("remembers that it was seen", () => {
+    const setItem = vi.fn();
+    vi.stubGlobal("localStorage", { setItem });
+
+    useGameStore.getState().closeFirstRun();
+
+    expect(setItem).toHaveBeenCalledWith("first-run-done", "1");
   });
 });

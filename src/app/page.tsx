@@ -2,6 +2,7 @@
 
 import Header from "@/components/Header";
 import Board from "@/components/Board";
+import FirstRun from "@/components/FirstRun";
 import GameDock from "@/components/GameDock";
 import GameStatus from "@/components/GameStatus";
 import MessageStrip from "@/components/MessageStrip";
@@ -10,12 +11,16 @@ import LiveAnnouncer from "@/components/LiveAnnouncer";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import { useGameStore } from "@/store/gameStore";
 import { useEffect } from "react";
+import { useHydrated } from "@/lib/useHydrated";
 
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 export default function Home() {
   const generatePuzzle = useGameStore((state) => state.generatePuzzle);
   const status = useGameStore((state) => state.status);
+  const firstRunOpen = useGameStore((state) => state.firstRunOpen);
+  const closeFirstRun = useGameStore((state) => state.closeFirstRun);
+  const hydrated = useHydrated();
 
   useEffect(() => {
     const shouldReset =
@@ -45,6 +50,9 @@ export default function Home() {
         <GameDock />
         <VictoryModal />
       </div>
+      {hydrated && firstRunOpen && (
+        <FirstRun onSkip={closeFirstRun} onPlay={closeFirstRun} />
+      )}
     </main>
   );
 }
