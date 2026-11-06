@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { THEMES } from "./themeSelector";
 
 type FetchListener = (event: {
   request: { method: string; url: string; mode: string };
@@ -6,17 +7,29 @@ type FetchListener = (event: {
   waitUntil: (work: unknown) => void;
 }) => void;
 
+type InstallListener = (event: { waitUntil: (work: unknown) => void }) => void;
+
 let onFetch: FetchListener;
+let onInstall: InstallListener;
+const precached: string[] = [];
 
 beforeAll(async () => {
   vi.stubGlobal("self", {
     location: { origin: "https://queens.test" },
-    addEventListener: (type: string, listener: FetchListener) => {
-      if (type === "fetch") onFetch = listener;
+    skipWaiting: async () => {},
+    addEventListener: (type: string, listener: unknown) => {
+      if (type === "fetch") onFetch = listener as FetchListener;
+      if (type === "install") onInstall = listener as InstallListener;
     },
   });
   vi.stubGlobal("caches", {
-    open: async () => ({ match: async () => "cached", put: () => {} }),
+    open: async () => ({
+      match: async () => "cached",
+      put: () => {},
+      add: async (path: string) => {
+        precached.push(path);
+      },
+    }),
   });
   vi.stubGlobal("fetch", async () => new Response("network"));
   // @ts-expect-error plain script outside the module graph
@@ -42,6 +55,20 @@ const intercepts = (path: string) => {
 };
 
 describe("service worker", () => {
+  it("holds every figure at install, so a theme never first appears offline", async () => {
+    let installed: unknown;
+    onInstall({ waitUntil: (work) => (installed = work) });
+    await installed;
+
+    expect(precached).toEqual(
+      expect.arrayContaining([
+        ...THEMES.map((theme) => `/assets/figures/${theme}.png`),
+        "/assets/figures/queen.png",
+        "/assets/figures/x-mark.png",
+      ]),
+    );
+  });
+
   it("leaves the API to the network, so polling never reads a stale board", () => {
     expect(intercepts("/api/leaderboard?limit=50")).toBe(false);
   });

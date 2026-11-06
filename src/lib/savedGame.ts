@@ -25,9 +25,6 @@ export interface SavedGame {
   pendingQueen: PendingQueen | null;
   history: Move[];
   movesCount: number;
-  scoredQueens: number[];
-  lastCorrectMoveTime: number;
-  lastMoveTime: number;
   solveLog: SolveLog;
 }
 

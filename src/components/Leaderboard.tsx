@@ -1,3 +1,4 @@
+import { formatTime } from "@/lib/formatTime";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
@@ -12,13 +13,6 @@ const REFRESH_INTERVAL_MS = 30_000;
 
 interface LeaderboardProps {
   fullPage?: boolean;
-}
-
-function formatTime(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
