@@ -1,7 +1,7 @@
 {
   "name": "Queens 4 My Queen",
   "short_name": "Queens 4 Me",
-  "description": "Un juego de puzzles especial para mi reina",
+  "description": "Coloca una reina por fila, columna y región sin que se toquen. Un puzzle de lógica para jugar gratis en el navegador, con tabla de líderes.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f0f9ff",

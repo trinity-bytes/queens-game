@@ -399,7 +399,8 @@ const VICTORY_MESSAGES: Record<Locale, Record<ThemeKey, string[]>> = {
 
 const MESSAGES: Record<Locale, Record<string, string>> = {
   es: {
-    "app.description": "Un rompecabezas especial para mi reina",
+    "app.description":
+      "Coloca una reina por fila, columna y región sin que se toquen. Un puzzle de lógica para jugar gratis en el navegador, con tabla de líderes.",
     "menu.open": "Abrir menú",
     "menu.close": "Cerrar menú",
     "menu.howToPlay": "Cómo Jugar",
@@ -551,7 +552,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
       "Los puntajes siguen a salvo. Revisa tu conexión e inténtalo otra vez.",
   },
   en: {
-    "app.description": "A special puzzle game for my queen",
+    "app.description":
+      "Place one queen per row, column and region without them touching. A free logic puzzle to play in your browser, with a leaderboard.",
     "menu.open": "Open menu",
     "menu.close": "Close menu",
     "menu.howToPlay": "How to Play",
@@ -701,7 +703,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
       "The scores are safe. Check your connection and try again.",
   },
   ko: {
-    "app.description": "나의 여왕을 위한 특별한 퍼즐 게임",
+    "app.description":
+      "행, 열, 영역마다 여왕을 하나씩, 서로 닿지 않게 놓으세요. 브라우저에서 무료로 즐기는 논리 퍼즐이며 리더보드도 있습니다.",
     "menu.open": "메뉴 열기",
     "menu.close": "메뉴 닫기",
     "menu.howToPlay": "게임 방법",
@@ -845,7 +848,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "leaderboard.errorText": "점수는 안전합니다. 연결을 확인하고 다시 시도하세요.",
   },
   "zh-CN": {
-    "app.description": "为我的女王特别制作的解谜游戏",
+    "app.description":
+      "在每行、每列和每个区域各放一位女王,且互不相邻。可在浏览器中免费游玩的逻辑解谜游戏,并设有排行榜。",
     "menu.open": "打开菜单",
     "menu.close": "关闭菜单",
     "menu.howToPlay": "玩法说明",
@@ -985,7 +989,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "leaderboard.errorText": "分数都还在。请检查网络后重试。",
   },
   pt: {
-    "app.description": "Um jogo de puzzle especial para minha rainha",
+    "app.description":
+      "Coloque uma rainha por linha, coluna e região sem que se toquem. Um puzzle de lógica para jogar grátis no navegador, com tabela de classificação.",
     "menu.open": "Abrir menu",
     "menu.close": "Fechar menu",
     "menu.howToPlay": "Como Jogar",
@@ -1137,7 +1142,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
       "As pontuações estão a salvo. Verifique sua conexão e tente de novo.",
   },
   tr: {
-    "app.description": "Kraliçem için özel bir bulmaca oyunu",
+    "app.description":
+      "Her satıra, sütuna ve bölgeye, birbirine değmeden birer kraliçe yerleştir. Tarayıcıda ücretsiz oynanan, lider tablolu bir mantık bulmacası.",
     "menu.open": "Menüyü aç",
     "menu.close": "Menüyü kapat",
     "menu.howToPlay": "Nasıl Oynanır",
