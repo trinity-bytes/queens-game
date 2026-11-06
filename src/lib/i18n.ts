@@ -449,11 +449,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.save": "Guardar",
     "victory.saving": "Guardando...",
     "victory.saved": "¡Récord guardado!",
-    "victory.unknown": "Desconocido",
     "victory.playAgain": "Jugar de nuevo",
     "victory.viewLeaderboard": "Ver Tabla de Líderes",
-    "victory.saveError":
-      "Hubo un error al guardar tu récord. Intenta de nuevo.",
     "leaderboard.loading": "Cargando tabla de clasificación",
     "leaderboard.loadingBest": "Cargando mejores tiempos…",
     "leaderboard.section": "Tabla de clasificación",
@@ -525,6 +522,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "cell.stateX": "marcada con X",
     "cell.stateEmpty": "vacía",
     "cell.aria": "Fila {row}, Columna {col}, región {region}, {state}",
+    "victory.publishError": "No pudimos publicarlo. Tu puntaje sigue aquí.",
+    "victory.retry": "Reintentar",
   },
   en: {
     "app.description": "A special puzzle game for my queen",
@@ -580,11 +579,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.save": "Save",
     "victory.saving": "Saving...",
     "victory.saved": "Record saved!",
-    "victory.unknown": "Unknown",
     "victory.playAgain": "Play again",
     "victory.viewLeaderboard": "View Leaderboard",
-    "victory.saveError":
-      "There was an error saving your record. Please try again.",
     "leaderboard.loading": "Loading leaderboard",
     "leaderboard.loadingBest": "Loading best scores...",
     "leaderboard.section": "Leaderboard",
@@ -653,6 +649,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "cell.stateX": "marked with X",
     "cell.stateEmpty": "empty",
     "cell.aria": "Row {row}, Column {col}, region {region}, {state}",
+    "victory.publishError": "We couldn't publish it. Your score is still here.",
+    "victory.retry": "Retry",
   },
   ko: {
     "app.description": "나의 여왕을 위한 특별한 퍼즐 게임",
@@ -707,11 +705,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.save": "저장",
     "victory.saving": "저장 중...",
     "victory.saved": "기록이 저장되었습니다!",
-    "victory.unknown": "알 수 없음",
     "victory.playAgain": "다시 플레이",
     "victory.viewLeaderboard": "리더보드 보기",
-    "victory.saveError":
-      "기록 저장 중 오류가 발생했습니다. 다시 시도해 주세요.",
     "leaderboard.loading": "리더보드 로딩 중",
     "leaderboard.loadingBest": "최고 기록 불러오는 중...",
     "leaderboard.section": "리더보드",
@@ -780,6 +775,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "cell.stateX": "X 표시됨",
     "cell.stateEmpty": "비어 있음",
     "cell.aria": "{row}행 {col}열, {region} 영역, {state}",
+    "victory.publishError": "게시하지 못했습니다. 점수는 그대로 남아 있습니다.",
+    "victory.retry": "다시 시도",
   },
   "zh-CN": {
     "app.description": "为我的女王特别制作的解谜游戏",
@@ -833,10 +830,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.save": "保存",
     "victory.saving": "保存中...",
     "victory.saved": "记录已保存！",
-    "victory.unknown": "未知",
     "victory.playAgain": "再来一局",
     "victory.viewLeaderboard": "查看排行榜",
-    "victory.saveError": "保存记录时出错，请重试。",
     "leaderboard.loading": "正在加载排行榜",
     "leaderboard.loadingBest": "正在加载最佳成绩...",
     "leaderboard.section": "排行榜",
@@ -902,6 +897,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "cell.stateX": "标记为 X",
     "cell.stateEmpty": "空",
     "cell.aria": "第 {row} 行，第 {col} 列，{region} 区域，{state}",
+    "victory.publishError": "发布失败。你的分数还在。",
+    "victory.retry": "重试",
   },
   pt: {
     "app.description": "Um jogo de puzzle especial para minha rainha",
@@ -957,11 +954,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.save": "Salvar",
     "victory.saving": "Salvando...",
     "victory.saved": "Recorde salvo!",
-    "victory.unknown": "Desconhecido",
     "victory.playAgain": "Jogar novamente",
     "victory.viewLeaderboard": "Ver Ranking",
-    "victory.saveError":
-      "Houve um erro ao salvar seu recorde. Tente novamente.",
     "leaderboard.loading": "Carregando ranking",
     "leaderboard.loadingBest": "Carregando melhores pontuações...",
     "leaderboard.section": "Ranking",
@@ -1032,6 +1026,9 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "cell.stateX": "marcada com X",
     "cell.stateEmpty": "vazia",
     "cell.aria": "Linha {row}, Coluna {col}, região {region}, {state}",
+    "victory.publishError":
+      "Não conseguimos publicar. Sua pontuação continua aqui.",
+    "victory.retry": "Tentar de novo",
   },
   tr: {
     "app.description": "Kraliçem için özel bir bulmaca oyunu",
@@ -1086,11 +1083,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.save": "Kaydet",
     "victory.saving": "Kaydediliyor...",
     "victory.saved": "Rekor kaydedildi!",
-    "victory.unknown": "Bilinmeyen",
     "victory.playAgain": "Tekrar oyna",
     "victory.viewLeaderboard": "Lider Tablosunu Gör",
-    "victory.saveError":
-      "Rekor kaydedilirken bir hata oluştu. Lütfen tekrar dene.",
     "leaderboard.loading": "Lider tablosu yükleniyor",
     "leaderboard.loadingBest": "En iyi skorlar yükleniyor...",
     "leaderboard.section": "Lider Tablosu",
@@ -1159,6 +1153,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "cell.stateX": "X ile işaretli",
     "cell.stateEmpty": "boş",
     "cell.aria": "Satır {row}, Sütun {col}, bölge {region}, {state}",
+    "victory.publishError": "Yayınlayamadık. Puanın hâlâ burada.",
+    "victory.retry": "Tekrar dene",
   },
 };
 
@@ -1221,6 +1217,11 @@ export function t(
   return Object.entries(vars).reduce((acc, [name, value]) => {
     return acc.replaceAll(`{${name}}`, String(value));
   }, raw);
+}
+
+/** Sorted, so two locales can be compared for missing translations. */
+export function messageKeys(locale: Locale): string[] {
+  return Object.keys(MESSAGES[locale]).sort();
 }
 
 export function getLanguageLabel(locale: Locale): string {

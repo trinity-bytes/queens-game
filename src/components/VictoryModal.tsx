@@ -51,6 +51,7 @@ export default function VictoryModal() {
 
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
+  const [publishFailed, setPublishFailed] = useState(false);
   const nickSuggestions = getSavedNicks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -89,10 +90,11 @@ export default function VictoryModal() {
    * dedupes on the win id, so calling this twice for the same win is safe.
    */
   const persistScore = async (playerName: string) => {
-    // Without a rating the server cannot reproduce the score, so it would
-    // reject the row anyway. Skipping here keeps the failure quiet instead of
-    // showing the player an error for a puzzle that arrived unrated.
-    if (!currentWinId || !difficulty) return;
+    // Without a rating the server cannot reproduce the score and would reject
+    // the row, so this is a failed publish like any other.
+    if (!currentWinId || !difficulty) {
+      throw new Error("The win has no rating to publish");
+    }
 
     await submitScore({
       winId: currentWinId,
@@ -112,39 +114,19 @@ export default function VictoryModal() {
     markCurrentWinSaved();
   };
 
-  const handlePlayAgain = async () => {
+  // Never writes to the leaderboard: only Publish does, because a score posted
+  // on the way out is one the player did not choose to share.
+  const handlePlayAgain = () => {
     if (saving) return;
     playButton();
-
-    if (!saved) {
-      setSaving(true);
-      try {
-        await persistScore(name.trim() || t(locale, "victory.unknown"));
-        if (name.trim()) {
-          saveNick(name.trim());
-        }
-      } catch (error) {
-        console.error("Error auto-saving score:", error);
-      } finally {
-        setSaving(false);
-      }
-    }
-
+    setPublishFailed(false);
     setName(getSavedNicks()[0] ?? "");
     generatePuzzle();
   };
 
-  // Focus trap: keep Tab/Shift+Tab inside modal.
-  //
-  // Not memoised: it depends on handlePlayAgain, which is rebuilt every render,
-  // so a useCallback here never returned a stable reference. It is only ever
-  // attached to a plain DOM element, so there is nothing to gain from one.
+  // Focus trap: keep Tab/Shift+Tab inside modal. Esc is deliberately inert: the
+  // sheet is the only place the score lives, so a stray key must not lose it.
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handlePlayAgain();
-      return;
-    }
-
     if (e.key !== "Tab") return;
 
     const modal = modalRef.current;
@@ -186,12 +168,13 @@ export default function VictoryModal() {
 
     playButton();
     setSaving(true);
+    setPublishFailed(false);
     try {
       await persistScore(name.trim());
       saveNick(name.trim());
     } catch (error) {
       console.error("Error saving score:", error);
-      alert(t(locale, "victory.saveError"));
+      setPublishFailed(true);
     } finally {
       setSaving(false);
     }
@@ -345,9 +328,16 @@ export default function VictoryModal() {
               >
                 {saving
                   ? t(locale, "victory.saving")
-                  : t(locale, "victory.save")}
+                  : publishFailed
+                    ? t(locale, "victory.retry")
+                    : t(locale, "victory.save")}
               </button>
             </div>
+            {publishFailed && (
+              <p role="alert" className="mt-2 text-xs font-extrabold text-stat-penalty">
+                {t(locale, "victory.publishError")}
+              </p>
+            )}
           </form>
         ) : (
           <div className="mb-3">

@@ -14,6 +14,14 @@
   --foreground: #f1f5f9;
 }
 
+/* ===== Result colours, fixed across themes ===== */
+:root {
+  --stat-penalty: #b64b53;
+}
+.dark {
+  --stat-penalty: #ff9aa2;
+}
+
 /* ===== Design tokens (light) — default fallback = elephant ===== */
 :root {
   --theme-bg: #e6f6f4;

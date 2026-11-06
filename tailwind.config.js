@@ -29,6 +29,7 @@ export default {
         "icon-bg": "var(--icon-bg)",
         "chip-bg": "var(--chip-bg)",
         "chip-label": "var(--chip-label)",
+        "stat-penalty": "var(--stat-penalty)",
         "score-bg": "var(--score-bg)",
         "score-label": "var(--score-label)",
         "score-text": "var(--score-text)",
