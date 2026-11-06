@@ -9,11 +9,20 @@ import DocumentSync from "@/components/DocumentSync";
 import LoadingScreen from "@/components/LoadingScreen";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import SkipLink from "@/components/SkipLink";
-import { t } from "@/lib/i18n";
+import {
+  pageMetadata,
+  SHARE_IMAGE,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
+import { SUPPORTED_LOCALES } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Queens 4 My Queen",
-  description: t("es", "app.description"),
+  metadataBase: new URL(SITE_URL),
+  ...pageMetadata("/"),
+  title: { default: SITE_TITLE, template: `%s · ${SITE_NAME}` },
   manifest: "/manifest.json",
   icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
@@ -25,6 +34,22 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#f0f9ff",
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  image: `${SITE_URL}${SHARE_IMAGE}`,
+  applicationCategory: "GameApplication",
+  operatingSystem: "Any",
+  browserRequirements: "Requires JavaScript",
+  inLanguage: SUPPORTED_LOCALES,
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  author: { "@type": "Person", name: "Jahat Trinidad" },
 };
 
 export default function RootLayout({
@@ -45,6 +70,13 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
+        <script
+          type="application/ld+json"
+          // Escaped so no value can close the script tag.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+          }}
+        />
         <DocumentSync />
         <ServiceWorkerRegistrar />
         <LoadingScreen />
