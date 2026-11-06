@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Volume2, VolumeX } from "lucide-react";
+import { Award, CircleHelp, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getLanguageOptions, t } from "@/lib/i18n";
 import { playButton } from "@/lib/sound";
@@ -29,6 +29,7 @@ export default function HamburgerMenu({
   const toggleSound = useGameStore((state) => state.toggleSound);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const languageOptions = getLanguageOptions();
 
   // The stored preference is only known on the client, so the switch renders
@@ -63,6 +64,7 @@ export default function HamburgerMenu({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        buttonRef.current?.focus();
       }
     }
 
@@ -84,13 +86,14 @@ export default function HamburgerMenu({
       ref={menuRef}
     >
       <button
+        ref={buttonRef}
         onClick={() => {
           playButton();
           setIsOpen(!isOpen);
         }}
         className={
           inHeader
-            ? "w-[38px] h-[38px] -ml-1.5 rounded-xl flex items-center justify-center hover:bg-icon-bg transition-colors active:opacity-50"
+            ? "w-11 h-11 -ml-1 rounded-xl flex items-center justify-center hover:bg-icon-bg transition-colors active:opacity-50"
             : "w-11 h-11 rounded-2xl bg-card shadow-[0_6px_18px_rgba(18,58,94,0.1)] flex items-center justify-center hover:brightness-95 transition-all"
         }
         aria-label={isOpen ? t(locale, "menu.close") : t(locale, "menu.open")}
@@ -103,8 +106,8 @@ export default function HamburgerMenu({
       <div
         className={`absolute top-full left-0 mt-3 w-64 bg-card rounded-3xl shadow-[0_16px_34px_rgba(18,58,94,0.18)] overflow-hidden transition-all duration-200 origin-top-left z-50 ${
           isOpen
-            ? "opacity-100 scale-100 pointer-events-auto"
-            : "opacity-0 scale-95 pointer-events-none"
+            ? "visible opacity-100 scale-100 pointer-events-auto"
+            : "invisible opacity-0 scale-95 pointer-events-none"
         }`}
       >
         <nav className="flex flex-col">
@@ -113,8 +116,8 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-[15px]">
-              ℹ️
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-ink">
+              <CircleHelp className="w-4 h-4" aria-hidden="true" />
             </span>
             <span className="font-extrabold text-ink text-sm">
               {t(locale, "menu.howToPlay")}
@@ -125,8 +128,8 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-[15px]">
-              🛡️
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-ink">
+              <Award className="w-4 h-4" aria-hidden="true" />
             </span>
             <span className="font-extrabold text-ink text-sm">
               {t(locale, "menu.credits")}
@@ -150,9 +153,9 @@ export default function HamburgerMenu({
               {t(locale, "menu.sound")}
             </span>
             <span
-              className={`ml-auto text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg ${
+              className={`ml-auto text-micro font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg ${
                 soundOn
-                  ? "bg-[#e3f9ec] text-[#1f9d5f] dark:bg-[rgba(31,157,95,0.16)] dark:text-[#6fe0ac]"
+                  ? "bg-badge-flawless-bg text-badge-flawless"
                   : "bg-chip-bg text-muted"
               }`}
             >
@@ -162,7 +165,7 @@ export default function HamburgerMenu({
           <div className="px-4 py-[15px]">
             <label
               htmlFor="language-select"
-              className="block text-[10px] font-extrabold uppercase tracking-wider text-muted mb-2"
+              className="block text-micro font-extrabold uppercase tracking-wider text-muted mb-2"
             >
               {t(locale, "menu.language")}
             </label>
@@ -172,7 +175,7 @@ export default function HamburgerMenu({
               onChange={(event) =>
                 setLocale(event.target.value as typeof locale)
               }
-              className="w-full rounded-xl bg-chip-bg text-ink px-3 py-2.5 text-sm font-bold border-0 focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded-xl bg-chip-bg text-ink px-3 py-2.5 text-sm font-bold border-0"
             >
               {languageOptions.map((option) => (
                 <option key={option.value} value={option.value}>

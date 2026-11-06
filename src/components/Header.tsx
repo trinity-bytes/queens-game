@@ -15,7 +15,6 @@ export default function Header() {
   const timer = useGameStore((state) => state.timer);
   const status = useGameStore((state) => state.status);
   const theme = useGameStore((state) => state.theme);
-  const generatePuzzle = useGameStore((state) => state.generatePuzzle);
   const darkMode = useGameStore((state) => state.darkMode);
   const toggleDarkMode = useGameStore((state) => state.toggleDarkMode);
   const locale = useGameStore((state) => state.locale);
@@ -41,7 +40,7 @@ export default function Header() {
   };
 
   return (
-    <header className="flex items-center justify-between gap-2 w-full max-w-md p-3 bg-card rounded-3xl shadow-[0_6px_18px_rgba(18,58,94,0.10)] mb-3 transition-colors duration-300">
+    <header className="game-header relative z-40 flex items-center justify-between gap-2 w-full p-2.5 bg-card rounded-3xl shadow-[0_6px_18px_rgba(18,58,94,0.10)] transition-colors duration-300">
       <div className="flex items-center gap-2 min-w-0">
         <HamburgerMenu inHeader={true} />
         <span
@@ -60,7 +59,7 @@ export default function Header() {
         </span>
         {/* Kept in the accessibility tree on very narrow screens, where there
             is no room to render it next to the timer and the actions. */}
-        <h1 className="font-display font-extrabold text-ink text-lg truncate sr-only min-[360px]:not-sr-only">
+        <h1 className="font-display font-extrabold text-ink text-xl truncate sr-only min-[360px]:not-sr-only">
           Queens
         </h1>
       </div>
@@ -73,7 +72,7 @@ export default function Header() {
           aria-label={t(locale, "header.timer", { time: formatTime(timer) })}
           aria-live="off"
         >
-          <span className="text-[8px] font-extrabold tracking-wider text-chip-label">
+          <span className="text-micro font-extrabold tracking-wider text-chip-label">
             {t(locale, "header.timeLabel")}
           </span>
           <span className="font-extrabold text-sm text-ink tabular-nums">
@@ -86,7 +85,7 @@ export default function Header() {
             playButton();
             toggleDarkMode();
           }}
-          className="w-9 h-9 rounded-xl bg-icon-bg hover:brightness-95 text-ink flex items-center justify-center transition-all active:scale-90"
+          className="w-11 h-11 rounded-xl bg-icon-bg hover:brightness-95 text-ink flex items-center justify-center transition-all active:scale-90"
           aria-label={
             mounted && darkMode
               ? t(locale, "header.light")
@@ -105,30 +104,6 @@ export default function Header() {
           )}
         </button>
 
-        <button
-          onClick={() => {
-            playButton();
-            generatePuzzle();
-          }}
-          className="w-9 h-9 rounded-xl bg-icon-bg hover:brightness-95 flex items-center justify-center transition-all active:scale-90"
-          aria-label={t(locale, "header.newPuzzle")}
-          title={t(locale, "header.newPuzzle")}
-        >
-          <div
-            className="w-3.5 h-3.5 bg-ink"
-            style={{
-              maskImage: "url(/assets/icons/play-button.png)",
-              WebkitMaskImage: "url(/assets/icons/play-button.png)",
-              maskSize: "contain",
-              WebkitMaskSize: "contain",
-              maskRepeat: "no-repeat",
-              WebkitMaskRepeat: "no-repeat",
-              maskPosition: "center",
-              WebkitMaskPosition: "center",
-            }}
-            aria-hidden="true"
-          />
-        </button>
       </div>
     </header>
   );

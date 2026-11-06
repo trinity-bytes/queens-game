@@ -1,55 +1,58 @@
-"use client";
-
 import "./globals.css";
-import { useGameStore } from "@/store/gameStore";
+import type { Metadata, Viewport } from "next";
+import { Baloo_2, Nunito } from "next/font/google";
 import { ThemeScript } from "@/components/ThemeScript";
+import DocumentSync from "@/components/DocumentSync";
 import LoadingScreen from "@/components/LoadingScreen";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import SkipLink from "@/components/SkipLink";
 import { t } from "@/lib/i18n";
+
+// Bundled at build time, so a third-party stylesheet never blocks first paint.
+const baloo = Baloo_2({
+  subsets: ["latin", "latin-ext"],
+  weight: ["700", "800"],
+  variable: "--font-baloo",
+  display: "swap",
+});
+const nunito = Nunito({
+  subsets: ["latin", "latin-ext"],
+  weight: ["600", "700", "800"],
+  variable: "--font-nunito",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: "Queens 4 My Queen",
+  description: t("es", "app.description"),
+  manifest: "/manifest.json",
+  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
+  other: { "mobile-web-app-capable": "yes" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f0f9ff",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const darkMode = useGameStore((state) => state.darkMode);
-  const theme = useGameStore((state) => state.theme);
-  const locale = useGameStore((state) => state.locale);
-
   return (
+    // ThemeScript rewrites lang and class before hydration, from values the
+    // prerender cannot know.
     <html
-      lang={locale}
+      lang="es"
       suppressHydrationWarning
-      className={`${darkMode ? "dark" : ""} theme-${theme}`}
+      className={`${baloo.variable} ${nunito.variable}`}
     >
       <head>
         <ThemeScript />
-        <title>Queens 4 My Queen</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-        <meta name="description" content={t(locale, "app.description")} />
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content={darkMode ? "#0f172a" : "#f0f9ff"} />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
-        />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content="black-translucent"
-        />
-        <meta name="mobile-web-app-capable" content="yes" />
         <link rel="preload" as="image" href="/assets/figures/dino.png" />
         <link rel="preload" as="image" href="/assets/figures/dog.png" />
         <link rel="preload" as="image" href="/assets/figures/cow.png" />
@@ -57,11 +60,10 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
+        <DocumentSync />
         <ServiceWorkerRegistrar />
         <LoadingScreen />
-        <a href="#main-content" className="skip-to-content">
-          {t(locale, "skip.content")}
-        </a>
+        <SkipLink />
         {children}
       </body>
     </html>

@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 
 const ATTRIBUTIONS = [
-  { emoji: "🦖", key: "credits.dino", href: "https://www.flaticon.com/free-icons/dinosaur" },
-  { emoji: "🐶", key: "credits.dog", href: "https://www.flaticon.com/free-icons/dog" },
-  { emoji: "🐮", key: "credits.cow", href: "https://www.flaticon.com/free-icons/cow" },
-  { emoji: "🥔", key: "credits.potato", href: "https://www.flaticon.com/free-icons/potato" },
-  { emoji: "⚔️", key: "credits.starwars", href: "https://www.flaticon.com/free-icons/star-wars" },
-  { emoji: "🐘", key: "credits.elephant", href: "https://www.flaticon.com/free-icons/elephant" },
-  { emoji: "👑", key: "credits.queen", href: "https://www.flaticon.com/free-icons/queen" },
+  { figure: "dino", key: "credits.dino", href: "https://www.flaticon.com/free-icons/dinosaur" },
+  { figure: "dog", key: "credits.dog", href: "https://www.flaticon.com/free-icons/dog" },
+  { figure: "cow", key: "credits.cow", href: "https://www.flaticon.com/free-icons/cow" },
+  { figure: "potato", key: "credits.potato", href: "https://www.flaticon.com/free-icons/potato" },
+  { figure: "starwars", key: "credits.starwars", href: "https://www.flaticon.com/free-icons/star-wars" },
+  { figure: "elephant", key: "credits.elephant", href: "https://www.flaticon.com/free-icons/elephant" },
+  { figure: "queen", key: "credits.queen", href: "https://www.flaticon.com/free-icons/queen" },
 ];
 
 export default function CreditsPage() {
@@ -21,6 +22,7 @@ export default function CreditsPage() {
 
   return (
     <main
+      id="main-content"
       className="page-shell flex min-h-screen flex-col items-center justify-start bg-theme-bg transition-colors duration-300 relative z-0"
       style={{ "--page-pt": "4rem" } as React.CSSProperties}
     >
@@ -31,14 +33,12 @@ export default function CreditsPage() {
         <div className="flex items-center gap-3 mb-5">
           <Link
             href="/"
-            className="w-[38px] h-[38px] rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
+            className="w-11 h-11 rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
             aria-label={t(locale, "credits.back")}
           >
-            <span aria-hidden="true" className="text-base">
-              ←
-            </span>
+            <ArrowLeft className="w-[18px] h-[18px]" aria-hidden="true" />
           </Link>
-          <h1 className="font-display text-[22px] font-extrabold text-ink">
+          <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "credits.title")}
           </h1>
         </div>
@@ -53,13 +53,13 @@ export default function CreditsPage() {
               className="w-8 h-8 object-contain"
             />
           </div>
-          <div className="font-display font-extrabold text-lg text-ink">
+          <div className="font-display font-extrabold text-xl text-ink">
             Queens
           </div>
-          <div className="text-muted text-[11px] font-extrabold uppercase tracking-wider mt-1">
+          <div className="text-muted text-micro font-extrabold uppercase tracking-wider mt-1">
             {t(locale, "credits.designedBy")}
           </div>
-          <div className="font-display font-extrabold text-[17px] text-ink">
+          <div className="font-display font-extrabold text-base text-ink">
             trinity-bytes
           </div>
           <div className="flex gap-2 mt-1.5">
@@ -67,40 +67,44 @@ export default function CreditsPage() {
               href="https://github.com/trinity-bytes"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-[13px]"
+              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-sm"
             >
-              GitHub <span className="text-[11px] text-muted">↗</span>
+              GitHub <ArrowUpRight className="w-3.5 h-3.5 text-muted" aria-hidden="true" />
             </a>
             <a
               href="https://www.linkedin.com/in/trinitybytes"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-[13px]"
+              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-sm"
             >
-              LinkedIn <span className="text-[11px] text-muted">↗</span>
+              LinkedIn <ArrowUpRight className="w-3.5 h-3.5 text-muted" aria-hidden="true" />
             </a>
           </div>
         </div>
 
         {/* Icon attributions (required by license) */}
-        <p className="text-muted text-[13px] font-semibold leading-relaxed mb-3 px-1">
+        <p className="text-muted text-sm font-semibold leading-relaxed mb-3 px-1">
           {t(locale, "credits.intro")}
         </p>
         <ul className="flex flex-col gap-2.5">
-          {ATTRIBUTIONS.map(({ emoji, key, href }) => (
+          {ATTRIBUTIONS.map(({ figure, key, href }) => (
             <li
               key={key}
               className="flex items-center gap-3 bg-card rounded-2xl px-3.5 py-3 shadow-[0_3px_8px_rgba(18,58,94,0.06)]"
             >
-              <span className="w-9 h-9 rounded-xl bg-icon-bg flex items-center justify-center text-lg shrink-0">
-                {emoji}
+              <span className="w-9 h-9 rounded-xl bg-icon-bg flex items-center justify-center shrink-0">
+                <img
+                  src={`/assets/figures/${figure}.png`}
+                  alt=""
+                  className="w-7 h-7 object-contain"
+                />
               </span>
               <a
                 href={href}
                 title={key}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink hover:underline font-bold text-[13.5px]"
+                className="text-ink hover:underline font-bold text-sm"
               >
                 {t(locale, key)}
               </a>

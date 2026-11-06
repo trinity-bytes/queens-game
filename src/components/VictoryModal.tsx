@@ -1,9 +1,8 @@
 import { useGameStore } from "@/store/gameStore";
-import { BAND_MULTIPLIER } from "@/domain/scoring";
-import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
+import BandBadge from "./BandBadge";
 import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
-import { AlertCircle } from "lucide-react";
+import { Check } from "lucide-react";
 import { submitScore } from "@/lib/leaderboard";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
@@ -14,14 +13,6 @@ const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 /** Stamped on every leaderboard row. Inlined from package.json at build time. */
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
-
-/** Cool to hot, so the badge reads as difficulty before the words are parsed. */
-const BAND_STYLES: Record<DifficultyBand, string> = {
-  gentle: "bg-[#e3f9ec] text-[#1f7a4d] dark:bg-[rgba(31,157,95,0.16)] dark:text-[#6fe0ac]",
-  tricky:
-    "bg-[#fff6da] text-[#946a0f] dark:bg-[rgba(201,150,44,0.16)] dark:text-[#f0c96b]",
-  brutal: "bg-[#fbdad9] text-[#b83a45] dark:bg-[rgba(225,92,103,0.16)] dark:text-[#ff9aa2]",
-};
 
 /**
  * Checks if user prefers reduced motion.
@@ -51,6 +42,7 @@ export default function VictoryModal() {
 
   const [name, setName] = useState(() => getSavedNicks()[0] ?? "");
   const [saving, setSaving] = useState(false);
+  const [publishFailed, setPublishFailed] = useState(false);
   const nickSuggestions = getSavedNicks();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -89,10 +81,11 @@ export default function VictoryModal() {
    * dedupes on the win id, so calling this twice for the same win is safe.
    */
   const persistScore = async (playerName: string) => {
-    // Without a rating the server cannot reproduce the score, so it would
-    // reject the row anyway. Skipping here keeps the failure quiet instead of
-    // showing the player an error for a puzzle that arrived unrated.
-    if (!currentWinId || !difficulty) return;
+    // Without a rating the server cannot reproduce the score and would reject
+    // the row, so this is a failed publish like any other.
+    if (!currentWinId || !difficulty) {
+      throw new Error("The win has no rating to publish");
+    }
 
     await submitScore({
       winId: currentWinId,
@@ -112,39 +105,19 @@ export default function VictoryModal() {
     markCurrentWinSaved();
   };
 
-  const handlePlayAgain = async () => {
+  // Never writes to the leaderboard: only Publish does, because a score posted
+  // on the way out is one the player did not choose to share.
+  const handlePlayAgain = () => {
     if (saving) return;
     playButton();
-
-    if (!saved) {
-      setSaving(true);
-      try {
-        await persistScore(name.trim() || t(locale, "victory.unknown"));
-        if (name.trim()) {
-          saveNick(name.trim());
-        }
-      } catch (error) {
-        console.error("Error auto-saving score:", error);
-      } finally {
-        setSaving(false);
-      }
-    }
-
+    setPublishFailed(false);
     setName(getSavedNicks()[0] ?? "");
     generatePuzzle();
   };
 
-  // Focus trap: keep Tab/Shift+Tab inside modal.
-  //
-  // Not memoised: it depends on handlePlayAgain, which is rebuilt every render,
-  // so a useCallback here never returned a stable reference. It is only ever
-  // attached to a plain DOM element, so there is nothing to gain from one.
+  // Focus trap: keep Tab/Shift+Tab inside modal. Esc is deliberately inert: the
+  // sheet is the only place the score lives, so a stray key must not lose it.
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handlePlayAgain();
-      return;
-    }
-
     if (e.key !== "Tab") return;
 
     const modal = modalRef.current;
@@ -186,20 +159,29 @@ export default function VictoryModal() {
 
     playButton();
     setSaving(true);
+    setPublishFailed(false);
     try {
       await persistScore(name.trim());
       saveNick(name.trim());
     } catch (error) {
       console.error("Error saving score:", error);
-      alert(t(locale, "victory.saveError"));
+      setPublishFailed(true);
     } finally {
       setSaving(false);
     }
   };
 
+  const percentLost =
+    grossScore > 0 ? Math.round((totalPenalties / grossScore) * 100) : 0;
+  const errorsLabel = t(
+    locale,
+    mistakes === 1 ? "victory.errorsBadge.one" : "victory.errorsBadge",
+    { count: mistakes },
+  );
+
   return (
     <div
-      className="fixed inset-0 bg-[rgba(18,58,94,0.35)] backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="victory-sheet bg-card rounded-[26px] shadow-[0_24px_40px_rgba(18,58,94,0.25)] p-4 animate-stripin outline-none"
       role="dialog"
       aria-modal="true"
       aria-labelledby="victory-title"
@@ -207,184 +189,146 @@ export default function VictoryModal() {
       tabIndex={-1}
       onKeyDown={handleKeyDown}
     >
-      <div className="bg-card rounded-[26px] shadow-[0_24px_40px_rgba(0,0,0,0.25)] w-full max-w-sm p-6 animate-qpop max-h-full overflow-auto">
-        <div className="text-center mb-4">
-          <div className="w-[70px] h-[70px] rounded-[22px] bg-[#fff6da] dark:bg-amber-400/15 flex items-center justify-center mx-auto mb-3">
-            <img
-              src="/assets/icons/trophy.png"
-              alt="Trophy"
-              className="w-9 h-9 object-contain"
-            />
-          </div>
+      <div className="flex items-center gap-3">
+        <span className="w-12 h-12 shrink-0 rounded-2xl bg-icon-bg flex items-center justify-center">
+          <img
+            src={`/assets/figures/${theme}.png`}
+            alt=""
+            className="w-9 h-9 object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
+            }}
+          />
+        </span>
+        <div className="min-w-0">
           <h2
             id="victory-title"
-            className="font-display text-2xl font-extrabold text-ink"
+            className="font-display text-xl font-extrabold text-ink"
           >
             {t(locale, "victory.title")}
           </h2>
-          <p className="text-muted font-bold mt-1 text-sm">
+          <p className="text-muted text-xs">
             {getVictoryMessage(locale, theme, currentWinId)}
           </p>
-
-          {/* The multiplier is shown alongside the band because it is the
-              whole reason the points below are what they are. A player who
-              only sees "Brutal" learns nothing about their score. */}
-          {difficulty && (
-            <div
-              className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-xl text-[11px] font-extrabold uppercase tracking-wider ${BAND_STYLES[difficulty.band]}`}
-              aria-label={t(locale, "victory.difficultyAria", {
-                band: t(locale, `difficulty.${difficulty.band}`),
-                // One decimal throughout, so x1.0 lines up with x1.6 and x2.4
-                // instead of rendering as a bare "x1".
-                multiplier: `x${BAND_MULTIPLIER[difficulty.band].toFixed(1)}`,
-              })}
-            >
-              <span aria-hidden="true">
-                {t(locale, "victory.difficulty")}:{" "}
-                {t(locale, `difficulty.${difficulty.band}`)}
-              </span>
-              <span aria-hidden="true" className="opacity-70">
-                ×{BAND_MULTIPLIER[difficulty.band].toFixed(1)}
-              </span>
-            </div>
-          )}
         </div>
+      </div>
 
-        <div className="grid grid-cols-3 gap-2.5 my-[18px]">
-          <div className="rounded-2xl p-[11px_6px] text-center bg-[#f3f9ff] dark:bg-[rgba(47,174,118,0.12)]">
-            <div className="text-[10px] font-extrabold text-muted">
-              {t(locale, "victory.points")}
-            </div>
-            <div
-              className="font-display font-black text-lg mt-0.5 text-[#2fae76]"
-              aria-label={t(locale, "victory.pointsAria", { value: grossScore })}
-            >
-              +{grossScore.toLocaleString(locale)}
-            </div>
-          </div>
-          <div className="rounded-2xl p-[11px_6px] text-center bg-[#fff1f0] dark:bg-[rgba(225,92,103,0.12)]">
-            <div className="text-[10px] font-extrabold text-muted flex items-center justify-center gap-0.5">
-              <AlertCircle className="w-3 h-3" aria-hidden="true" />
-              {t(locale, "victory.penalty")}
-            </div>
-            <div
-              className="font-display font-black text-lg mt-0.5 text-[#e15c67]"
-              aria-label={t(locale, "victory.penaltiesAria", {
-                value: totalPenalties,
-              })}
-            >
-              −{totalPenalties.toLocaleString(locale)}
-            </div>
-          </div>
-          <div className="rounded-2xl p-[11px_6px] text-center bg-[#fff6da] dark:bg-[rgba(201,150,44,0.12)]">
-            <div className="text-[10px] font-extrabold text-muted">
-              {t(locale, "victory.total")}
-            </div>
-            <div
-              className="font-display font-black text-lg mt-0.5 text-[#c9962c]"
-              aria-label={t(locale, "victory.totalAria", { value: score })}
-            >
-              {score.toLocaleString(locale)}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-chip-bg rounded-2xl p-3 mb-[18px] text-center relative">
-          <div
-            className={`absolute -top-[11px] left-1/2 -translate-x-1/2 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-xl border-2 border-card ${
-              mistakes === 0
-                ? "bg-[#e3f9ec] text-[#1f9d5f]"
-                : "bg-[#fbdad9] text-[#d5525d]"
-            }`}
-          >
-            {mistakes === 0
-              ? t(locale, "victory.flawless")
-              : t(locale, "victory.errorsBadge", { count: mistakes })}
-          </div>
-          <p className="text-[11px] font-bold text-muted mt-1">
-            {t(locale, "victory.yourTime")}
-          </p>
-          <p className="font-display text-[26px] font-black text-ink tabular-nums">
+      <div className="flex items-end justify-between gap-3 mt-3">
+        <p
+          role="img"
+          className="font-display text-display font-extrabold text-ink tabular-nums"
+          aria-label={t(locale, "victory.totalAria", { value: score })}
+        >
+          {score.toLocaleString(locale)}
+        </p>
+        <div className="text-right shrink-0 pb-1">
+          <p className="text-sm font-extrabold text-ink tabular-nums">
             {formatTime(timer)}
           </p>
-          <p className="text-[11px] text-muted opacity-80 mt-1 font-semibold">
-            {t(locale, "victory.completedMoves", { moves: movesCount })}
+          <p className="text-micro text-muted">
+            {t(locale, "victory.moves", { moves: movesCount })}
           </p>
         </div>
-
-        {!saved ? (
-          <form onSubmit={handleSave} className="mb-3">
-            <label
-              htmlFor="player-name"
-              className="block text-[12.5px] font-extrabold text-muted mb-[7px]"
-            >
-              {t(locale, "victory.saveRecord")}
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="player-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t(locale, "victory.namePlaceholder")}
-                className="flex-1 min-w-0 bg-chip-bg border-0 rounded-2xl px-3.5 py-2.5 text-ink font-bold focus:outline-none focus:ring-2 focus:ring-accent"
-                maxLength={15}
-                required
-                list="nick-suggestions"
-                autoComplete="off"
-              />
-              <datalist id="nick-suggestions">
-                {nickSuggestions.map((nick) => (
-                  <option key={nick} value={nick} />
-                ))}
-              </datalist>
-              <button
-                type="submit"
-                disabled={saving || !name.trim()}
-                className="px-4 bg-accent text-white rounded-2xl font-extrabold hover:brightness-95 disabled:opacity-50 transition-all active:scale-95"
-              >
-                {saving
-                  ? t(locale, "victory.saving")
-                  : t(locale, "victory.save")}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="mb-3">
-            <Link
-              href="/leaderboard"
-              onClick={() =>
-                sessionStorage.setItem(RESET_HOME_ON_RETURN_KEY, "1")
-              }
-              className="w-full py-[11px] px-2 bg-[#e3f9ec] dark:bg-[rgba(31,157,95,0.16)] text-[#1f7a4d] dark:text-[#6fe0ac] rounded-2xl font-extrabold text-[13.5px] flex items-center justify-center gap-2 hover:brightness-95 transition-all active:scale-[0.97]"
-              role="alert"
-            >
-              ✓ {t(locale, "victory.saved")}
-            </Link>
-          </div>
-        )}
-
-        <button
-          onClick={handlePlayAgain}
-          className="w-full py-3 bg-ink text-card rounded-2xl font-extrabold flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-[0.97]"
-        >
-          <div
-            className="w-[15px] h-[15px] bg-card"
-            style={{
-              maskImage: "url(/assets/icons/play-button.png)",
-              WebkitMaskImage: "url(/assets/icons/play-button.png)",
-              maskSize: "contain",
-              WebkitMaskSize: "contain",
-              maskRepeat: "no-repeat",
-              WebkitMaskRepeat: "no-repeat",
-              maskPosition: "center",
-              WebkitMaskPosition: "center",
-            }}
-            aria-hidden="true"
-          />
-          {t(locale, "victory.playAgain")}
-        </button>
       </div>
+
+      <div className="flex flex-wrap gap-1.5 mt-2.5">
+        {difficulty && <BandBadge band={difficulty.band} locale={locale} />}
+        <span
+          className={`px-2.5 py-1 rounded-xl text-micro font-extrabold uppercase tracking-wider ${
+            mistakes === 0
+              ? "bg-badge-flawless-bg text-badge-flawless"
+              : "bg-badge-errors-bg text-badge-errors"
+          }`}
+        >
+          {mistakes === 0 ? t(locale, "victory.flawless") : errorsLabel}
+        </span>
+      </div>
+
+      {mistakes > 0 && (
+        <p className="text-xs text-muted mt-2.5">
+          {t(locale, "victory.breakdown", {
+            value: grossScore.toLocaleString(locale),
+            percent: percentLost,
+            errors: errorsLabel.toLowerCase(),
+          })}
+        </p>
+      )}
+
+      {!saved ? (
+        <form onSubmit={handleSave} className="mt-3">
+          <div className="flex gap-2">
+            <label htmlFor="player-name" className="sr-only">
+              {t(locale, "victory.namePlaceholder")}
+            </label>
+            <input
+              id="player-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t(locale, "victory.namePlaceholder")}
+              className="flex-1 min-w-0 min-h-11 bg-chip-bg border-0 rounded-2xl px-3.5 text-base text-ink font-bold"
+              maxLength={15}
+              required
+              list="nick-suggestions"
+              autoComplete="off"
+            />
+            <datalist id="nick-suggestions">
+              {nickSuggestions.map((nick) => (
+                <option key={nick} value={nick} />
+              ))}
+            </datalist>
+            <button
+              type="submit"
+              disabled={saving || !name.trim()}
+              className="min-h-11 px-4 bg-accent text-white rounded-2xl text-sm font-extrabold hover:brightness-95 disabled:opacity-50 transition-all active:scale-95"
+            >
+              {saving
+                ? t(locale, "victory.saving")
+                : publishFailed
+                  ? t(locale, "victory.retry")
+                  : t(locale, "victory.save")}
+            </button>
+          </div>
+          {publishFailed ? (
+            <p role="alert" className="mt-2 text-xs font-extrabold text-stat-penalty">
+              {t(locale, "victory.publishError")}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-muted">
+              {t(locale, "victory.publishNote")}
+            </p>
+          )}
+        </form>
+      ) : (
+        <div
+          role="status"
+          className="mt-3 flex items-center justify-between gap-2 min-h-11 px-3.5 rounded-2xl bg-badge-flawless-bg text-badge-flawless text-sm font-extrabold"
+        >
+          <span className="min-w-0 flex items-center gap-1.5">
+            <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              {t(locale, "victory.saved", { name: name.trim() })}
+            </span>
+          </span>
+          <Link
+            href="/leaderboard"
+            onClick={() =>
+              sessionStorage.setItem(RESET_HOME_ON_RETURN_KEY, "1")
+            }
+            className="shrink-0 py-2 hover:underline"
+          >
+            {t(locale, "victory.viewRanking")}
+          </Link>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handlePlayAgain}
+        className="mt-3 w-full min-h-11 bg-ink text-card rounded-2xl text-sm font-extrabold hover:brightness-110 transition-all active:scale-[0.97]"
+      >
+        {t(locale, "victory.playAgain")}
+      </button>
     </div>
   );
 }
