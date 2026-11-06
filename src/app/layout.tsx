@@ -18,6 +18,7 @@ import {
   SITE_URL,
 } from "@/lib/site";
 import { SUPPORTED_LOCALES } from "@/lib/i18n";
+import { DEFAULT_THEME_COLOR, SYNC_THEME_COLOR_SCRIPT } from "@/lib/systemBars";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
   title: { default: SITE_TITLE, template: `%s · ${SITE_NAME}` },
   manifest: "/manifest.json",
   icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, statusBarStyle: "default" },
   other: { "mobile-web-app-capable": "yes" },
 };
 
@@ -33,7 +34,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f0f9ff",
+  themeColor: DEFAULT_THEME_COLOR,
+  colorScheme: "light dark",
 };
 
 const structuredData = {
@@ -70,6 +72,8 @@ export default function RootLayout({
         <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
+        {/* Here and not in ThemeScript: the meta tag comes after that script. */}
+        <script dangerouslySetInnerHTML={{ __html: SYNC_THEME_COLOR_SCRIPT }} />
         <script
           type="application/ld+json"
           // Escaped so no value can close the script tag.

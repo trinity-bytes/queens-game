@@ -37,6 +37,7 @@
 
 /* ===== Design tokens (light) — default fallback = elephant ===== */
 :root {
+  color-scheme: light;
   --theme-bg: #e6f6f4;
   --theme-text: #0f5a53;
   --ink: #0f5a53;
@@ -49,6 +50,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --theme-bg: #020d0c;
   --theme-text: #cee7e5;
   --ink: #cee7e5;

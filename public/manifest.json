@@ -4,8 +4,8 @@
   "description": "Coloca una reina por fila, columna y región sin que se toquen. Un puzzle de lógica para jugar gratis en el navegador, con tabla de líderes.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f0f9ff",
-  "theme_color": "#0284c7",
+  "background_color": "#e6f6f4",
+  "theme_color": "#e6f6f4",
   "icons": [
     {
       "src": "/icon-192x192.png",
