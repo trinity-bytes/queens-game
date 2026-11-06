@@ -1,3 +1,4 @@
+import { formatTime } from "@/lib/formatTime";
 import { useGameStore } from "@/store/gameStore";
 import BandBadge from "./BandBadge";
 import { useEffect, useState, useRef } from "react";
@@ -145,13 +146,6 @@ export default function VictoryModal() {
   };
 
   if (status !== "won") return null;
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

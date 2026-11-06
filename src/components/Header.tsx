@@ -1,3 +1,4 @@
+import { formatTime } from "@/lib/formatTime";
 import { useGameStore } from "@/store/gameStore";
 import { useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
@@ -31,13 +32,6 @@ export default function Header() {
     }
     return () => clearInterval(interval);
   }, [status]);
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
 
   return (
     <header className="game-header relative z-40 flex items-center justify-between gap-2 w-full p-2.5 bg-card rounded-3xl shadow-[0_6px_18px_rgba(18,58,94,0.10)] transition-colors duration-300">

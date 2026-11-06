@@ -3,6 +3,7 @@ import { getCurrentTheme } from "@/lib/themeSelector";
 import { DEFAULT_LOCALE, Locale, setStoredLocale } from "@/lib/i18n";
 import { clearSavedGame, loadGame, saveGame, saveTimer } from "@/lib/savedGame";
 import { setSoundEnabled } from "@/lib/sound";
+import { findConflicts } from "@/domain/board";
 import { puzzleValue, scoreFor } from "@/domain/scoring";
 import {
   settleMove,
@@ -89,13 +90,9 @@ interface GameState {
   /** The queen placed by the last move, which that move's successor settles. */
   pendingQueen: PendingQueen | null;
   history: Move[];
-  xPenalties: number;
   score: number;
   grossScore: number;
   totalPenalties: number;
-  scoredQueens: number[];
-  lastCorrectMoveTime: number;
-  lastMoveTime: number;
   movesCount: number;
   /** Rating of the puzzle in play, null until one is loaded. */
   difficulty: PuzzleDifficulty | null;
@@ -113,7 +110,6 @@ interface GameState {
   firstRunOpen: boolean;
 
   // Actions
-  setGridSize: (size: number) => void;
   setTheme: (theme: Theme) => void;
   setLocale: (locale: Locale) => void;
   toggleDarkMode: () => void;
@@ -195,18 +191,93 @@ const GENERATION_RETRY_BASE_MS = 400;
 const MAX_PRELOAD_ATTEMPTS = 3;
 const PRELOAD_RETRY_BASE_MS = 1500;
 
-// Live handles so a new run can cancel whatever the previous one left behind
-// instead of racing it.
-let generationWorker: Worker | null = null;
-let generationRetryTimer: ReturnType<typeof setTimeout> | null = null;
-let preloadWorker: Worker | null = null;
-let preloadRetryTimer: ReturnType<typeof setTimeout> | null = null;
+type GeneratedPuzzle = Extract<GenerationResult, { success: true }>;
 
 const createGeneratorWorker = () =>
   new Worker(new URL("../workers/puzzleGenerator.worker.ts", import.meta.url));
 
-const backoffMs = (base: number, attempt: number) =>
-  base * Math.pow(2, attempt - 1);
+interface PuzzleJob {
+  label: string;
+  maxAttempts: number;
+  retryBaseMs: number;
+  onPuzzle: (puzzle: GeneratedPuzzle) => void;
+  onGiveUp: () => void;
+}
+
+/**
+ * One puzzle at a time, in a worker, with bounded retries. Starting again cancels
+ * whatever the previous run left behind instead of racing it.
+ */
+function createPuzzleJob({
+  label,
+  maxAttempts,
+  retryBaseMs,
+  onPuzzle,
+  onGiveUp,
+}: PuzzleJob) {
+  let worker: Worker | null = null;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const cancel = () => {
+    if (retryTimer !== null) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+    worker?.terminate();
+    worker = null;
+  };
+
+  const run = (attempt: number) => {
+    cancel();
+
+    const current = createGeneratorWorker();
+    worker = current;
+
+    const release = () => {
+      current.terminate();
+      if (worker === current) worker = null;
+    };
+
+    const fail = (reason: string, diagnostics?: GenerationDiagnostics) => {
+      release();
+      logFailure(
+        `${label} attempt ${attempt}/${maxAttempts} failed`,
+        reason,
+        diagnostics,
+      );
+
+      if (attempt >= maxAttempts) {
+        onGiveUp();
+        return;
+      }
+
+      retryTimer = setTimeout(
+        () => run(attempt + 1),
+        retryBaseMs * Math.pow(2, attempt - 1),
+      );
+    };
+
+    current.onmessage = (e: MessageEvent<GenerationResult>) => {
+      if (!e.data.success) {
+        fail(e.data.error, e.data.diagnostics);
+        return;
+      }
+
+      release();
+      onPuzzle(e.data);
+    };
+
+    // Without this a worker that throws or fails to load never posts a message,
+    // and the game would sit on "generating" forever.
+    current.onerror = (event) => {
+      fail(event.message || "Worker error");
+    };
+
+    current.postMessage({ size: useGameStore.getState().gridSize });
+  };
+
+  return { cancel, start: () => run(1) };
+}
 
 const logFailure = (
   label: string,
@@ -220,69 +291,15 @@ const logFailure = (
   );
 };
 
-const cancelGeneration = () => {
-  if (generationRetryTimer !== null) {
-    clearTimeout(generationRetryTimer);
-    generationRetryTimer = null;
-  }
-  generationWorker?.terminate();
-  generationWorker = null;
-};
-
-const cancelPreload = () => {
-  if (preloadRetryTimer !== null) {
-    clearTimeout(preloadRetryTimer);
-    preloadRetryTimer = null;
-  }
-  preloadWorker?.terminate();
-  preloadWorker = null;
-};
-
 /**
- * Runs a single generation attempt, retrying up to MAX_GENERATION_ATTEMPTS
- * before parking the game in the terminal "error" state.
- *
- * Status deliberately stays "generating" across the backoff: the player really
- * is still waiting, and it keeps Board's "idle" effect from firing.
+ * Status stays "generating" across the backoff: the player really is still
+ * waiting, and it keeps Board's "idle" effect from firing.
  */
-const runGenerationAttempt = (attempt: number) => {
-  cancelGeneration();
-
-  const worker = createGeneratorWorker();
-  generationWorker = worker;
-
-  const release = () => {
-    worker.terminate();
-    if (generationWorker === worker) generationWorker = null;
-  };
-
-  const fail = (reason: string, diagnostics?: GenerationDiagnostics) => {
-    release();
-    logFailure(
-      `Puzzle generation attempt ${attempt}/${MAX_GENERATION_ATTEMPTS} failed`,
-      reason,
-      diagnostics,
-    );
-
-    if (attempt >= MAX_GENERATION_ATTEMPTS) {
-      useGameStore.setState({ status: "error" });
-      return;
-    }
-
-    generationRetryTimer = setTimeout(
-      () => runGenerationAttempt(attempt + 1),
-      backoffMs(GENERATION_RETRY_BASE_MS, attempt),
-    );
-  };
-
-  worker.onmessage = (e: MessageEvent<GenerationResult>) => {
-    if (!e.data.success) {
-      fail(e.data.error, e.data.diagnostics);
-      return;
-    }
-
-    const { regions, solution, size, difficulty } = e.data;
-    release();
+const generation = createPuzzleJob({
+  label: "Puzzle generation",
+  maxAttempts: MAX_GENERATION_ATTEMPTS,
+  retryBaseMs: GENERATION_RETRY_BASE_MS,
+  onPuzzle: ({ regions, solution, size, difficulty }) => {
     useGameStore.setState({
       regions,
       solution,
@@ -292,72 +309,26 @@ const runGenerationAttempt = (attempt: number) => {
       theme: getCurrentTheme(),
     });
     useGameStore.getState().preloadNextPuzzle();
-  };
-
-  // Without this a worker that throws or fails to load never posts a message,
-  // and the game would sit on "generating" forever.
-  worker.onerror = (event) => {
-    fail(event.message || "Worker error");
-  };
-
-  worker.postMessage({ size: useGameStore.getState().gridSize });
-};
+  },
+  onGiveUp: () => useGameStore.setState({ status: "error" }),
+});
 
 /**
- * Same bounded-retry shape as generation, but failure is silent: a lost preload
- * only costs the player a loading screen on the next puzzle, so there is
- * nothing worth interrupting them about.
+ * Failure is silent: a lost preload only costs the player a loading screen on
+ * the next puzzle, so there is nothing worth interrupting them about.
  */
-const runPreloadAttempt = (attempt: number) => {
-  cancelPreload();
-
-  const worker = createGeneratorWorker();
-  preloadWorker = worker;
-
-  const release = () => {
-    worker.terminate();
-    if (preloadWorker === worker) preloadWorker = null;
-  };
-
-  const fail = (reason: string, diagnostics?: GenerationDiagnostics) => {
-    release();
-    logFailure(
-      `Puzzle preload attempt ${attempt}/${MAX_PRELOAD_ATTEMPTS} failed`,
-      reason,
-      diagnostics,
-    );
-
-    if (attempt >= MAX_PRELOAD_ATTEMPTS) {
-      useGameStore.setState({ isPreloading: false });
-      return;
-    }
-
-    preloadRetryTimer = setTimeout(
-      () => runPreloadAttempt(attempt + 1),
-      backoffMs(PRELOAD_RETRY_BASE_MS, attempt),
-    );
-  };
-
-  worker.onmessage = (e: MessageEvent<GenerationResult>) => {
-    if (!e.data.success) {
-      fail(e.data.error, e.data.diagnostics);
-      return;
-    }
-
-    const { regions, solution, size, difficulty } = e.data;
-    release();
+const preload = createPuzzleJob({
+  label: "Puzzle preload",
+  maxAttempts: MAX_PRELOAD_ATTEMPTS,
+  retryBaseMs: PRELOAD_RETRY_BASE_MS,
+  onPuzzle: ({ regions, solution, size, difficulty }) => {
     useGameStore.setState({
       preloadedPuzzle: { regions, solution, size, difficulty },
       isPreloading: false,
     });
-  };
-
-  worker.onerror = (event) => {
-    fail(event.message || "Worker error");
-  };
-
-  worker.postMessage({ size: useGameStore.getState().gridSize });
-};
+  },
+  onGiveUp: () => useGameStore.setState({ isPreloading: false }),
+});
 
 export const useGameStore = create<GameState>((set, get) => ({
   gridSize: 9,
@@ -369,13 +340,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   mistakes: 0,
   pendingQueen: null,
   history: [],
-  xPenalties: 0,
   score: 0,
   grossScore: 0,
   totalPenalties: 0,
-  scoredQueens: [],
-  lastCorrectMoveTime: 0,
-  lastMoveTime: 0,
   movesCount: 0,
   difficulty: null,
   solveLog: emptySolveLog(),
@@ -389,9 +356,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   isPreloading: false,
   firstRunOpen: getInitialFirstRun(),
 
-  setGridSize: (size) => {
-    set({ gridSize: size, preloadedPuzzle: null }); // Invalidate preloaded puzzle if size changes
-  },
   setTheme: (theme) => set({ theme }),
   setLocale: (locale) => {
     set({ locale });
@@ -436,7 +400,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Drop any generation still in flight or waiting out a backoff. Nothing
     // reaches this call mid-retry today, but a stale attempt that resolved
     // later would swap the board out from under a game in progress.
-    cancelGeneration();
+    generation.cancel();
     clearSavedGame();
 
     // Reset game stats
@@ -448,10 +412,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
-      scoredQueens: [],
-      lastCorrectMoveTime: 0,
-      lastMoveTime: 0,
-      movesCount: 0,
+                  movesCount: 0,
       cells: [],
       difficulty: null,
       solveLog: emptySolveLog(),
@@ -477,7 +438,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Otherwise, generate one now (shows loading screen)
     set({ status: "generating" });
-    runGenerationAttempt(1);
+    generation.start();
   },
 
   preloadNextPuzzle: () => {
@@ -487,7 +448,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // isPreloading stays true across the whole retry sequence, so a queued
     // backoff is not mistaken for "no preload running".
     set({ isPreloading: true });
-    runPreloadAttempt(1);
+    preload.start();
   },
 
   toggleCell: (index) => {
@@ -499,9 +460,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       mistakes,
       pendingQueen,
       history,
-      scoredQueens,
       solveLog,
-      lastCorrectMoveTime,
       movesCount,
       timer,
     } = get();
@@ -522,9 +481,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       placed,
     );
 
-    const newScoredQueens = [...scoredQueens];
-    let newLastCorrectMoveTime = lastCorrectMoveTime;
-    const newLastMoveTime = timer;
     const newMovesCount = movesCount + 1;
     const newLog: SolveLog = { ...solveLog };
 
@@ -546,11 +502,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         ...solveLog.placements,
         { atMs: timer, correct: placed.correct },
       ];
-
-      if (placed.correct && !newScoredQueens.includes(index)) {
-        newScoredQueens.push(index);
-        newLastCorrectMoveTime = timer;
-      }
     }
 
     set({
@@ -561,10 +512,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         ...history,
         { index, cells, passed: passedThrough ? pendingQueen : null },
       ],
-      scoredQueens: newScoredQueens,
       solveLog: newLog,
-      lastCorrectMoveTime: newLastCorrectMoveTime,
-      lastMoveTime: newLastMoveTime,
       movesCount: newMovesCount,
     });
     get().checkWinCondition();
@@ -603,13 +551,12 @@ export const useGameStore = create<GameState>((set, get) => ({
           : placements,
       },
       movesCount: movesCount + 1,
-      lastMoveTime: timer,
     });
   },
 
   /** Empties the board. The clock keeps running, so it cannot reset a bad time. */
   clearBoard: () => {
-    const { cells, status, mistakes, pendingQueen, history, movesCount, timer } =
+    const { cells, status, mistakes, pendingQueen, history, movesCount } =
       get();
     if (status !== "playing" || cells.every((cell) => cell === 0)) return;
 
@@ -625,7 +572,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       mistakes: tally.mistakes,
       pendingQueen: tally.pending,
       movesCount: movesCount + 1,
-      lastMoveTime: timer,
     });
   },
 
@@ -648,39 +594,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   checkWinCondition: () => {
     const { cells, gridSize, regions, mistakes, difficulty } = get();
 
-    // Count queens
-    const queens = cells.reduce((acc, cell, idx) => {
-      if (cell === 2) acc.push(idx);
-      return acc;
-    }, [] as number[]);
+    const queenCount = cells.filter((cell) => cell === 2).length;
+    if (queenCount !== gridSize) return;
 
-    if (queens.length !== gridSize) return;
-
-    // Check rows, cols, regions, and adjacency
-    const rowUsed = new Set<number>();
-    const colUsed = new Set<number>();
-    const regionUsed = new Set<number>();
-
-    for (const q of queens) {
-      const r = Math.floor(q / gridSize);
-      const c = q % gridSize;
-      const reg = regions[q];
-
-      if (rowUsed.has(r) || colUsed.has(c) || regionUsed.has(reg)) return;
-
-      rowUsed.add(r);
-      colUsed.add(c);
-      regionUsed.add(reg);
-
-      // Check 8-way adjacency
-      for (const otherQ of queens) {
-        if (q === otherQ) continue;
-        const or = Math.floor(otherQ / gridSize);
-        const oc = otherQ % gridSize;
-
-        if (Math.abs(r - or) <= 1 && Math.abs(c - oc) <= 1) return;
-      }
-    }
+    // One queen per row, column and region follows from having gridSize of
+    // them with no two in conflict.
+    if (findConflicts(cells, regions, gridSize).queens.size > 0) return;
 
     // Scored here rather than move by move: nothing is shown until the puzzle
     // is solved anyway, and a single formula over the finished game is easier
@@ -736,9 +655,6 @@ useGameStore.subscribe((state, previous) => {
       pendingQueen: state.pendingQueen,
       history: state.history,
       movesCount: state.movesCount,
-      scoredQueens: state.scoredQueens,
-      lastCorrectMoveTime: state.lastCorrectMoveTime,
-      lastMoveTime: state.lastMoveTime,
       solveLog: state.solveLog,
     });
   }
