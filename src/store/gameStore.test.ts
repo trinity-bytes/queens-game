@@ -212,3 +212,56 @@ describe("first run", () => {
     expect(setItem).toHaveBeenCalledWith("first-run-done", "1");
   });
 });
+
+describe("startGame", () => {
+  it("resumes a saved game instead of dealing a new one", () => {
+    const stored = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => stored.set(key, value),
+      removeItem: (key: string) => stored.delete(key),
+    });
+    vi.stubGlobal(
+      "Worker",
+      class {
+        postMessage() {}
+        terminate() {}
+      },
+    );
+
+    tap(WRONG_CELL, 2);
+    tap(OTHER_CELL);
+    useGameStore.setState({ timer: 9000 });
+    const before = useGameStore.getState();
+
+    useGameStore.setState({
+      status: "idle",
+      cells: [],
+      timer: 0,
+      mistakes: 0,
+      movesCount: 0,
+    });
+    useGameStore.getState().startGame();
+
+    const after = useGameStore.getState();
+    expect(after.status).toBe("playing");
+    expect(after.cells).toEqual(before.cells);
+    expect(after.timer).toBe(9000);
+    expect(after.mistakes).toBe(1);
+    expect(after.movesCount).toBe(3);
+    expect(stored.get("puzzles-abandoned")).toBeUndefined();
+  });
+
+  it("forgets the saved game once it is won", () => {
+    const removeItem = vi.fn();
+    vi.stubGlobal("localStorage", {
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem,
+    });
+
+    SOLUTION.forEach((col, row) => tap(cellAt(row, col), 2));
+
+    expect(removeItem).toHaveBeenCalledWith("game-in-progress");
+  });
+});

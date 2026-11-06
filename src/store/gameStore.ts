@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
 import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
+import { clearSavedGame, loadGame, saveGame, saveTimer } from "@/lib/savedGame";
 import { setSoundEnabled } from "@/lib/sound";
 import { puzzleValue, scoreFor } from "@/domain/scoring";
 import {
@@ -117,6 +118,8 @@ interface GameState {
   setLocale: (locale: Locale) => void;
   toggleDarkMode: () => void;
   toggleSound: () => void;
+  /** Resumes the saved game if there is one, or deals a new puzzle. */
+  startGame: () => void;
   generatePuzzle: () => void;
   preloadNextPuzzle: () => void;
   toggleCell: (index: number) => void;
@@ -408,6 +411,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     localStorage.setItem(SOUND_STORAGE_KEY, String(newValue));
   },
 
+  startGame: () => {
+    const saved = loadGame();
+    if (!saved) {
+      get().generatePuzzle();
+      return;
+    }
+
+    set({ ...saved, status: "playing", theme: getCurrentTheme() });
+    get().preloadNextPuzzle();
+  },
+
   generatePuzzle: () => {
     const { preloadedPuzzle, gridSize, status } = get();
 
@@ -423,6 +437,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // reaches this call mid-retry today, but a stale attempt that resolved
     // later would swap the board out from under a game in progress.
     cancelGeneration();
+    clearSavedGame();
 
     // Reset game stats
     set({
@@ -679,6 +694,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // A win ends the reroll streak: the count belongs to the game it produced.
     localStorage.removeItem(ABANDONED_STORAGE_KEY);
+    clearSavedGame();
 
     set({
       status: "won",
@@ -701,3 +717,29 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ firstRunOpen: false });
   },
 }));
+
+// Saved from here, not from each action, so no way of changing the board can
+// forget to. A win clears the save instead, and is not "playing" by then.
+useGameStore.subscribe((state, previous) => {
+  if (state.status !== "playing") return;
+
+  if (state.timer !== previous.timer) saveTimer(state.timer);
+
+  if (state.cells !== previous.cells || state.regions !== previous.regions) {
+    saveGame({
+      gridSize: state.gridSize,
+      regions: state.regions,
+      solution: state.solution,
+      difficulty: state.difficulty,
+      cells: state.cells,
+      mistakes: state.mistakes,
+      pendingQueen: state.pendingQueen,
+      history: state.history,
+      movesCount: state.movesCount,
+      scoredQueens: state.scoredQueens,
+      lastCorrectMoveTime: state.lastCorrectMoveTime,
+      lastMoveTime: state.lastMoveTime,
+      solveLog: state.solveLog,
+    });
+  }
+});

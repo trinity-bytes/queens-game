@@ -11,6 +11,7 @@ export default function Board() {
   const cells = useGameStore((state) => state.cells);
   const status = useGameStore((state) => state.status);
   const generatePuzzle = useGameStore((state) => state.generatePuzzle);
+  const startGame = useGameStore((state) => state.startGame);
   const locale = useGameStore((state) => state.locale);
 
   const { queens: conflicting } = useConflicts();
@@ -27,9 +28,9 @@ export default function Board() {
 
   useEffect(() => {
     if (status === "idle") {
-      generatePuzzle();
+      startGame();
     }
-  }, [status, generatePuzzle]);
+  }, [status, startGame]);
 
   if (status === "error") {
     return (
