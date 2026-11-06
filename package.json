@@ -1,6 +1,6 @@
 {
   "name": "queens-4-my-queen",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Queens game for my queen",
   "main": "index.js",
   "scripts": {
