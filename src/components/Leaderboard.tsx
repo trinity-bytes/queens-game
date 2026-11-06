@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { fetchTopScores, type LeaderboardEntry } from "@/lib/leaderboard";
 import { pollWhileVisible } from "@/lib/poll";
 import { useGameStore } from "@/store/gameStore";
@@ -227,11 +228,11 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 {entry.mistakes === 0 && (
                   <span
                     role="img"
-                    className="shrink-0 w-6 h-[18px] flex items-center justify-center text-micro font-extrabold text-badge-flawless bg-badge-flawless-bg rounded-full"
+                    className="shrink-0 w-6 h-[18px] flex items-center justify-center text-badge-flawless bg-badge-flawless-bg rounded-full"
                     title={t(locale, "leaderboard.flawlessTitle")}
                     aria-label={t(locale, "leaderboard.flawlessTitle")}
                   >
-                    <span aria-hidden="true">✓</span>
+                    <Check className="w-3 h-3" strokeWidth={3} aria-hidden="true" />
                   </span>
                 )}
               </div>

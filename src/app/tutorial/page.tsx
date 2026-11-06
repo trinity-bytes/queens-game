@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, TriangleAlert, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import BandBadge from "@/components/BandBadge";
@@ -42,7 +43,13 @@ function MiniGrid({
           className="rounded-md flex items-center justify-center"
           style={{ background: highlight.includes(i) ? active : base }}
         >
-          {i === queen && <span className="text-sm text-[#123a5e]">♛</span>}
+          {i === queen && (
+            <img
+              src="/assets/figures/queen.png"
+              alt=""
+              className="w-[72%] h-[72%] object-contain"
+            />
+          )}
         </div>
       ))}
     </div>
@@ -105,9 +112,7 @@ export default function TutorialPage() {
             className="w-11 h-11 rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
             aria-label={t(locale, "tutorial.back")}
           >
-            <span aria-hidden="true" className="text-base">
-              ←
-            </span>
+            <ArrowLeft className="w-[18px] h-[18px]" aria-hidden="true" />
           </Link>
           <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "tutorial.title")}
@@ -145,18 +150,25 @@ export default function TutorialPage() {
                 style={{ background: i === 4 ? "#eaf4ff" : "#ffd9d9" }}
               >
                 {i === 4 ? (
-                  <span className="text-sm text-[#123a5e]">♛</span>
+                  <img
+                    src="/assets/figures/queen.png"
+                    alt=""
+                    className="w-[72%] h-[72%] object-contain"
+                  />
                 ) : (
-                  <span className="text-micro font-extrabold text-stat-penalty">
-                    ✕
-                  </span>
+                  <X
+                    className="w-2.5 h-2.5 text-stat-penalty"
+                    strokeWidth={3}
+                    aria-hidden="true"
+                  />
                 )}
               </div>
             ))}
           </div>
           <div>
-            <div className="font-extrabold text-badge-errors text-sm mb-1">
-              ⚠ {t(locale, "tutorial.goldRule")}
+            <div className="flex items-center gap-1.5 font-extrabold text-badge-errors text-sm mb-1">
+              <TriangleAlert className="w-3.5 h-3.5" aria-hidden="true" />
+              {t(locale, "tutorial.goldRule")}
             </div>
             <div className="text-badge-errors text-xs font-semibold leading-snug">
               {t(locale, "tutorial.goldRuleText")}
@@ -174,7 +186,7 @@ export default function TutorialPage() {
             aria-hidden="true"
           >
             <CycleTile />
-            →
+            <ArrowRight className="w-4 h-4" />
             <CycleTile>
               <img
                 src="/assets/figures/x-mark.png"
@@ -182,7 +194,7 @@ export default function TutorialPage() {
                 className="w-1/2 h-1/2 object-contain opacity-60"
               />
             </CycleTile>
-            →
+            <ArrowRight className="w-4 h-4" />
             <CycleTile>
               {hydrated && (
                 <img
@@ -192,7 +204,7 @@ export default function TutorialPage() {
                 />
               )}
             </CycleTile>
-            →
+            <ArrowRight className="w-4 h-4" />
             <CycleTile />
           </div>
           <p className="text-muted text-xs">{t(locale, "tutorial.markFree")}</p>

@@ -2,6 +2,7 @@ import { useGameStore } from "@/store/gameStore";
 import BandBadge from "./BandBadge";
 import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
+import { Check } from "lucide-react";
 import { submitScore } from "@/lib/leaderboard";
 import { getSavedNicks, saveNick } from "@/lib/nickStorage";
 import Link from "next/link";
@@ -303,8 +304,11 @@ export default function VictoryModal() {
           role="status"
           className="mt-3 flex items-center justify-between gap-2 min-h-11 px-3.5 rounded-2xl bg-badge-flawless-bg text-badge-flawless text-sm font-extrabold"
         >
-          <span className="min-w-0 truncate">
-            ✓ {t(locale, "victory.saved", { name: name.trim() })}
+          <span className="min-w-0 flex items-center gap-1.5">
+            <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              {t(locale, "victory.saved", { name: name.trim() })}
+            </span>
           </span>
           <Link
             href="/leaderboard"

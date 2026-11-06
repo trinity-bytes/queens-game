@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Volume2, VolumeX } from "lucide-react";
+import { Award, CircleHelp, Volume2, VolumeX } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { getLanguageOptions, t } from "@/lib/i18n";
 import { playButton } from "@/lib/sound";
@@ -116,8 +116,8 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-base">
-              ℹ️
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-ink">
+              <CircleHelp className="w-4 h-4" aria-hidden="true" />
             </span>
             <span className="font-extrabold text-ink text-sm">
               {t(locale, "menu.howToPlay")}
@@ -128,8 +128,8 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-base">
-              🛡️
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-ink">
+              <Award className="w-4 h-4" aria-hidden="true" />
             </span>
             <span className="font-extrabold text-ink text-sm">
               {t(locale, "menu.credits")}

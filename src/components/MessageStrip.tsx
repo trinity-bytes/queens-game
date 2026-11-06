@@ -1,3 +1,4 @@
+import { Pointer, TriangleAlert } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 import { useConflicts } from "@/lib/useConflicts";
@@ -18,10 +19,14 @@ export default function MessageStrip() {
       aria-live="polite"
     >
       <span
-        className="w-[18px] h-[18px] rounded-[7px] flex items-center justify-center font-extrabold text-micro text-ink bg-icon-bg flex-shrink-0"
+        className="w-[18px] h-[18px] rounded-[7px] flex items-center justify-center text-ink bg-icon-bg flex-shrink-0"
         aria-hidden="true"
       >
-        {rule ? "!" : "☝"}
+        {rule ? (
+          <TriangleAlert className="w-3 h-3" />
+        ) : (
+          <Pointer className="w-3 h-3" />
+        )}
       </span>
       <span className="font-extrabold text-xs text-muted">
         {t(locale, rule ? `msg.conflict.${rule}` : "msg.tip")}
