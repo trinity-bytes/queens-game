@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
-import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, Locale, setStoredLocale } from "@/lib/i18n";
 import { clearSavedGame, loadGame, saveGame, saveTimer } from "@/lib/savedGame";
 import { setSoundEnabled } from "@/lib/sound";
 import { puzzleValue, scoreFor } from "@/domain/scoring";
@@ -383,7 +383,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentWinId: null,
   savedWinId: null,
   darkMode: getInitialDarkMode(),
-  locale: getInitialLocale(),
+  locale: DEFAULT_LOCALE,
   soundEnabled: initialSound,
   preloadedPuzzle: null,
   isPreloading: false,

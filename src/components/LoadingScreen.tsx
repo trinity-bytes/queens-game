@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";

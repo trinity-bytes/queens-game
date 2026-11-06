@@ -2,6 +2,9 @@ export type Locale = "es" | "en" | "ko" | "zh-CN" | "pt" | "tr";
 
 export const LOCALE_STORAGE_KEY = "queens-locale";
 
+/** The language the pages are prerendered in. */
+export const DEFAULT_LOCALE: Locale = "es";
+
 export const SUPPORTED_LOCALES: Locale[] = [
   "es",
   "en",

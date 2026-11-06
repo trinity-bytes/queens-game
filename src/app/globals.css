@@ -5,8 +5,6 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-baloo: "Baloo 2";
-  --font-nunito: "Nunito";
 }
 
 .dark {
@@ -19,7 +17,7 @@
 :root {
   --stat-points: #238057;
   --stat-penalty: #b64b53;
-  --stat-total: #8e6a1f;
+  --stat-total: #8a671d;
   --badge-flawless: #197e4c;
   --badge-flawless-bg: #e3f9ec;
   --badge-errors: #a74049;
@@ -41,7 +39,7 @@
   --theme-text: #0f5a53;
   --ink: #0f5a53;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #dcf3f1;
   --accent: #1c827a;
   --chip-bg: #eafaf8;
@@ -65,7 +63,7 @@
   --theme-text: #166b42;
   --ink: #166b42;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #dcf5e6;
   --accent: #1a8651;
   --chip-bg: #eefbf3;
@@ -88,7 +86,7 @@
   --theme-text: #8a5a12;
   --ink: #8a5a12;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #fdedd3;
   --accent: #a0691f;
   --chip-bg: #fef6e8;
@@ -111,7 +109,7 @@
   --theme-text: #37455a;
   --ink: #37455a;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #e7ebf1;
   --accent: #5b6b85;
   --chip-bg: #f2f4f8;
@@ -134,7 +132,7 @@
   --theme-text: #7c1f8a;
   --ink: #7c1f8a;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #f8e2fb;
   --accent: #b93cc7;
   --chip-bg: #fcf0fd;
@@ -157,7 +155,7 @@
   --theme-text: #7a5f0a;
   --ink: #7a5f0a;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #fbf0d3;
   --accent: #927010;
   --chip-bg: #fcf7e6;
@@ -180,7 +178,7 @@
   --theme-text: #0f5a53;
   --ink: #0f5a53;
   --card: #ffffff;
-  --muted: #5c7387;
+  --muted: #546a7d;
   --icon-bg: #dcf3f1;
   --accent: #1c827a;
   --chip-bg: #eafaf8;
@@ -316,15 +314,38 @@ body {
   border-width: 0;
 }
 
-/* Accessibility: respect reduced motion preference */
+/* Reduced motion removes movement, not feedback: a queen still arrives and the
+   loader still pulses, by fading instead of moving. */
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dotfade {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .animate-qpop,
+  .animate-stripin {
+    animation: fadein 0.15s ease;
+  }
+  .dot-bounce {
+    animation-name: dotfade;
+  }
+  button:active,
+  a:active {
+    transform: none !important;
   }
 }
 
