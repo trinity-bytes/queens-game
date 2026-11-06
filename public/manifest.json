@@ -1,7 +1,7 @@
 {
   "name": "Queens 4 My Queen",
   "short_name": "Queens 4 Me",
-  "description": "Coloca una reina por fila, columna y región sin que se toquen. Un puzzle de lógica para jugar gratis en el navegador, con tabla de líderes.",
+  "description": "Place one queen per row, column and region without them touching. A free logic puzzle to play in your browser, with a leaderboard.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#e6f6f4",

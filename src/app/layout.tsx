@@ -17,7 +17,7 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
-import { SUPPORTED_LOCALES } from "@/lib/i18n";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@/lib/i18n";
 import { DEFAULT_THEME_COLOR, SYNC_THEME_COLOR_SCRIPT } from "@/lib/systemBars";
 
 export const metadata: Metadata = {
@@ -62,7 +62,7 @@ export default function RootLayout({
   return (
     // ThemeScript rewrites lang and class before hydration, from values the
     // prerender cannot know.
-    <html lang="es" suppressHydrationWarning>
+    <html lang={DEFAULT_LOCALE} suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>
