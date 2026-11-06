@@ -9,19 +9,27 @@ import type { DifficultyBand } from "../../src/workers/puzzleGenerator.types";
 
 const MAX_NAME_LENGTH = 15;
 const MAX_TIME_MS = 3_600_000;
-const MIN_MOVES = 9;
 const MAX_MOVES = 5000;
 const MAX_MISTAKES = 500;
-const MIN_GRID = 4;
-const MAX_GRID = 12;
+/**
+ * The only grid the game deals and the board ranks. The database keeps the best
+ * 100 runs of any grid, so a larger one, which scores higher and is never shown,
+ * would silently push every real run out.
+ */
+export const RANKED_GRID_SIZE = 9;
 const MIN_WIN_ID_LENGTH = 5;
 const MAX_WIN_ID_LENGTH = 64;
 const MAX_LABEL_LENGTH = 64;
 /** The column was an int4 in Postgres; nothing legitimate comes close. */
 const MAX_DIFFICULTY_SCORE = 2_147_483_647;
 
+export interface Placement {
+  atMs: number;
+  correct: boolean;
+}
+
 export interface SolveRecord {
-  placements: unknown[];
+  placements: Placement[];
   xMarksPlaced: number;
   peakXMarks: number;
   puzzlesAbandoned: number;
@@ -74,10 +82,19 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 /** SQLite's length() stops at a NUL, so such a string cannot be measured. */
 const hasNul = (value: string): boolean => value.includes("\0");
 
+/**
+ * Control and format characters, which can reverse the text around them on the
+ * public board or make a name invisible. The zero-width joiner stays, because
+ * it is what holds an emoji sequence together.
+ */
+const INVISIBLE_CHARACTERS = /(?!\u200D)[\p{Cc}\p{Cf}]/gu;
+
 /** Counts characters, not UTF-16 units, so an emoji is not cut in half. */
 const normaliseName = (value: unknown): string =>
   typeof value === "string" && !hasNul(value)
-    ? Array.from(value.trim()).slice(0, MAX_NAME_LENGTH).join("")
+    ? Array.from(value.replace(INVISIBLE_CHARACTERS, "").trim())
+        .slice(0, MAX_NAME_LENGTH)
+        .join("")
     : "";
 
 /** Measured in characters, as the database's length check does. */
@@ -90,14 +107,28 @@ const isWinId = (value: unknown): value is string =>
 const counter = (value: unknown): number =>
   Number.isInteger(value) ? Math.max(0, value as number) : 0;
 
+const isPlacement = (
+  value: unknown,
+): value is Record<string, unknown> & Placement =>
+  isRecord(value) &&
+  isIntegerBetween(value.atMs, 0, MAX_TIME_MS) &&
+  typeof value.correct === "boolean";
+
 function parseSolveLog(value: unknown, movesCount: number): SolveRecord | null {
   const log = isRecord(value) ? value : {};
   const placements = log.placements ?? [];
 
-  if (!Array.isArray(placements) || placements.length > movesCount) return null;
+  if (
+    !Array.isArray(placements) ||
+    placements.length > movesCount ||
+    !placements.every(isPlacement)
+  ) {
+    return null;
+  }
 
   return {
-    placements,
+    // Rebuilt field by field, so nothing else in the body reaches the database.
+    placements: placements.map(({ atMs, correct }) => ({ atMs, correct })),
     xMarksPlaced: counter(log.xMarksPlaced),
     peakXMarks: counter(log.peakXMarks),
     puzzlesAbandoned: counter(log.puzzlesAbandoned),
@@ -133,12 +164,10 @@ export function parseSubmission(body: unknown): ParsedSubmission {
     return fail("invalid time");
   }
 
-  if (!isIntegerBetween(gridSize, MIN_GRID, MAX_GRID)) {
-    return fail("invalid grid size");
-  }
+  if (gridSize !== RANKED_GRID_SIZE) return fail("invalid grid size");
 
   // Solving a board takes at least one move per queen.
-  if (!isIntegerBetween(movesCount, Math.max(MIN_MOVES, gridSize), MAX_MOVES)) {
+  if (!isIntegerBetween(movesCount, RANKED_GRID_SIZE, MAX_MOVES)) {
     return fail("invalid move count");
   }
 
@@ -163,11 +192,9 @@ export function parseSubmission(body: unknown): ParsedSubmission {
   if (!solveLog) return fail("invalid solve log");
 
   const expected = scoreFor({ gridSize, band: difficultyBand, mistakes });
-  if (score !== expected) {
-    return fail(
-      `score does not match difficulty and mistakes (expected ${expected}, got ${String(score)})`,
-    );
-  }
+  // The expected value stays out of the message: it would hand a forger the
+  // exact number to send.
+  if (score !== expected) return fail("invalid score");
 
   return {
     ok: true,

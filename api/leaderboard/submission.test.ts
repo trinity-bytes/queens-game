@@ -64,13 +64,12 @@ describe("parseSubmission", () => {
     [{ mistakes: -1 }, "invalid mistake count"],
     [{ mistakes: 501 }, "invalid mistake count"],
     [{ mistakes: 13 }, "invalid mistake count"],
-    [{ gridSize: 3 }, "invalid grid size"],
-    [{ gridSize: 13 }, "invalid grid size"],
+    [{ gridSize: 8, score: 25600 }, "invalid grid size"],
+    [{ gridSize: 12, score: 38400 }, "invalid grid size"],
     [{ difficultyBand: "legendary" }, "invalid difficulty band"],
     [{ difficultyBand: "constructor" }, "invalid difficulty band"],
     [{ difficultyScore: -1 }, "invalid difficulty score"],
     [{ difficultyScore: 2147483648 }, "invalid difficulty score"],
-    [{ gridSize: 12, movesCount: 11, score: 38400 }, "invalid move count"],
     [{ winId: "👑👑👑👑" }, "invalid win id"],
     [{ winId: "win\0-12345" }, "invalid win id"],
     [{ playerName: "Que\0en" }, "invalid name"],
@@ -87,9 +86,47 @@ describe("parseSubmission", () => {
   });
 
   it("rejects a score the band and mistakes cannot produce", () => {
-    expect(errorFor({ score: 28801 })).toBe(
-      "score does not match difficulty and mistakes (expected 28800, got 28801)",
-    );
+    expect(errorFor({ score: 28801 })).toBe("invalid score");
+  });
+
+  it.each([
+    ["a bare string", "x"],
+    ["a missing time", { correct: true }],
+    ["a negative time", { atMs: -1, correct: true }],
+    ["a time past the limit", { atMs: 3_600_001, correct: true }],
+    ["a non-boolean verdict", { atMs: 1000, correct: "yes" }],
+  ])("rejects a placement that is %s", (_, placement) => {
+    expect(
+      errorFor({ solveLog: { placements: [placement] } }),
+    ).toBe("invalid solve log");
+  });
+
+  it("keeps only the known fields of a placement", () => {
+    const parsed = parseSubmission({
+      ...valid,
+      solveLog: { placements: [{ atMs: 1000, correct: true, note: "x".repeat(99) }] },
+    });
+
+    expect(parsed.ok && parsed.value.solveLog.placements).toEqual([
+      { atMs: 1000, correct: true },
+    ]);
+  });
+
+  it("strips control and direction characters from a name", () => {
+    const parsed = parseSubmission({ ...valid, playerName: "Qu\u202Eeen\u200B\n" });
+
+    expect(parsed.ok && parsed.value.playerName).toBe("Queen");
+  });
+
+  it("keeps the joiner that holds an emoji sequence together", () => {
+    const family = "👩\u200D👧";
+    const parsed = parseSubmission({ ...valid, playerName: family });
+
+    expect(parsed.ok && parsed.value.playerName).toBe(family);
+  });
+
+  it("rejects a name made only of invisible characters", () => {
+    expect(errorFor({ playerName: "\u200B\u202E" })).toBe("invalid name");
   });
 
   it("rejects a solve log with more placements than moves", () => {
