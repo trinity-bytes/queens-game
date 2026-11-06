@@ -7,8 +7,6 @@ import {
   REGION_PALETTE_DARK,
   CELL_EDGE_LIGHT,
   CELL_EDGE_DARK,
-  CELL_CONFLICT_LIGHT,
-  CELL_CONFLICT_DARK,
 } from "@/lib/designTokens";
 
 interface CellProps {
@@ -34,9 +32,8 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
   const col = index % gridSize;
 
   const palette = darkMode ? REGION_PALETTE_DARK : REGION_PALETTE_LIGHT;
-  const conflict = darkMode ? CELL_CONFLICT_DARK : CELL_CONFLICT_LIGHT;
   const edge = darkMode ? CELL_EDGE_DARK : CELL_EDGE_LIGHT;
-  const bgColor = isConflicting ? conflict : palette[regionId % palette.length];
+  const bgColor = palette[regionId % palette.length];
   const patternClass = `region-pattern-${regionId % 15}`;
   const regionName = getRegionName(locale, regionId);
 
@@ -124,6 +121,20 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
 
   const icon = getIcon();
 
+  // The grid cannot clip its corners: it would also clip the focus ring and the
+  // conflict badge of every cell along the edge.
+  const last = gridSize - 1;
+  const cornerClass =
+    row === 0 && col === 0
+      ? "rounded-tl-[28px]"
+      : row === 0 && col === last
+        ? "rounded-tr-[28px]"
+        : row === last && col === 0
+          ? "rounded-bl-[28px]"
+          : row === last && col === last
+            ? "rounded-br-[28px]"
+            : "";
+
   return (
     <button
       type="button"
@@ -131,7 +142,7 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
       aria-label={ariaLabel}
       aria-pressed={state === 2}
       tabIndex={index === 0 ? 0 : -1}
-      className={`w-full aspect-square flex items-center justify-center cursor-pointer select-none transition-colors duration-200 hover:brightness-95 active:scale-90 ${patternClass}`}
+      className={`relative w-full aspect-square flex items-center justify-center cursor-pointer select-none transition-colors duration-200 hover:brightness-95 active:scale-90 focus-visible:z-30 ${isConflicting ? "z-20" : ""} ${cornerClass} ${patternClass}`}
       style={{
         backgroundColor: bgColor,
         border: `1px solid ${edge}`,
@@ -144,6 +155,14 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
       onKeyDown={handleKeyDown}
     >
       {icon}
+      {isConflicting && (
+        <span aria-hidden="true">
+          <span className="absolute inset-0 rounded-lg border-[3px] border-badge-errors pointer-events-none" />
+          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-badge-errors text-card text-micro font-extrabold flex items-center justify-center pointer-events-none">
+            !
+          </span>
+        </span>
+      )}
     </button>
   );
 }

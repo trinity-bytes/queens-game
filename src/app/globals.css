@@ -328,6 +328,13 @@ body {
   }
 }
 
+/* ===== Game layout ===== */
+.board-frame {
+  width: 100%;
+  max-width: 28rem;
+  aspect-ratio: 1;
+}
+
 /* Region patterns for color-blind users (subtle textures over pastel fills) */
 .region-pattern-0 {
   background-image: url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='4' r='1' fill='rgba(0,0,0,0.08)'/%3E%3C/svg%3E");

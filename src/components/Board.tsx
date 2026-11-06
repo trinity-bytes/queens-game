@@ -2,49 +2,8 @@ import { useGameStore } from "@/store/gameStore";
 import Cell from "./Cell";
 import { useEffect, useMemo } from "react";
 import { t } from "@/lib/i18n";
-
-/**
- * Returns the indices of every queen that breaks a rule against another queen
- * already on the board: same row, same column, same region, or touching.
- *
- * This is derived purely from what the player can see, never from the stored
- * solution. Highlighting "wrong" queens by comparing them to the solution would
- * turn the board into an oracle and let the puzzle be brute-forced.
- */
-function getConflictingQueens(
-  cells: number[],
-  regions: number[],
-  gridSize: number,
-): Set<number> {
-  const queens: number[] = [];
-  for (let i = 0; i < cells.length; i++) {
-    if (cells[i] === 2) queens.push(i);
-  }
-
-  const conflicting = new Set<number>();
-  for (let a = 0; a < queens.length; a++) {
-    for (let b = a + 1; b < queens.length; b++) {
-      const first = queens[a];
-      const second = queens[b];
-      const firstRow = Math.floor(first / gridSize);
-      const firstCol = first % gridSize;
-      const secondRow = Math.floor(second / gridSize);
-      const secondCol = second % gridSize;
-
-      const sameLine = firstRow === secondRow || firstCol === secondCol;
-      const sameRegion = regions[first] === regions[second];
-      const touching =
-        Math.abs(firstRow - secondRow) <= 1 &&
-        Math.abs(firstCol - secondCol) <= 1;
-
-      if (sameLine || sameRegion || touching) {
-        conflicting.add(first);
-        conflicting.add(second);
-      }
-    }
-  }
-  return conflicting;
-}
+import { regionBoundaries } from "@/domain/board";
+import { useConflicts } from "@/lib/useConflicts";
 
 export default function Board() {
   const gridSize = useGameStore((state) => state.gridSize);
@@ -54,9 +13,16 @@ export default function Board() {
   const generatePuzzle = useGameStore((state) => state.generatePuzzle);
   const locale = useGameStore((state) => state.locale);
 
-  const conflicting = useMemo(
-    () => getConflictingQueens(cells, regions, gridSize),
-    [cells, regions, gridSize],
+  const { queens: conflicting } = useConflicts();
+
+  // One path, so the lines stay even where they meet: overlapping strokes at
+  // 75% opacity would darken every junction.
+  const boundaryPath = useMemo(
+    () =>
+      regionBoundaries(regions, gridSize)
+        .map(({ x1, y1, x2, y2 }) => `M${x1} ${y1}L${x2} ${y2}`)
+        .join(""),
+    [regions, gridSize],
   );
 
   useEffect(() => {
@@ -68,7 +34,7 @@ export default function Board() {
   if (status === "error") {
     return (
       <div
-        className="w-full max-w-md aspect-square bg-card rounded-[28px] flex items-center justify-center shadow-[0_14px_30px_rgba(18,58,94,0.18)] p-6"
+        className="board-frame bg-card rounded-[28px] flex items-center justify-center shadow-[0_14px_30px_rgba(18,58,94,0.18)] p-6"
         role="alert"
       >
         <div className="flex flex-col items-center gap-4 text-center">
@@ -93,7 +59,7 @@ export default function Board() {
   if (status === "generating") {
     return (
       <div
-        className="w-full max-w-md aspect-square bg-card rounded-[28px] flex items-center justify-center shadow-[0_14px_30px_rgba(18,58,94,0.18)]"
+        className="board-frame bg-card rounded-[28px] flex items-center justify-center shadow-[0_14px_30px_rgba(18,58,94,0.18)]"
         role="status"
         aria-live="polite"
         aria-label={t(locale, "board.generatingLabel")}
@@ -113,33 +79,51 @@ export default function Board() {
   }
 
   return (
-    <div
-      role="grid"
-      aria-label={t(locale, "board.gridAria", { size: gridSize })}
-      className="w-full max-w-md aspect-square bg-card rounded-[28px] shadow-[0_14px_30px_rgba(18,58,94,0.18)] overflow-hidden"
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-        gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
-      }}
-    >
-      {Array.from({ length: gridSize }, (_, rowIdx) => (
-        <div key={rowIdx} role="row" style={{ display: "contents" }}>
-          {Array.from({ length: gridSize }, (_, colIdx) => {
-            const index = rowIdx * gridSize + colIdx;
-            return (
-              <Cell
-                key={index}
-                index={index}
-                regionId={regions[index]}
-                state={cells[index]}
-                gridSize={gridSize}
-                isConflicting={conflicting.has(index)}
-              />
-            );
-          })}
-        </div>
-      ))}
+    <div className="board-frame relative bg-card rounded-[28px] shadow-[0_14px_30px_rgba(18,58,94,0.18)]">
+      <div
+        role="grid"
+        aria-label={t(locale, "board.gridAria", { size: gridSize })}
+        className="w-full h-full"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
+        }}
+      >
+        {Array.from({ length: gridSize }, (_, rowIdx) => (
+          <div key={rowIdx} role="row" style={{ display: "contents" }}>
+            {Array.from({ length: gridSize }, (_, colIdx) => {
+              const index = rowIdx * gridSize + colIdx;
+              return (
+                <Cell
+                  key={index}
+                  index={index}
+                  regionId={regions[index]}
+                  state={cells[index]}
+                  gridSize={gridSize}
+                  isConflicting={conflicting.has(index)}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <svg
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full pointer-events-none z-10"
+        viewBox={`0 0 ${gridSize} ${gridSize}`}
+        preserveAspectRatio="none"
+      >
+        <path
+          d={boundaryPath}
+          fill="none"
+          stroke="var(--ink)"
+          strokeOpacity={0.75}
+          strokeWidth={3}
+          strokeLinecap="square"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
     </div>
   );
 }
