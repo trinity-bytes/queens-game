@@ -1,6 +1,5 @@
 import { useGameStore } from "@/store/gameStore";
-import { BAND_MULTIPLIER } from "@/domain/scoring";
-import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
+import BandBadge from "./BandBadge";
 import { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { submitScore } from "@/lib/leaderboard";
@@ -13,14 +12,6 @@ const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 /** Stamped on every leaderboard row. Inlined from package.json at build time. */
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
-
-/** Cool to hot, so the badge reads as difficulty before the words are parsed. */
-const BAND_STYLES: Record<DifficultyBand, string> = {
-  gentle: "bg-badge-flawless-bg text-badge-flawless",
-  tricky:
-    "bg-[#fff6da] text-stat-total dark:bg-[rgba(201,150,44,0.16)]",
-  brutal: "bg-badge-errors-bg text-badge-errors",
-};
 
 /**
  * Checks if user prefers reduced motion.
@@ -179,7 +170,6 @@ export default function VictoryModal() {
     }
   };
 
-  const multiplier = difficulty && BAND_MULTIPLIER[difficulty.band].toFixed(1);
   const percentLost =
     grossScore > 0 ? Math.round((totalPenalties / grossScore) * 100) : 0;
   const errorsLabel = t(
@@ -240,27 +230,7 @@ export default function VictoryModal() {
       </div>
 
       <div className="flex flex-wrap gap-1.5 mt-2.5">
-        {/* The multiplier is shown alongside the band because it is the whole
-            reason the score is what it is. */}
-        {difficulty && (
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-micro font-extrabold uppercase tracking-wider ${BAND_STYLES[difficulty.band]}`}
-            aria-label={t(locale, "victory.difficultyAria", {
-              band: t(locale, `difficulty.${difficulty.band}`),
-              // One decimal throughout, so x1.0 lines up with x1.6 and x2.4
-              // instead of rendering as a bare "x1".
-              multiplier: `x${multiplier}`,
-            })}
-          >
-            <span aria-hidden="true">
-              {t(locale, "victory.difficulty")}:{" "}
-              {t(locale, `difficulty.${difficulty.band}`)}
-            </span>
-            <span aria-hidden="true" className="opacity-70">
-              ×{multiplier}
-            </span>
-          </span>
-        )}
+        {difficulty && <BandBadge band={difficulty.band} locale={locale} />}
         <span
           className={`px-2.5 py-1 rounded-xl text-micro font-extrabold uppercase tracking-wider ${
             mistakes === 0
