@@ -7,11 +7,15 @@
 //
 // Bump CACHE on any change to this file. The activate handler deletes every
 // cache that does not match, which is what actually retires the old one.
-const CACHE = "queens-v3";
+const CACHE = "queens-v4";
 
 // Fixed-path assets worth holding before the first offline load. Hashed build
 // output is deliberately absent: its names only exist at build time, so it is
 // picked up by the runtime rules below instead.
+//
+// The figures are here because the theme changes with the clock: one that was
+// never shown online would otherwise be a broken image the first time it comes
+// up offline. All of them together are about 60 KB.
 const SHELL = [
   "/",
   "/manifest.json",
@@ -20,6 +24,14 @@ const SHELL = [
   "/icon-512x512.png",
   "/icon-maskable-512x512.png",
   "/apple-touch-icon.png",
+  "/assets/figures/cow.png",
+  "/assets/figures/dino.png",
+  "/assets/figures/dog.png",
+  "/assets/figures/elephant.png",
+  "/assets/figures/potato.png",
+  "/assets/figures/queen.png",
+  "/assets/figures/starwars.png",
+  "/assets/figures/x-mark.png",
 ];
 
 self.addEventListener("install", (event) => {

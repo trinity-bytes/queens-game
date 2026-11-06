@@ -1,7 +1,7 @@
 import { Theme } from "@/store/gameStore";
 import { mulberry32 } from "@/lib/random";
 
-const THEMES: Theme[] = [
+export const THEMES: Theme[] = [
   "dino",
   "dog",
   "cow",
