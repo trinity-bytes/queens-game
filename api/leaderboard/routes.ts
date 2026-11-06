@@ -1,8 +1,8 @@
 import type { LeaderboardRepository } from "./repository";
-import { parseSubmission } from "./submission";
+import { parseSubmission, RANKED_GRID_SIZE } from "./submission";
 
-/** The board only ranks the standard grid. */
-const RANKED_GRID_SIZE = 9;
+/** The part of the Workers rate limit binding this layer uses. */
+export type SubmissionLimiter = Pick<RateLimit, "limit">;
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 100;
@@ -14,6 +14,9 @@ const MAX_LIMIT = 100;
 const MAX_BODY_BYTES = 256 * 1024;
 
 const MAX_USER_AGENT_LENGTH = 512;
+
+/** Matches the period of the binding in wrangler.jsonc. */
+const RATE_LIMIT_PERIOD_SECONDS = 60;
 
 const json = (body: unknown, status = 200, headers?: HeadersInit): Response =>
   Response.json(body, {
@@ -51,7 +54,26 @@ async function listScores(
 async function submitScore(
   request: Request,
   repository: LeaderboardRepository,
+  limiter?: SubmissionLimiter,
 ): Promise<Response> {
+  // Players are anonymous, so the address is the only key there is. Limits are
+  // counted per Cloudflare location, which is enough to stop a flood.
+  const key = request.headers.get("cf-connecting-ip");
+  if (limiter && key && !(await limiter.limit({ key })).success) {
+    return json({ error: "too many submissions" }, 429, {
+      "retry-after": String(RATE_LIMIT_PERIOD_SECONDS),
+    });
+  }
+
+  if (!request.headers.get("content-type")?.startsWith("application/json")) {
+    return json({ error: "unsupported media type" }, 415);
+  }
+
+  // Answered from the header when it is honest, before the body is buffered.
+  if (Number(request.headers.get("content-length")) > MAX_BODY_BYTES) {
+    return json({ error: "submission too large" }, 413);
+  }
+
   const text = await request.text();
   if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) {
     return json({ error: "submission too large" }, 413);
@@ -72,13 +94,14 @@ async function submitScore(
 export async function handleLeaderboard(
   request: Request,
   repository: LeaderboardRepository,
+  limiter?: SubmissionLimiter,
 ): Promise<Response> {
   try {
     switch (request.method) {
       case "GET":
         return await listScores(request, repository);
       case "POST":
-        return await submitScore(request, repository);
+        return await submitScore(request, repository, limiter);
       default:
         return json({ error: "method not allowed" }, 405, {
           allow: "GET, POST",

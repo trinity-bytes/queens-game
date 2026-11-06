@@ -3,6 +3,7 @@ import { handleLeaderboard } from "./leaderboard/routes";
 
 interface Env {
   DB: D1Database;
+  SUBMISSION_LIMITER: RateLimit;
 }
 
 /**
@@ -12,7 +13,11 @@ interface Env {
 const worker = {
   fetch(request: Request, env: Env): Promise<Response> | Response {
     if (new URL(request.url).pathname === "/api/leaderboard") {
-      return handleLeaderboard(request, d1Repository(env.DB));
+      return handleLeaderboard(
+        request,
+        d1Repository(env.DB),
+        env.SUBMISSION_LIMITER,
+      );
     }
     return Response.json({ error: "not found" }, { status: 404 });
   },

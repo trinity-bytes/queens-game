@@ -11,9 +11,6 @@ const GAME = {
   pendingQueen: { index: 3, correct: false },
   history: [],
   movesCount: 4,
-  scoredQueens: [],
-  lastCorrectMoveTime: 0,
-  lastMoveTime: 2000,
   solveLog: {
     placements: [],
     xMarksPlaced: 1,

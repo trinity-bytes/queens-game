@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import worker from "../index";
+import { d1Repository } from "./d1Repository";
 import { handleLeaderboard } from "./routes";
 
 const win = (patch: Record<string, unknown> = {}) => ({
@@ -118,10 +119,7 @@ describe("POST /api/leaderboard", () => {
     const response = await post(win({ score: 43200 }));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
-      error:
-        "score does not match difficulty and mistakes (expected 28800, got 43200)",
-    });
+    expect(await response.json()).toEqual({ error: "invalid score" });
     expect(await count("leaderboard")).toBe(0);
   });
 
@@ -139,6 +137,66 @@ describe("POST /api/leaderboard", () => {
 
     expect(response.status).toBe(413);
     expect(await count("leaderboard")).toBe(0);
+  });
+
+  it("refuses a declared oversized body without reading it", async () => {
+    const response = await post(win(), { "content-length": "300000" });
+
+    expect(response.status).toBe(413);
+    expect(await count("leaderboard")).toBe(0);
+  });
+
+  it("rejects a body not declared as JSON", async () => {
+    const response = await post(win(), { "content-type": "text/plain" });
+
+    expect(response.status).toBe(415);
+    expect(await count("leaderboard")).toBe(0);
+  });
+
+  it("cannot push real runs off the board with an unranked grid", async () => {
+    const response = await post(win({ gridSize: 12, score: 38400 }));
+
+    expect(response.status).toBe(400);
+    expect(await count("leaderboard")).toBe(0);
+  });
+
+  it("turns away a submitter over the limit and stores nothing", async () => {
+    const keys: string[] = [];
+    const limiter = {
+      limit: ({ key }: { key: string }) => {
+        keys.push(key);
+        return Promise.resolve({ success: false });
+      },
+    };
+    const response = await handleLeaderboard(
+      new Request("https://queens.test/api/leaderboard", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "cf-connecting-ip": "203.0.113.7",
+        },
+        body: JSON.stringify(win()),
+      }),
+      d1Repository(env.DB),
+      limiter,
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("60");
+    expect(await response.json()).toEqual({ error: "too many submissions" });
+    expect(keys).toEqual(["203.0.113.7"]);
+    expect(await count("leaderboard")).toBe(0);
+  });
+
+  it("does not limit reading the board", async () => {
+    const limiter = { limit: () => Promise.resolve({ success: false }) };
+    const response = await handleLeaderboard(
+      new Request("https://queens.test/api/leaderboard"),
+      d1Repository(env.DB),
+      limiter,
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it("keeps only the best 100 runs and removes their private rows", async () => {
@@ -184,13 +242,10 @@ describe("GET /api/leaderboard", () => {
     await post(win({ score: 18000, difficultyBand: "gentle", playerName: "C" }));
     await post(win({ timeMs: 90000, playerName: "A" }));
     await post(win({ timeMs: 95000, playerName: "B" }));
-    await post(
-      win({
-        gridSize: 8,
-        score: 25600,
-        playerName: "Other grid",
-      }),
-    );
+    await env.DB.prepare(
+      `INSERT INTO leaderboard (id, win_id, player_name, score, time_ms, grid_size, theme_used)
+       VALUES ('legacy', 'legacy-win', 'Other grid', 25600, 1000, 8, 'dog')`,
+    ).run();
   };
 
   it("ranks 9x9 runs by score, then by time", async () => {

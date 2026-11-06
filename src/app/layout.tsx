@@ -17,7 +17,7 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
-import { SUPPORTED_LOCALES } from "@/lib/i18n";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@/lib/i18n";
 import { DEFAULT_THEME_COLOR, SYNC_THEME_COLOR_SCRIPT } from "@/lib/systemBars";
 
 export const metadata: Metadata = {
@@ -62,14 +62,9 @@ export default function RootLayout({
   return (
     // ThemeScript rewrites lang and class before hydration, from values the
     // prerender cannot know.
-    <html lang="es" suppressHydrationWarning>
+    <html lang={DEFAULT_LOCALE} suppressHydrationWarning>
       <head>
         <ThemeScript />
-        <link rel="preload" as="image" href="/assets/figures/dino.png" />
-        <link rel="preload" as="image" href="/assets/figures/dog.png" />
-        <link rel="preload" as="image" href="/assets/figures/cow.png" />
-        <link rel="preload" as="image" href="/assets/figures/potato.png" />
-        <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
         {/* Here and not in ThemeScript: the meta tag comes after that script. */}
