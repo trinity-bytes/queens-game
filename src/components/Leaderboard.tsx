@@ -23,8 +23,11 @@ function formatTime(ms: number) {
 export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
   const locale = useGameStore((state) => state.locale);
   const theme = useGameStore((state) => state.theme);
+  const darkMode = useGameStore((state) => state.darkMode);
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   const limit = fullPage ? 50 : 10;
 
@@ -34,10 +37,14 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
     const loadLeaderboard = async () => {
       try {
         const top = await fetchTopScores(limit);
-        if (active) setEntries(top);
+        if (!active) return;
+        setEntries(top);
+        setFailed(false);
       } catch (error) {
-        // A failed refresh keeps the board already on screen.
+        // A failed refresh keeps the board already on screen: `failed` only
+        // shows once there are no entries to keep.
         console.error("Error fetching leaderboard:", error);
+        if (active) setFailed(true);
       } finally {
         if (active) setLoading(false);
       }
@@ -50,7 +57,13 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
       active = false;
       stopPolling();
     };
-  }, [limit]);
+  }, [limit, attempt]);
+
+  const retry = () => {
+    setLoading(true);
+    setFailed(false);
+    setAttempt((count) => count + 1);
+  };
 
   if (loading) {
     return (
@@ -80,23 +93,51 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
     );
   }
 
+  const mascot = (
+    <div className="w-[72px] h-[72px] rounded-[22px] bg-chip-bg flex items-center justify-center">
+      <img
+        src={`/assets/figures/${theme}.png`}
+        alt=""
+        aria-hidden="true"
+        className="w-11 h-11 object-contain opacity-85"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
+        }}
+      />
+    </div>
+  );
+
+  if (failed && entries.length === 0) {
+    return (
+      <section
+        className="w-full max-w-md mx-auto bg-card rounded-3xl p-8 text-center flex flex-col items-center gap-2.5"
+        role="alert"
+      >
+        {mascot}
+        <div className="font-display font-extrabold text-base text-ink">
+          {t(locale, "leaderboard.errorTitle")}
+        </div>
+        <p className="text-muted text-sm leading-relaxed">
+          {t(locale, "leaderboard.errorText")}
+        </p>
+        <button
+          type="button"
+          onClick={retry}
+          className="mt-1.5 min-h-11 bg-accent text-white font-extrabold rounded-2xl px-5 text-sm hover:brightness-95 transition-all active:scale-95"
+        >
+          {t(locale, "victory.retry")}
+        </button>
+      </section>
+    );
+  }
+
   if (entries.length === 0) {
     return (
       <section
         className="w-full max-w-md mx-auto bg-card rounded-3xl p-8 text-center flex flex-col items-center gap-2.5"
         aria-label={t(locale, "leaderboard.section")}
       >
-        <div className="w-[72px] h-[72px] rounded-[22px] bg-chip-bg flex items-center justify-center">
-          <img
-            src={`/assets/figures/${theme}.png`}
-            alt=""
-            aria-hidden="true"
-            className="w-11 h-11 object-contain opacity-85"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
-            }}
-          />
-        </div>
+        {mascot}
         <div className="font-display font-extrabold text-base text-ink">
           {t(locale, "leaderboard.emptyTitle")}
         </div>
@@ -157,7 +198,9 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             <div
               className="w-full rounded-t-2xl"
               style={{
-                background: medal.barColor,
+                background: darkMode
+                  ? `color-mix(in srgb, ${medal.medalColor} 30%, transparent)`
+                  : medal.barColor,
                 height: `${medal.barHeight}px`,
               }}
             />
@@ -182,10 +225,11 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 </span>
                 {entry.mistakes === 0 && (
                   <span
-                    className="shrink-0 whitespace-nowrap px-2 py-0.5 text-micro font-extrabold uppercase tracking-wider text-badge-flawless bg-badge-flawless-bg rounded-full"
+                    className="shrink-0 w-6 h-[18px] flex items-center justify-center text-micro font-extrabold text-badge-flawless bg-badge-flawless-bg rounded-full"
                     title={t(locale, "leaderboard.flawlessTitle")}
+                    aria-label={t(locale, "leaderboard.flawlessTitle")}
                   >
-                    {t(locale, "victory.flawless")}
+                    <span aria-hidden="true">✓</span>
                   </span>
                 )}
               </div>

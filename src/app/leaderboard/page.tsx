@@ -20,7 +20,7 @@ export default function LeaderboardPage() {
         <div className="flex items-center gap-3 mb-5">
           <Link
             href="/"
-            className="w-[38px] h-[38px] rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
+            className="w-11 h-11 rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
             aria-label={t(locale, "leaderboardPage.back")}
             title={t(locale, "leaderboardPage.back")}
           >
