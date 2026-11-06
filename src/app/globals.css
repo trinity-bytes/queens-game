@@ -487,6 +487,29 @@ body {
   }
 }
 
+/* Portrait keeps the sheet over the foot of the screen, under the board.
+   Wider screens give it the panel the controls were in. */
+.victory-sheet {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  width: min(100dvw - 2rem, 34rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  transform: translateX(-50%);
+}
+@media (min-aspect-ratio: 1/1) {
+  .victory-sheet {
+    position: static;
+    grid-area: sheet;
+    width: auto;
+    max-height: 100%;
+    align-self: start;
+    transform: none;
+  }
+}
+
 /* ===== Native modal dialogs ===== */
 dialog:modal {
   overscroll-behavior: contain;
