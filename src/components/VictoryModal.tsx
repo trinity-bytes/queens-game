@@ -17,10 +17,10 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 
 /** Cool to hot, so the badge reads as difficulty before the words are parsed. */
 const BAND_STYLES: Record<DifficultyBand, string> = {
-  gentle: "bg-[#e3f9ec] text-[#1f7a4d] dark:bg-[rgba(31,157,95,0.16)] dark:text-[#6fe0ac]",
+  gentle: "bg-badge-flawless-bg text-badge-flawless",
   tricky:
-    "bg-[#fff6da] text-[#946a0f] dark:bg-[rgba(201,150,44,0.16)] dark:text-[#f0c96b]",
-  brutal: "bg-[#fbdad9] text-[#b83a45] dark:bg-[rgba(225,92,103,0.16)] dark:text-[#ff9aa2]",
+    "bg-[#fff6da] text-stat-total dark:bg-[rgba(201,150,44,0.16)]",
+  brutal: "bg-badge-errors-bg text-badge-errors",
 };
 
 /**
@@ -214,7 +214,7 @@ export default function VictoryModal() {
               only sees "Brutal" learns nothing about their score. */}
           {difficulty && (
             <div
-              className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-xl text-[11px] font-extrabold uppercase tracking-wider ${BAND_STYLES[difficulty.band]}`}
+              className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-xl text-micro font-extrabold uppercase tracking-wider ${BAND_STYLES[difficulty.band]}`}
               aria-label={t(locale, "victory.difficultyAria", {
                 band: t(locale, `difficulty.${difficulty.band}`),
                 // One decimal throughout, so x1.0 lines up with x1.6 and x2.4
@@ -235,23 +235,23 @@ export default function VictoryModal() {
 
         <div className="grid grid-cols-3 gap-2.5 my-[18px]">
           <div className="rounded-2xl p-[11px_6px] text-center bg-[#f3f9ff] dark:bg-[rgba(47,174,118,0.12)]">
-            <div className="text-[10px] font-extrabold text-muted">
+            <div className="text-micro font-extrabold text-muted">
               {t(locale, "victory.points")}
             </div>
             <div
-              className="font-display font-black text-lg mt-0.5 text-[#2fae76]"
+              className="font-display font-extrabold text-xl mt-0.5 text-stat-points"
               aria-label={t(locale, "victory.pointsAria", { value: grossScore })}
             >
               +{grossScore.toLocaleString(locale)}
             </div>
           </div>
           <div className="rounded-2xl p-[11px_6px] text-center bg-[#fff1f0] dark:bg-[rgba(225,92,103,0.12)]">
-            <div className="text-[10px] font-extrabold text-muted flex items-center justify-center gap-0.5">
+            <div className="text-micro font-extrabold text-muted flex items-center justify-center gap-0.5">
               <AlertCircle className="w-3 h-3" aria-hidden="true" />
               {t(locale, "victory.penalty")}
             </div>
             <div
-              className="font-display font-black text-lg mt-0.5 text-[#e15c67]"
+              className="font-display font-extrabold text-xl mt-0.5 text-stat-penalty"
               aria-label={t(locale, "victory.penaltiesAria", {
                 value: totalPenalties,
               })}
@@ -260,11 +260,11 @@ export default function VictoryModal() {
             </div>
           </div>
           <div className="rounded-2xl p-[11px_6px] text-center bg-[#fff6da] dark:bg-[rgba(201,150,44,0.12)]">
-            <div className="text-[10px] font-extrabold text-muted">
+            <div className="text-micro font-extrabold text-muted">
               {t(locale, "victory.total")}
             </div>
             <div
-              className="font-display font-black text-lg mt-0.5 text-[#c9962c]"
+              className="font-display font-extrabold text-xl mt-0.5 text-stat-total"
               aria-label={t(locale, "victory.totalAria", { value: score })}
             >
               {score.toLocaleString(locale)}
@@ -274,23 +274,23 @@ export default function VictoryModal() {
 
         <div className="bg-chip-bg rounded-2xl p-3 mb-[18px] text-center relative">
           <div
-            className={`absolute -top-[11px] left-1/2 -translate-x-1/2 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-xl border-2 border-card ${
+            className={`absolute -top-[11px] left-1/2 -translate-x-1/2 text-micro font-extrabold uppercase tracking-wider px-3 py-1 rounded-xl border-2 border-card ${
               mistakes === 0
-                ? "bg-[#e3f9ec] text-[#1f9d5f]"
-                : "bg-[#fbdad9] text-[#d5525d]"
+                ? "bg-badge-flawless-bg text-badge-flawless"
+                : "bg-badge-errors-bg text-badge-errors"
             }`}
           >
             {mistakes === 0
               ? t(locale, "victory.flawless")
               : t(locale, "victory.errorsBadge", { count: mistakes })}
           </div>
-          <p className="text-[11px] font-bold text-muted mt-1">
+          <p className="text-micro font-bold text-muted mt-1">
             {t(locale, "victory.yourTime")}
           </p>
-          <p className="font-display text-[26px] font-black text-ink tabular-nums">
+          <p className="font-display text-2xl font-extrabold text-ink tabular-nums">
             {formatTime(timer)}
           </p>
-          <p className="text-[11px] text-muted opacity-80 mt-1 font-semibold">
+          <p className="text-micro text-muted opacity-80 mt-1 font-semibold">
             {t(locale, "victory.completedMoves", { moves: movesCount })}
           </p>
         </div>
@@ -299,7 +299,7 @@ export default function VictoryModal() {
           <form onSubmit={handleSave} className="mb-3">
             <label
               htmlFor="player-name"
-              className="block text-[12.5px] font-extrabold text-muted mb-[7px]"
+              className="block text-xs font-extrabold text-muted mb-[7px]"
             >
               {t(locale, "victory.saveRecord")}
             </label>
@@ -310,7 +310,7 @@ export default function VictoryModal() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t(locale, "victory.namePlaceholder")}
-                className="flex-1 min-w-0 bg-chip-bg border-0 rounded-2xl px-3.5 py-2.5 text-ink font-bold focus:outline-none focus:ring-2 focus:ring-accent"
+                className="flex-1 min-w-0 bg-chip-bg border-0 rounded-2xl px-3.5 py-2.5 text-ink font-bold"
                 maxLength={15}
                 required
                 list="nick-suggestions"
@@ -346,7 +346,7 @@ export default function VictoryModal() {
               onClick={() =>
                 sessionStorage.setItem(RESET_HOME_ON_RETURN_KEY, "1")
               }
-              className="w-full py-[11px] px-2 bg-[#e3f9ec] dark:bg-[rgba(31,157,95,0.16)] text-[#1f7a4d] dark:text-[#6fe0ac] rounded-2xl font-extrabold text-[13.5px] flex items-center justify-center gap-2 hover:brightness-95 transition-all active:scale-[0.97]"
+              className="w-full py-[11px] px-2 bg-badge-flawless-bg text-badge-flawless rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 hover:brightness-95 transition-all active:scale-[0.97]"
               role="alert"
             >
               ✓ {t(locale, "victory.saved")}

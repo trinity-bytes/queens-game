@@ -17,10 +17,7 @@ export default {
         foreground: "var(--foreground)",
         theme: {
           bg: "var(--theme-bg)",
-          surface: "var(--theme-surface)",
           text: "var(--theme-text)",
-          accent: "var(--theme-accent)",
-          pattern: "var(--theme-pattern)",
         },
         ink: "var(--ink)",
         muted: "var(--muted)",
@@ -29,10 +26,19 @@ export default {
         "icon-bg": "var(--icon-bg)",
         "chip-bg": "var(--chip-bg)",
         "chip-label": "var(--chip-label)",
+        "stat-points": "var(--stat-points)",
         "stat-penalty": "var(--stat-penalty)",
-        "score-bg": "var(--score-bg)",
-        "score-label": "var(--score-label)",
-        "score-text": "var(--score-text)",
+        "stat-total": "var(--stat-total)",
+        "badge-flawless": "var(--badge-flawless)",
+        "badge-flawless-bg": "var(--badge-flawless-bg)",
+        "badge-errors": "var(--badge-errors)",
+        "badge-errors-bg": "var(--badge-errors-bg)",
+      },
+      // The type scale is 44, 24, 20, 16, 14, 12 and 11: text-display, text-2xl,
+      // text-xl, text-base, text-sm, text-xs and text-micro.
+      fontSize: {
+        display: ["44px", { lineHeight: "1.1" }],
+        micro: ["11px", { lineHeight: "1.3" }],
       },
       borderRadius: {
         "3xl": "1.5rem",

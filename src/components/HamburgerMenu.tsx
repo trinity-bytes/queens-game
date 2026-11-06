@@ -113,7 +113,7 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-[15px]">
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-base">
               ℹ️
             </span>
             <span className="font-extrabold text-ink text-sm">
@@ -125,7 +125,7 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-4 py-[15px] border-b border-black/[0.04] dark:border-white/[0.06] hover:bg-icon-bg transition-colors"
           >
-            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-[15px]">
+            <span className="w-[34px] h-[34px] rounded-xl bg-icon-bg flex items-center justify-center text-base">
               🛡️
             </span>
             <span className="font-extrabold text-ink text-sm">
@@ -150,9 +150,9 @@ export default function HamburgerMenu({
               {t(locale, "menu.sound")}
             </span>
             <span
-              className={`ml-auto text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg ${
+              className={`ml-auto text-micro font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg ${
                 soundOn
-                  ? "bg-[#e3f9ec] text-[#1f9d5f] dark:bg-[rgba(31,157,95,0.16)] dark:text-[#6fe0ac]"
+                  ? "bg-badge-flawless-bg text-badge-flawless"
                   : "bg-chip-bg text-muted"
               }`}
             >
@@ -162,7 +162,7 @@ export default function HamburgerMenu({
           <div className="px-4 py-[15px]">
             <label
               htmlFor="language-select"
-              className="block text-[10px] font-extrabold uppercase tracking-wider text-muted mb-2"
+              className="block text-micro font-extrabold uppercase tracking-wider text-muted mb-2"
             >
               {t(locale, "menu.language")}
             </label>
@@ -172,7 +172,7 @@ export default function HamburgerMenu({
               onChange={(event) =>
                 setLocale(event.target.value as typeof locale)
               }
-              className="w-full rounded-xl bg-chip-bg text-ink px-3 py-2.5 text-sm font-bold border-0 focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded-xl bg-chip-bg text-ink px-3 py-2.5 text-sm font-bold border-0"
             >
               {languageOptions.map((option) => (
                 <option key={option.value} value={option.value}>

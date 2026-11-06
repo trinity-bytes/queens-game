@@ -18,7 +18,7 @@ export default function MessageStrip() {
       style={{ background: darkMode ? style.bgDark : style.bg }}
     >
       <span
-        className="w-[18px] h-[18px] rounded-[7px] flex items-center justify-center font-black text-[11px] flex-shrink-0"
+        className="w-[18px] h-[18px] rounded-[7px] flex items-center justify-center font-extrabold text-micro flex-shrink-0"
         style={{
           background: darkMode ? style.iconBgDark : style.iconBg,
           color: style.iconColor,

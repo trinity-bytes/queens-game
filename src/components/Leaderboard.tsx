@@ -97,7 +97,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             }}
           />
         </div>
-        <div className="font-display font-extrabold text-[17px] text-ink">
+        <div className="font-display font-extrabold text-base text-ink">
           {t(locale, "leaderboard.emptyTitle")}
         </div>
         <p className="text-muted text-sm font-semibold leading-relaxed">
@@ -142,16 +142,16 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             className="flex flex-col items-center gap-1.5 w-[110px]"
           >
             <div
-              className="w-[50px] h-[50px] rounded-2xl bg-card shadow-[0_6px_16px_rgba(18,58,94,0.12)] flex items-center justify-center font-black text-lg"
+              className="w-[50px] h-[50px] rounded-2xl bg-card shadow-[0_6px_16px_rgba(18,58,94,0.12)] flex items-center justify-center font-extrabold text-xl"
               style={{ color: medal.medalColor }}
               aria-label={t(locale, "leaderboard.position", { position: rank })}
             >
               {rank}
             </div>
-            <span className="font-extrabold text-ink text-[13px] truncate max-w-full px-1">
+            <span className="font-extrabold text-ink text-sm truncate max-w-full px-1">
               {entry.player_name}
             </span>
-            <span className="font-black text-[#c9962c] text-[13px]">
+            <span className="font-extrabold text-stat-total text-sm">
               {entry.score.toLocaleString(locale)}
             </span>
             <div
@@ -182,7 +182,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 </span>
                 {entry.mistakes === 0 && (
                   <span
-                    className="shrink-0 whitespace-nowrap px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#1f9d5f] bg-[#e3f9ec] dark:bg-[rgba(31,157,95,0.16)] rounded-full"
+                    className="shrink-0 whitespace-nowrap px-2 py-0.5 text-micro font-extrabold uppercase tracking-wider text-badge-flawless bg-badge-flawless-bg rounded-full"
                     title={t(locale, "leaderboard.flawlessTitle")}
                   >
                     {t(locale, "victory.flawless")}
@@ -197,7 +197,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   </span>
                 )}
                 <span
-                  className="font-extrabold text-[#c9962c] text-[13px]"
+                  className="font-extrabold text-stat-total text-sm"
                   aria-label={t(locale, "leaderboard.scoreAria", {
                     score: entry.score,
                   })}
@@ -205,7 +205,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   {entry.score.toLocaleString(locale)}
                 </span>
                 <span
-                  className="font-bold text-muted text-[13px] tabular-nums"
+                  className="font-bold text-muted text-sm tabular-nums"
                   aria-label={t(locale, "leaderboard.timeAria", {
                     time: formatTime(entry.time_ms),
                   })}

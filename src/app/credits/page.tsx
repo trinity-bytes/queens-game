@@ -38,7 +38,7 @@ export default function CreditsPage() {
               ←
             </span>
           </Link>
-          <h1 className="font-display text-[22px] font-extrabold text-ink">
+          <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "credits.title")}
           </h1>
         </div>
@@ -53,13 +53,13 @@ export default function CreditsPage() {
               className="w-8 h-8 object-contain"
             />
           </div>
-          <div className="font-display font-extrabold text-lg text-ink">
+          <div className="font-display font-extrabold text-xl text-ink">
             Queens
           </div>
-          <div className="text-muted text-[11px] font-extrabold uppercase tracking-wider mt-1">
+          <div className="text-muted text-micro font-extrabold uppercase tracking-wider mt-1">
             {t(locale, "credits.designedBy")}
           </div>
-          <div className="font-display font-extrabold text-[17px] text-ink">
+          <div className="font-display font-extrabold text-base text-ink">
             trinity-bytes
           </div>
           <div className="flex gap-2 mt-1.5">
@@ -67,23 +67,23 @@ export default function CreditsPage() {
               href="https://github.com/trinity-bytes"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-[13px]"
+              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-sm"
             >
-              GitHub <span className="text-[11px] text-muted">↗</span>
+              GitHub <span className="text-micro text-muted">↗</span>
             </a>
             <a
               href="https://www.linkedin.com/in/trinitybytes"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-[13px]"
+              className="flex items-center gap-1.5 bg-chip-bg rounded-xl px-3.5 py-2 text-ink font-extrabold text-sm"
             >
-              LinkedIn <span className="text-[11px] text-muted">↗</span>
+              LinkedIn <span className="text-micro text-muted">↗</span>
             </a>
           </div>
         </div>
 
         {/* Icon attributions (required by license) */}
-        <p className="text-muted text-[13px] font-semibold leading-relaxed mb-3 px-1">
+        <p className="text-muted text-sm font-semibold leading-relaxed mb-3 px-1">
           {t(locale, "credits.intro")}
         </p>
         <ul className="flex flex-col gap-2.5">
@@ -92,7 +92,7 @@ export default function CreditsPage() {
               key={key}
               className="flex items-center gap-3 bg-card rounded-2xl px-3.5 py-3 shadow-[0_3px_8px_rgba(18,58,94,0.06)]"
             >
-              <span className="w-9 h-9 rounded-xl bg-icon-bg flex items-center justify-center text-lg shrink-0">
+              <span className="w-9 h-9 rounded-xl bg-icon-bg flex items-center justify-center text-xl shrink-0">
                 {emoji}
               </span>
               <a
@@ -100,7 +100,7 @@ export default function CreditsPage() {
                 title={key}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink hover:underline font-bold text-[13.5px]"
+                className="text-ink hover:underline font-bold text-sm"
               >
                 {t(locale, key)}
               </a>

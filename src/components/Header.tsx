@@ -60,7 +60,7 @@ export default function Header() {
         </span>
         {/* Kept in the accessibility tree on very narrow screens, where there
             is no room to render it next to the timer and the actions. */}
-        <h1 className="font-display font-extrabold text-ink text-lg truncate sr-only min-[360px]:not-sr-only">
+        <h1 className="font-display font-extrabold text-ink text-xl truncate sr-only min-[360px]:not-sr-only">
           Queens
         </h1>
       </div>
@@ -73,7 +73,7 @@ export default function Header() {
           aria-label={t(locale, "header.timer", { time: formatTime(timer) })}
           aria-live="off"
         >
-          <span className="text-[8px] font-extrabold tracking-wider text-chip-label">
+          <span className="text-micro font-extrabold tracking-wider text-chip-label">
             {t(locale, "header.timeLabel")}
           </span>
           <span className="font-extrabold text-sm text-ink tabular-nums">

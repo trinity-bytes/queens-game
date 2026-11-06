@@ -28,7 +28,7 @@ export default function LeaderboardPage() {
               ←
             </span>
           </Link>
-          <h1 className="font-display text-[22px] font-extrabold text-ink">
+          <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "leaderboard.title")}
           </h1>
         </div>

@@ -72,7 +72,7 @@ export default function Board() {
         role="alert"
       >
         <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-extrabold">
+          <p className="text-xl font-extrabold">
             {t(locale, "board.errorTitle")}
           </p>
           <p className="text-muted font-semibold text-sm max-w-xs">

@@ -72,7 +72,7 @@ export default function TutorialPage() {
               ←
             </span>
           </Link>
-          <h1 className="font-display text-[22px] font-extrabold text-ink">
+          <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "tutorial.title")}
           </h1>
         </div>
@@ -91,7 +91,7 @@ export default function TutorialPage() {
                 active={rule.active}
                 base={rule.base}
               />
-              <div className="font-extrabold text-ink text-[13.5px] text-center">
+              <div className="font-extrabold text-ink text-sm text-center">
                 {rule.title}
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function TutorialPage() {
                 {i === 4 ? (
                   <span className="text-sm text-[#123a5e]">♛</span>
                 ) : (
-                  <span className="text-[10px] font-extrabold text-[#e15c67]">
+                  <span className="text-micro font-extrabold text-stat-penalty">
                     ✕
                   </span>
                 )}
@@ -118,10 +118,10 @@ export default function TutorialPage() {
             ))}
           </div>
           <div>
-            <div className="font-extrabold text-[#d5525d] text-[13.5px] mb-1">
+            <div className="font-extrabold text-badge-errors text-sm mb-1">
               ⚠ {t(locale, "tutorial.goldRule")}
             </div>
-            <div className="text-[#b5555e] dark:text-[#e0a3a7] text-[12.5px] font-semibold leading-snug">
+            <div className="text-[#b5555e] dark:text-[#e0a3a7] text-xs font-semibold leading-snug">
               {t(locale, "tutorial.goldRuleText")}
             </div>
           </div>
@@ -133,16 +133,16 @@ export default function TutorialPage() {
         </div>
         <div className="grid grid-cols-2 gap-2.5 mb-4">
           <div className="bg-[#eefaf3] dark:bg-[rgba(47,174,118,0.12)] rounded-2xl p-3">
-            <div className="font-extrabold text-[#2fae76] text-[12.5px] mb-2.5">
+            <div className="font-extrabold text-stat-points text-xs mb-2.5">
               + {t(locale, "tutorial.positive")}
             </div>
             <div className="flex flex-col gap-2">
               {positives.map((s, i) => (
                 <div key={i} className="flex items-start gap-1.5">
-                  <span className="w-[17px] h-[17px] rounded-md bg-[#d3f0e0] text-[#2fae76] text-[10px] font-black flex items-center justify-center shrink-0 mt-px">
+                  <span className="w-[17px] h-[17px] rounded-md bg-[#d3f0e0] text-stat-points text-micro font-extrabold flex items-center justify-center shrink-0 mt-px">
                     {s.icon}
                   </span>
-                  <span className="text-[11.5px] text-[#3f6b56] dark:text-[#93c4bb] font-semibold leading-snug">
+                  <span className="text-xs text-[#3f6b56] dark:text-[#93c4bb] font-semibold leading-snug">
                     {s.text}
                   </span>
                 </div>
@@ -150,16 +150,16 @@ export default function TutorialPage() {
             </div>
           </div>
           <div className="bg-[#fff1f0] dark:bg-[rgba(225,92,103,0.12)] rounded-2xl p-3">
-            <div className="font-extrabold text-[#e15c67] text-[12.5px] mb-2.5">
+            <div className="font-extrabold text-stat-penalty text-xs mb-2.5">
               − {t(locale, "tutorial.penalties")}
             </div>
             <div className="flex flex-col gap-2">
               {negatives.map((s, i) => (
                 <div key={i} className="flex items-start gap-1.5">
-                  <span className="w-[17px] h-[17px] rounded-md bg-[#fbdad9] text-[#e15c67] text-[10px] font-black flex items-center justify-center shrink-0 mt-px">
+                  <span className="w-[17px] h-[17px] rounded-md bg-[#fbdad9] text-stat-penalty text-micro font-extrabold flex items-center justify-center shrink-0 mt-px">
                     {s.icon}
                   </span>
-                  <span className="text-[11.5px] text-[#8a4a4f] dark:text-[#e0a3a7] font-semibold leading-snug">
+                  <span className="text-xs text-[#8a4a4f] dark:text-[#e0a3a7] font-semibold leading-snug">
                     {s.text}
                   </span>
                 </div>
