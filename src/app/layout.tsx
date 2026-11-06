@@ -65,11 +65,6 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <ThemeScript />
-        <link rel="preload" as="image" href="/assets/figures/dino.png" />
-        <link rel="preload" as="image" href="/assets/figures/dog.png" />
-        <link rel="preload" as="image" href="/assets/figures/cow.png" />
-        <link rel="preload" as="image" href="/assets/figures/potato.png" />
-        <link rel="preload" as="image" href="/assets/figures/starwars.png" />
       </head>
       <body className="antialiased text-slate-900 dark:text-slate-100">
         {/* Here and not in ThemeScript: the meta tag comes after that script. */}
