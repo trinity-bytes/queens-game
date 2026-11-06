@@ -1,8 +1,14 @@
 import { create } from "zustand";
 import { getCurrentTheme } from "@/lib/themeSelector";
-import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, Locale, setStoredLocale } from "@/lib/i18n";
+import { clearSavedGame, loadGame, saveGame, saveTimer } from "@/lib/savedGame";
 import { setSoundEnabled } from "@/lib/sound";
 import { puzzleValue, scoreFor } from "@/domain/scoring";
+import {
+  settleMove,
+  WHOLE_BOARD,
+  type PendingQueen,
+} from "@/domain/mistakes";
 import {
   summarizeDiagnostics,
   type GenerationDiagnostics,
@@ -45,7 +51,10 @@ interface PreloadedPuzzle {
  * part that separates skill from luck.
  */
 export interface SolveLog {
-  /** Elapsed ms at each queen placed, right or wrong, in order. */
+  /**
+   * Elapsed ms at each queen played, right or wrong, in order. A queen the
+   * next move took straight off is a cell passing through, not a placement.
+   */
   placements: { atMs: number; correct: boolean }[];
   /** Times a cell was marked X, the notation this game no longer punishes. */
   xMarksPlaced: number;
@@ -59,6 +68,16 @@ export interface SolveLog {
   puzzlesAbandoned: number;
 }
 
+/** One step Undo can take back. */
+export interface Move {
+  /** The cell the move acted on, or WHOLE_BOARD. */
+  index: number;
+  /** The board as it stood before the move. */
+  cells: CellState[];
+  /** The unsettled queen this move took off, which Undo puts back unsettled. */
+  passed: PendingQueen | null;
+}
+
 interface GameState {
   gridSize: number;
   regions: number[];
@@ -67,6 +86,9 @@ interface GameState {
   theme: Theme;
   timer: number;
   mistakes: number;
+  /** The queen placed by the last move, which that move's successor settles. */
+  pendingQueen: PendingQueen | null;
+  history: Move[];
   xPenalties: number;
   score: number;
   grossScore: number;
@@ -87,6 +109,8 @@ interface GameState {
   soundEnabled: boolean;
   preloadedPuzzle: PreloadedPuzzle | null;
   isPreloading: boolean;
+  /** The walkthrough is up, so the clock has not started. */
+  firstRunOpen: boolean;
 
   // Actions
   setGridSize: (size: number) => void;
@@ -94,13 +118,17 @@ interface GameState {
   setLocale: (locale: Locale) => void;
   toggleDarkMode: () => void;
   toggleSound: () => void;
+  /** Resumes the saved game if there is one, or deals a new puzzle. */
+  startGame: () => void;
   generatePuzzle: () => void;
   preloadNextPuzzle: () => void;
   toggleCell: (index: number) => void;
-  resetBoard: () => void;
+  undo: () => void;
+  clearBoard: () => void;
   tickTimer: () => void;
   checkWinCondition: () => void;
   markCurrentWinSaved: () => void;
+  closeFirstRun: () => void;
 }
 
 const ABANDONED_STORAGE_KEY = "puzzles-abandoned";
@@ -119,6 +147,13 @@ const emptySolveLog = (): SolveLog => ({
   peakXMarks: 0,
   puzzlesAbandoned: getAbandonedCount(),
 });
+
+const FIRST_RUN_STORAGE_KEY = "first-run-done";
+
+const getInitialFirstRun = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(FIRST_RUN_STORAGE_KEY) === null;
+};
 
 const SOUND_STORAGE_KEY = "sound-enabled";
 
@@ -332,6 +367,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   theme: getCurrentTheme(),
   timer: 0,
   mistakes: 0,
+  pendingQueen: null,
+  history: [],
   xPenalties: 0,
   score: 0,
   grossScore: 0,
@@ -346,10 +383,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentWinId: null,
   savedWinId: null,
   darkMode: getInitialDarkMode(),
-  locale: getInitialLocale(),
+  locale: DEFAULT_LOCALE,
   soundEnabled: initialSound,
   preloadedPuzzle: null,
   isPreloading: false,
+  firstRunOpen: getInitialFirstRun(),
 
   setGridSize: (size) => {
     set({ gridSize: size, preloadedPuzzle: null }); // Invalidate preloaded puzzle if size changes
@@ -373,6 +411,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     localStorage.setItem(SOUND_STORAGE_KEY, String(newValue));
   },
 
+  startGame: () => {
+    const saved = loadGame();
+    if (!saved) {
+      get().generatePuzzle();
+      return;
+    }
+
+    set({ ...saved, status: "playing", theme: getCurrentTheme() });
+    get().preloadNextPuzzle();
+  },
+
   generatePuzzle: () => {
     const { preloadedPuzzle, gridSize, status } = get();
 
@@ -388,11 +437,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     // reaches this call mid-retry today, but a stale attempt that resolved
     // later would swap the board out from under a game in progress.
     cancelGeneration();
+    clearSavedGame();
 
     // Reset game stats
     set({
       timer: 0,
       mistakes: 0,
+      pendingQueen: null,
+      history: [],
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
@@ -445,6 +497,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       solution,
       gridSize,
       mistakes,
+      pendingQueen,
+      history,
       scoredQueens,
       solveLog,
       lastCorrectMoveTime,
@@ -459,7 +513,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newState = currentState === 0 ? 1 : currentState === 1 ? 2 : 0;
     newCells[index] = newState as CellState;
 
-    let newMistakes = mistakes;
+    const row = Math.floor(index / gridSize);
+    const col = index % gridSize;
+    const placed = newState === 2 ? { correct: solution[row] === col } : null;
+    const { tally, passedThrough } = settleMove(
+      { mistakes, pending: pendingQueen },
+      index,
+      placed,
+    );
+
     const newScoredQueens = [...scoredQueens];
     let newLastCorrectMoveTime = lastCorrectMoveTime;
     const newLastMoveTime = timer;
@@ -475,16 +537,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       newLog.peakXMarks = Math.max(solveLog.peakXMarks, standing);
     }
 
-    if (newState === 2) {
-      const row = Math.floor(index / gridSize);
-      const col = index % gridSize;
-      const correct = solution[row] === col;
+    if (passedThrough) {
+      newLog.placements = solveLog.placements.slice(0, -1);
+    }
 
-      newLog.placements = [...solveLog.placements, { atMs: timer, correct }];
+    if (placed) {
+      newLog.placements = [
+        ...solveLog.placements,
+        { atMs: timer, correct: placed.correct },
+      ];
 
-      if (!correct) {
-        newMistakes++;
-      } else if (!newScoredQueens.includes(index)) {
+      if (placed.correct && !newScoredQueens.includes(index)) {
         newScoredQueens.push(index);
         newLastCorrectMoveTime = timer;
       }
@@ -492,7 +555,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({
       cells: newCells,
-      mistakes: newMistakes,
+      mistakes: tally.mistakes,
+      pendingQueen: tally.pending,
+      history: [
+        ...history,
+        { index, cells, passed: passedThrough ? pendingQueen : null },
+      ],
       scoredQueens: newScoredQueens,
       solveLog: newLog,
       lastCorrectMoveTime: newLastCorrectMoveTime,
@@ -502,23 +570,62 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().checkWinCondition();
   },
 
-  resetBoard: () => {
-    const { cells } = get();
+  /**
+   * Takes back the last change. It is a move like any other: the API requires
+   * every placement to fit within movesCount, so the count only ever grows, and
+   * an error already settled stays on the record.
+   */
+  undo: () => {
+    const { history, status, mistakes, pendingQueen, solveLog, movesCount, timer } =
+      get();
+    const last = history[history.length - 1];
+    if (status !== "playing" || !last) return;
+
+    const { tally, passedThrough } = settleMove(
+      { mistakes, pending: pendingQueen },
+      last.index,
+      null,
+    );
+
+    const placements = passedThrough
+      ? solveLog.placements.slice(0, -1)
+      : solveLog.placements;
+
+    set({
+      cells: last.cells,
+      history: history.slice(0, -1),
+      mistakes: tally.mistakes,
+      pendingQueen: last.passed ?? tally.pending,
+      solveLog: {
+        ...solveLog,
+        placements: last.passed
+          ? [...placements, { atMs: timer, correct: last.passed.correct }]
+          : placements,
+      },
+      movesCount: movesCount + 1,
+      lastMoveTime: timer,
+    });
+  },
+
+  /** Empties the board. The clock keeps running, so it cannot reset a bad time. */
+  clearBoard: () => {
+    const { cells, status, mistakes, pendingQueen, history, movesCount, timer } =
+      get();
+    if (status !== "playing" || cells.every((cell) => cell === 0)) return;
+
+    const { tally } = settleMove(
+      { mistakes, pending: pendingQueen },
+      WHOLE_BOARD,
+      null,
+    );
+
     set({
       cells: new Array(cells.length).fill(0),
-      timer: 0,
-      mistakes: 0,
-      score: 0,
-      grossScore: 0,
-      totalPenalties: 0,
-      scoredQueens: [],
-      solveLog: emptySolveLog(),
-      lastCorrectMoveTime: 0,
-      lastMoveTime: 0,
-      movesCount: 0,
-      status: "playing",
-      currentWinId: null,
-      savedWinId: null,
+      history: [...history, { index: WHOLE_BOARD, cells, passed: null }],
+      mistakes: tally.mistakes,
+      pendingQueen: tally.pending,
+      movesCount: movesCount + 1,
+      lastMoveTime: timer,
     });
   },
 
@@ -533,7 +640,8 @@ export const useGameStore = create<GameState>((set, get) => ({
    * for.
    */
   tickTimer: () => {
-    if (get().status !== "playing") return;
+    const { status, firstRunOpen } = get();
+    if (status !== "playing" || firstRunOpen) return;
     set((state) => ({ timer: state.timer + 1000 }));
   },
 
@@ -586,6 +694,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // A win ends the reroll streak: the count belongs to the game it produced.
     localStorage.removeItem(ABANDONED_STORAGE_KEY);
+    clearSavedGame();
 
     set({
       status: "won",
@@ -602,4 +711,35 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!currentWinId) return;
     set({ savedWinId: currentWinId });
   },
+
+  closeFirstRun: () => {
+    localStorage.setItem(FIRST_RUN_STORAGE_KEY, "1");
+    set({ firstRunOpen: false });
+  },
 }));
+
+// Saved from here, not from each action, so no way of changing the board can
+// forget to. A win clears the save instead, and is not "playing" by then.
+useGameStore.subscribe((state, previous) => {
+  if (state.status !== "playing") return;
+
+  if (state.timer !== previous.timer) saveTimer(state.timer);
+
+  if (state.cells !== previous.cells || state.regions !== previous.regions) {
+    saveGame({
+      gridSize: state.gridSize,
+      regions: state.regions,
+      solution: state.solution,
+      difficulty: state.difficulty,
+      cells: state.cells,
+      mistakes: state.mistakes,
+      pendingQueen: state.pendingQueen,
+      history: state.history,
+      movesCount: state.movesCount,
+      scoredQueens: state.scoredQueens,
+      lastCorrectMoveTime: state.lastCorrectMoveTime,
+      lastMoveTime: state.lastMoveTime,
+      solveLog: state.solveLog,
+    });
+  }
+});

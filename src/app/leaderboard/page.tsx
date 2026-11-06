@@ -3,6 +3,7 @@
 import Leaderboard from "@/components/Leaderboard";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 
@@ -20,15 +21,13 @@ export default function LeaderboardPage() {
         <div className="flex items-center gap-3 mb-5">
           <Link
             href="/"
-            className="w-[38px] h-[38px] rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
+            className="w-11 h-11 rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
             aria-label={t(locale, "leaderboardPage.back")}
             title={t(locale, "leaderboardPage.back")}
           >
-            <span aria-hidden="true" className="text-base">
-              ←
-            </span>
+            <ArrowLeft className="w-[18px] h-[18px]" aria-hidden="true" />
           </Link>
-          <h1 className="font-display text-[22px] font-extrabold text-ink">
+          <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "leaderboard.title")}
           </h1>
         </div>

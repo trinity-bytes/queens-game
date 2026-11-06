@@ -1,10 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, TriangleAlert, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import BackgroundPattern from "@/components/BackgroundPattern";
+import BandBadge from "@/components/BandBadge";
+import FirstRun from "@/components/FirstRun";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import { puzzleValue } from "@/domain/scoring";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
+import { REGION_PALETTE_DARK, REGION_PALETTE_LIGHT } from "@/lib/designTokens";
+import { useHydrated } from "@/lib/useHydrated";
+import type { DifficultyBand } from "@/workers/puzzleGenerator.types";
+
+const BANDS: DifficultyBand[] = ["gentle", "tricky", "brutal"];
+
+/** Scores are quoted for the board the game deals. */
+const STANDARD_GRID = 9;
+
+/** The region the cycle illustration borrows its colour and texture from. */
+const CYCLE_REGION = 3;
 
 /** A 3×3 mini illustration used by the rule cards. */
 function MiniGrid({
@@ -26,15 +43,40 @@ function MiniGrid({
           className="rounded-md flex items-center justify-center"
           style={{ background: highlight.includes(i) ? active : base }}
         >
-          {i === queen && <span className="text-sm text-[#123a5e]">♛</span>}
+          {i === queen && (
+            <img
+              src="/assets/figures/queen.png"
+              alt=""
+              className="w-[72%] h-[72%] object-contain"
+            />
+          )}
         </div>
       ))}
     </div>
   );
 }
 
+function CycleTile({ children }: { children?: React.ReactNode }) {
+  const darkMode = useGameStore((state) => state.darkMode);
+  const palette = darkMode ? REGION_PALETTE_DARK : REGION_PALETTE_LIGHT;
+
+  return (
+    <span
+      className={`w-10 h-10 flex items-center justify-center region-pattern-${CYCLE_REGION}`}
+      style={{ backgroundColor: palette[CYCLE_REGION] }}
+    >
+      {children}
+    </span>
+  );
+}
+
 export default function TutorialPage() {
   const locale = useGameStore((state) => state.locale);
+  const theme = useGameStore((state) => state.theme);
+  const closeFirstRun = useGameStore((state) => state.closeFirstRun);
+  const router = useRouter();
+  const hydrated = useHydrated();
+  const [walkthroughOpen, setWalkthroughOpen] = useState(true);
 
   const rules = [
     { title: t(locale, "tutorial.row"), highlight: [3, 4, 5], active: "#bfe0ff", base: "#eef3fa" },
@@ -42,37 +84,37 @@ export default function TutorialPage() {
     { title: t(locale, "tutorial.region"), highlight: [1, 3, 4, 5, 7], active: "#ffd3e1", base: "#dbeafe" },
   ];
 
-  const positives = [
-    { icon: "✓", text: t(locale, "tutorial.pos1") },
-    { icon: "⚡", text: t(locale, "tutorial.pos2") },
-    { icon: "★", text: t(locale, "tutorial.pos3") },
-  ];
-  const negatives = [
-    { icon: "✕", text: t(locale, "tutorial.neg1") },
-    { icon: "◐", text: t(locale, "tutorial.neg2") },
-    { icon: "⏱", text: t(locale, "tutorial.neg3") },
-  ];
-
   return (
     <main
+      id="main-content"
       className="page-shell flex min-h-screen flex-col items-center justify-start bg-theme-bg transition-colors duration-300 relative z-0"
       style={{ "--page-pt": "4rem" } as React.CSSProperties}
     >
       <BackgroundPattern />
       <HamburgerMenu />
+      {hydrated && walkthroughOpen && (
+        <FirstRun
+          onSkip={() => {
+            closeFirstRun();
+            setWalkthroughOpen(false);
+          }}
+          onPlay={() => {
+            closeFirstRun();
+            router.push("/");
+          }}
+        />
+      )}
 
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-4">
           <Link
             href="/"
-            className="w-[38px] h-[38px] rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
+            className="w-11 h-11 rounded-[13px] bg-card flex items-center justify-center shadow-[0_4px_10px_rgba(18,58,94,0.08)] text-ink hover:brightness-95 transition-all active:scale-95"
             aria-label={t(locale, "tutorial.back")}
           >
-            <span aria-hidden="true" className="text-base">
-              ←
-            </span>
+            <ArrowLeft className="w-[18px] h-[18px]" aria-hidden="true" />
           </Link>
-          <h1 className="font-display text-[22px] font-extrabold text-ink">
+          <h1 className="font-display text-xl font-extrabold text-ink">
             {t(locale, "tutorial.title")}
           </h1>
         </div>
@@ -91,7 +133,7 @@ export default function TutorialPage() {
                 active={rule.active}
                 base={rule.base}
               />
-              <div className="font-extrabold text-ink text-[13.5px] text-center">
+              <div className="font-extrabold text-ink text-sm text-center">
                 {rule.title}
               </div>
             </div>
@@ -108,64 +150,82 @@ export default function TutorialPage() {
                 style={{ background: i === 4 ? "#eaf4ff" : "#ffd9d9" }}
               >
                 {i === 4 ? (
-                  <span className="text-sm text-[#123a5e]">♛</span>
+                  <img
+                    src="/assets/figures/queen.png"
+                    alt=""
+                    className="w-[72%] h-[72%] object-contain"
+                  />
                 ) : (
-                  <span className="text-[10px] font-extrabold text-[#e15c67]">
-                    ✕
-                  </span>
+                  <X
+                    className="w-2.5 h-2.5 text-stat-penalty"
+                    strokeWidth={3}
+                    aria-hidden="true"
+                  />
                 )}
               </div>
             ))}
           </div>
           <div>
-            <div className="font-extrabold text-[#d5525d] text-[13.5px] mb-1">
-              ⚠ {t(locale, "tutorial.goldRule")}
+            <div className="flex items-center gap-1.5 font-extrabold text-badge-errors text-sm mb-1">
+              <TriangleAlert className="w-3.5 h-3.5" aria-hidden="true" />
+              {t(locale, "tutorial.goldRule")}
             </div>
-            <div className="text-[#b5555e] dark:text-[#e0a3a7] text-[12.5px] font-semibold leading-snug">
+            <div className="text-badge-errors text-xs font-semibold leading-snug">
               {t(locale, "tutorial.goldRuleText")}
             </div>
           </div>
         </div>
 
-        {/* Scoring */}
-        <div className="font-extrabold text-ink text-sm mb-2.5">
-          {t(locale, "tutorial.scoring")}
+        {/* Marking */}
+        <div className="bg-card rounded-3xl p-4 mb-3 text-center">
+          <div className="font-extrabold text-ink text-sm mb-3">
+            {t(locale, "tutorial.cycleTitle")}
+          </div>
+          <div
+            className="flex items-center justify-center gap-2.5 mb-3 text-muted"
+            aria-hidden="true"
+          >
+            <CycleTile />
+            <ArrowRight className="w-4 h-4" />
+            <CycleTile>
+              <img
+                src="/assets/figures/x-mark.png"
+                alt=""
+                className="w-1/2 h-1/2 object-contain opacity-60"
+              />
+            </CycleTile>
+            <ArrowRight className="w-4 h-4" />
+            <CycleTile>
+              {hydrated && (
+                <img
+                  src={`/assets/figures/${theme}.png`}
+                  alt=""
+                  className="w-[74%] h-[74%] object-contain"
+                />
+              )}
+            </CycleTile>
+            <ArrowRight className="w-4 h-4" />
+            <CycleTile />
+          </div>
+          <p className="text-muted text-xs">{t(locale, "tutorial.markFree")}</p>
         </div>
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
-          <div className="bg-[#eefaf3] dark:bg-[rgba(47,174,118,0.12)] rounded-2xl p-3">
-            <div className="font-extrabold text-[#2fae76] text-[12.5px] mb-2.5">
-              + {t(locale, "tutorial.positive")}
-            </div>
-            <div className="flex flex-col gap-2">
-              {positives.map((s, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <span className="w-[17px] h-[17px] rounded-md bg-[#d3f0e0] text-[#2fae76] text-[10px] font-black flex items-center justify-center shrink-0 mt-px">
-                    {s.icon}
-                  </span>
-                  <span className="text-[11.5px] text-[#3f6b56] dark:text-[#93c4bb] font-semibold leading-snug">
-                    {s.text}
-                  </span>
-                </div>
-              ))}
-            </div>
+
+        {/* Scoring */}
+        <div className="bg-card rounded-3xl p-4 mb-4">
+          <div className="font-extrabold text-ink text-sm mb-3">
+            {t(locale, "tutorial.scoring")}
           </div>
-          <div className="bg-[#fff1f0] dark:bg-[rgba(225,92,103,0.12)] rounded-2xl p-3">
-            <div className="font-extrabold text-[#e15c67] text-[12.5px] mb-2.5">
-              − {t(locale, "tutorial.penalties")}
-            </div>
-            <div className="flex flex-col gap-2">
-              {negatives.map((s, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <span className="w-[17px] h-[17px] rounded-md bg-[#fbdad9] text-[#e15c67] text-[10px] font-black flex items-center justify-center shrink-0 mt-px">
-                    {s.icon}
-                  </span>
-                  <span className="text-[11.5px] text-[#8a4a4f] dark:text-[#e0a3a7] font-semibold leading-snug">
-                    {s.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ul className="flex flex-col gap-2 mb-3">
+            {BANDS.map((band) => (
+              <li key={band} className="flex items-center justify-between gap-2">
+                <BandBadge band={band} locale={locale} />
+                <span className="font-extrabold text-ink text-sm tabular-nums">
+                  {puzzleValue(STANDARD_GRID, band).toLocaleString(locale)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-muted text-xs">{t(locale, "tutorial.scoreNote")}</p>
         </div>
 
         <div className="flex justify-center">

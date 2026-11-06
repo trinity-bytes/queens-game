@@ -2,20 +2,25 @@
 
 import Header from "@/components/Header";
 import Board from "@/components/Board";
+import FirstRun from "@/components/FirstRun";
+import GameDock from "@/components/GameDock";
+import GameStatus from "@/components/GameStatus";
 import MessageStrip from "@/components/MessageStrip";
 import VictoryModal from "@/components/VictoryModal";
 import LiveAnnouncer from "@/components/LiveAnnouncer";
 import BackgroundPattern from "@/components/BackgroundPattern";
 import { useGameStore } from "@/store/gameStore";
 import { useEffect } from "react";
-import Link from "next/link";
-import { t } from "@/lib/i18n";
+import { useHydrated } from "@/lib/useHydrated";
 
 const RESET_HOME_ON_RETURN_KEY = "reset-home-on-return-from-leaderboard";
 
 export default function Home() {
   const generatePuzzle = useGameStore((state) => state.generatePuzzle);
-  const locale = useGameStore((state) => state.locale);
+  const status = useGameStore((state) => state.status);
+  const firstRunOpen = useGameStore((state) => state.firstRunOpen);
+  const closeFirstRun = useGameStore((state) => state.closeFirstRun);
+  const hydrated = useHydrated();
 
   useEffect(() => {
     const shouldReset =
@@ -29,27 +34,25 @@ export default function Home() {
   return (
     <main
       id="main-content"
-      className="page-shell flex min-h-screen flex-col items-center justify-start bg-theme-bg transition-colors duration-300 relative z-0"
+      data-status={status}
+      className="game-shell page-shell bg-theme-bg transition-colors duration-300 relative z-0"
     >
       <BackgroundPattern />
       <LiveAnnouncer />
-      <Header />
-      <MessageStrip />
-      <Board />
-      <div className="flex justify-center mt-5">
-        <Link
-          href="/leaderboard"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-card hover:-translate-y-px text-ink font-extrabold rounded-[18px] shadow-[0_6px_16px_rgba(18,58,94,0.10)] transition-all active:scale-[0.97]"
-        >
-          <img
-            src="/assets/icons/trophy.png"
-            alt="Trophy"
-            className="w-[18px] h-[18px] object-contain"
-          />
-          {t(locale, "home.viewLeaderboard")}
-        </Link>
+      <div className="game-stage">
+        <Board />
+        <GameStatus />
       </div>
-      <VictoryModal />
+      <div className="game-panel">
+        <Header />
+        <MessageStrip />
+        <GameStatus />
+        <GameDock />
+        <VictoryModal />
+      </div>
+      {hydrated && firstRunOpen && (
+        <FirstRun onSkip={closeFirstRun} onPlay={closeFirstRun} />
+      )}
     </main>
   );
 }
