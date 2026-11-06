@@ -83,19 +83,24 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const hasNul = (value: string): boolean => value.includes("\0");
 
 /**
- * Control and format characters, which can reverse the text around them on the
- * public board or make a name invisible. The zero-width joiner stays, because
- * it is what holds an emoji sequence together.
+ * Characters that can reverse the text around them on the public board or hide
+ * in a name: controls, direction marks and zero-width spaces. The joiners and
+ * tag characters stay, because scripts and emoji sequences are spelled with them.
  */
-const INVISIBLE_CHARACTERS = /(?!\u200D)[\p{Cc}\p{Cf}]/gu;
+const INVISIBLE_CHARACTERS =
+  /[\p{Cc}\u00AD\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/gu;
+
+const JOINERS_ONLY = /^[\u200C\u200D]*$/;
 
 /** Counts characters, not UTF-16 units, so an emoji is not cut in half. */
-const normaliseName = (value: unknown): string =>
-  typeof value === "string" && !hasNul(value)
-    ? Array.from(value.replace(INVISIBLE_CHARACTERS, "").trim())
-        .slice(0, MAX_NAME_LENGTH)
-        .join("")
-    : "";
+const normaliseName = (value: unknown): string => {
+  if (typeof value !== "string" || hasNul(value)) return "";
+
+  const name = Array.from(value.replace(INVISIBLE_CHARACTERS, "").trim())
+    .slice(0, MAX_NAME_LENGTH)
+    .join("");
+  return JOINERS_ONLY.test(name) ? "" : name;
+};
 
 /** Measured in characters, as the database's length check does. */
 const isWinId = (value: unknown): value is string =>

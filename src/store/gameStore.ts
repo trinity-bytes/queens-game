@@ -412,7 +412,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
-                  movesCount: 0,
+      movesCount: 0,
       cells: [],
       difficulty: null,
       solveLog: emptySolveLog(),

@@ -125,9 +125,26 @@ describe("parseSubmission", () => {
     expect(parsed.ok && parsed.value.playerName).toBe(family);
   });
 
-  it("rejects a name made only of invisible characters", () => {
-    expect(errorFor({ playerName: "\u200B\u202E" })).toBe("invalid name");
+  it("keeps the non-joiner that Persian spelling depends on", () => {
+    const name = "می\u200Cخواهم";
+    const parsed = parseSubmission({ ...valid, playerName: name });
+
+    expect(parsed.ok && parsed.value.playerName).toBe(name);
   });
+
+  it("keeps the tag characters of a subdivision flag", () => {
+    const scotland = "🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}";
+    const parsed = parseSubmission({ ...valid, playerName: scotland });
+
+    expect(parsed.ok && parsed.value.playerName).toBe(scotland);
+  });
+
+  it.each([["\u200B\u202E"], ["\u200D"], ["\u200C\u200D"]])(
+    "rejects the invisible name %j",
+    (playerName) => {
+      expect(errorFor({ playerName })).toBe("invalid name");
+    },
+  );
 
   it("rejects a solve log with more placements than moves", () => {
     const placements = Array(13).fill({ atMs: 1, correct: true });
