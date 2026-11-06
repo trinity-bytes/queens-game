@@ -1,26 +1,15 @@
+// Installed, not fetched by next/font/google: that download made the build
+// depend on what Google answered, and some of its answers broke Turbopack.
+import "@fontsource-variable/baloo-2/wght.css";
+import "@fontsource-variable/nunito/wght.css";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import { Baloo_2, Nunito } from "next/font/google";
 import { ThemeScript } from "@/components/ThemeScript";
 import DocumentSync from "@/components/DocumentSync";
 import LoadingScreen from "@/components/LoadingScreen";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import SkipLink from "@/components/SkipLink";
 import { t } from "@/lib/i18n";
-
-// Bundled at build time, so a third-party stylesheet never blocks first paint.
-const baloo = Baloo_2({
-  subsets: ["latin", "latin-ext"],
-  weight: ["700", "800"],
-  variable: "--font-baloo",
-  display: "swap",
-});
-const nunito = Nunito({
-  subsets: ["latin", "latin-ext"],
-  weight: ["600", "700", "800"],
-  variable: "--font-nunito",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Queens 4 My Queen",
@@ -46,11 +35,7 @@ export default function RootLayout({
   return (
     // ThemeScript rewrites lang and class before hydration, from values the
     // prerender cannot know.
-    <html
-      lang="es"
-      suppressHydrationWarning
-      className={`${baloo.variable} ${nunito.variable}`}
-    >
+    <html lang="es" suppressHydrationWarning>
       <head>
         <ThemeScript />
         <link rel="preload" as="image" href="/assets/figures/dino.png" />
