@@ -4,3 +4,8 @@ declare namespace NodeJS {
     readonly NEXT_PUBLIC_APP_VERSION: string;
   }
 }
+
+declare module "*?raw" {
+  const content: string;
+  export default content;
+}
