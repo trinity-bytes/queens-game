@@ -3,6 +3,7 @@
 import { useLayoutEffect } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { getInitialLocale, t } from "@/lib/i18n";
+import { syncThemeColor } from "@/lib/systemBars";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? () => undefined : useLayoutEffect;
@@ -33,9 +34,7 @@ export default function DocumentSync() {
     });
     html.classList.add(`theme-${theme}`);
 
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", darkMode ? "#0f172a" : "#f0f9ff");
+    syncThemeColor();
   }, [darkMode, theme]);
 
   useIsomorphicLayoutEffect(() => {
