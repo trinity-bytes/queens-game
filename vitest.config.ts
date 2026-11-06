@@ -1,4 +1,5 @@
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 /**
@@ -9,6 +10,9 @@ export default defineConfig(async () => {
   const migrations = await readD1Migrations("./migrations");
 
   return {
+    resolve: {
+      alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    },
     plugins: [
       cloudflareTest({
         wrangler: { configPath: "./wrangler.jsonc" },

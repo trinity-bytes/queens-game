@@ -3,6 +3,7 @@ import { getCurrentTheme } from "@/lib/themeSelector";
 import { Locale, getInitialLocale, setStoredLocale } from "@/lib/i18n";
 import { setSoundEnabled } from "@/lib/sound";
 import { puzzleValue, scoreFor } from "@/domain/scoring";
+import { settleMove, type PendingQueen } from "@/domain/mistakes";
 import {
   summarizeDiagnostics,
   type GenerationDiagnostics,
@@ -45,7 +46,10 @@ interface PreloadedPuzzle {
  * part that separates skill from luck.
  */
 export interface SolveLog {
-  /** Elapsed ms at each queen placed, right or wrong, in order. */
+  /**
+   * Elapsed ms at each queen played, right or wrong, in order. A queen the
+   * next move took straight off is a cell passing through, not a placement.
+   */
   placements: { atMs: number; correct: boolean }[];
   /** Times a cell was marked X, the notation this game no longer punishes. */
   xMarksPlaced: number;
@@ -67,6 +71,8 @@ interface GameState {
   theme: Theme;
   timer: number;
   mistakes: number;
+  /** The queen placed by the last move, which that move's successor settles. */
+  pendingQueen: PendingQueen | null;
   xPenalties: number;
   score: number;
   grossScore: number;
@@ -332,6 +338,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   theme: getCurrentTheme(),
   timer: 0,
   mistakes: 0,
+  pendingQueen: null,
   xPenalties: 0,
   score: 0,
   grossScore: 0,
@@ -393,6 +400,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       timer: 0,
       mistakes: 0,
+      pendingQueen: null,
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
@@ -445,6 +453,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       solution,
       gridSize,
       mistakes,
+      pendingQueen,
       scoredQueens,
       solveLog,
       lastCorrectMoveTime,
@@ -459,7 +468,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newState = currentState === 0 ? 1 : currentState === 1 ? 2 : 0;
     newCells[index] = newState as CellState;
 
-    let newMistakes = mistakes;
+    const row = Math.floor(index / gridSize);
+    const col = index % gridSize;
+    const placed = newState === 2 ? { correct: solution[row] === col } : null;
+    const { tally, passedThrough } = settleMove(
+      { mistakes, pending: pendingQueen },
+      index,
+      placed,
+    );
+
     const newScoredQueens = [...scoredQueens];
     let newLastCorrectMoveTime = lastCorrectMoveTime;
     const newLastMoveTime = timer;
@@ -475,16 +492,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       newLog.peakXMarks = Math.max(solveLog.peakXMarks, standing);
     }
 
-    if (newState === 2) {
-      const row = Math.floor(index / gridSize);
-      const col = index % gridSize;
-      const correct = solution[row] === col;
+    if (passedThrough) {
+      newLog.placements = solveLog.placements.slice(0, -1);
+    }
 
-      newLog.placements = [...solveLog.placements, { atMs: timer, correct }];
+    if (placed) {
+      newLog.placements = [
+        ...solveLog.placements,
+        { atMs: timer, correct: placed.correct },
+      ];
 
-      if (!correct) {
-        newMistakes++;
-      } else if (!newScoredQueens.includes(index)) {
+      if (placed.correct && !newScoredQueens.includes(index)) {
         newScoredQueens.push(index);
         newLastCorrectMoveTime = timer;
       }
@@ -492,7 +510,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({
       cells: newCells,
-      mistakes: newMistakes,
+      mistakes: tally.mistakes,
+      pendingQueen: tally.pending,
       scoredQueens: newScoredQueens,
       solveLog: newLog,
       lastCorrectMoveTime: newLastCorrectMoveTime,
@@ -508,6 +527,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       cells: new Array(cells.length).fill(0),
       timer: 0,
       mistakes: 0,
+      pendingQueen: null,
       score: 0,
       grossScore: 0,
       totalPenalties: 0,
