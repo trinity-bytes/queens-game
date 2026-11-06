@@ -25,6 +25,7 @@ export default function BandBadge({ band, locale }: BandBadgeProps) {
 
   return (
     <span
+      role="img"
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-micro font-extrabold uppercase tracking-wider ${BAND_STYLES[band]}`}
       aria-label={t(locale, "victory.difficultyAria", {
         band: name,
@@ -34,9 +35,7 @@ export default function BandBadge({ band, locale }: BandBadgeProps) {
       <span aria-hidden="true">
         {t(locale, "victory.difficulty")}: {name}
       </span>
-      <span aria-hidden="true" className="opacity-70">
-        ×{multiplier}
-      </span>
+      <span aria-hidden="true">×{multiplier}</span>
     </span>
   );
 }

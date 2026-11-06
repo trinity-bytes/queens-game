@@ -1,6 +1,6 @@
 import { useGameStore } from "@/store/gameStore";
 import Cell from "./Cell";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 import { regionBoundaries } from "@/domain/board";
 import { useConflicts } from "@/lib/useConflicts";
@@ -15,6 +15,7 @@ export default function Board() {
   const locale = useGameStore((state) => state.locale);
 
   const { queens: conflicting } = useConflicts();
+  const [tabStop, setTabStop] = useState(0);
 
   // One path, so the lines stay even where they meet: overlapping strokes at
   // 75% opacity would darken every junction.
@@ -85,6 +86,10 @@ export default function Board() {
         role="grid"
         aria-label={t(locale, "board.gridAria", { size: gridSize })}
         className="w-full h-full"
+        onFocus={(event) => {
+          const { cellIndex } = (event.target as HTMLElement).dataset;
+          if (cellIndex) setTabStop(Number(cellIndex));
+        }}
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
@@ -103,6 +108,7 @@ export default function Board() {
                   state={cells[index]}
                   gridSize={gridSize}
                   isConflicting={conflicting.has(index)}
+                  isTabStop={index === tabStop}
                 />
               );
             })}

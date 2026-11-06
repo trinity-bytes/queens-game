@@ -16,9 +16,18 @@ interface CellProps {
   gridSize: number;
   /** True when this queen breaks a rule against another queen on the board. */
   isConflicting: boolean;
+  /** The one cell Tab lands on; arrow keys reach the rest of the grid. */
+  isTabStop: boolean;
 }
 
-function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
+function Cell({
+  index,
+  regionId,
+  state,
+  gridSize,
+  isConflicting,
+  isTabStop,
+}: CellProps) {
   // One subscription per value. Reading the whole store here would re-render
   // all 81 cells on every timer tick, since tickTimer writes to the store once
   // a second whether or not anything on the board changed.
@@ -136,33 +145,35 @@ function Cell({ index, regionId, state, gridSize, isConflicting }: CellProps) {
             : "";
 
   return (
-    <button
-      type="button"
-      data-cell-index={index}
-      aria-label={ariaLabel}
-      aria-pressed={state === 2}
-      tabIndex={index === 0 ? 0 : -1}
-      className={`relative w-full aspect-square flex items-center justify-center cursor-pointer select-none touch-manipulation transition-colors duration-200 hover:brightness-95 active:scale-90 focus-visible:z-30 ${isConflicting ? "z-20" : ""} ${cornerClass} ${patternClass}`}
-      style={{
-        backgroundColor: bgColor,
-        border: `1px solid ${edge}`,
-      }}
-      onClick={() => {
-        playTap();
-        toggleCell(index);
-      }}
-      onKeyDown={handleKeyDown}
-    >
-      {icon}
-      {isConflicting && (
-        <span aria-hidden="true">
-          <span className="absolute inset-0 rounded-lg border-[3px] border-badge-errors pointer-events-none" />
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-badge-errors text-card text-micro font-extrabold flex items-center justify-center pointer-events-none">
-            !
+    <div role="gridcell" style={{ display: "contents" }}>
+      <button
+        type="button"
+        data-cell-index={index}
+        aria-label={ariaLabel}
+        aria-pressed={state === 2}
+        tabIndex={isTabStop ? 0 : -1}
+        className={`relative w-full aspect-square flex items-center justify-center cursor-pointer select-none touch-manipulation transition-colors duration-200 hover:brightness-95 active:scale-90 focus-visible:z-30 ${isConflicting ? "z-20" : ""} ${cornerClass} ${patternClass}`}
+        style={{
+          backgroundColor: bgColor,
+          border: `1px solid ${edge}`,
+        }}
+        onClick={() => {
+          playTap();
+          toggleCell(index);
+        }}
+        onKeyDown={handleKeyDown}
+      >
+        {icon}
+        {isConflicting && (
+          <span aria-hidden="true">
+            <span className="absolute inset-0 rounded-lg border-[3px] border-badge-errors pointer-events-none" />
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-badge-errors text-card text-micro font-extrabold flex items-center justify-center pointer-events-none">
+              !
+            </span>
           </span>
-        </span>
-      )}
-    </button>
+        )}
+      </button>
+    </div>
   );
 }
 

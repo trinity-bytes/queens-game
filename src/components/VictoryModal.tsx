@@ -214,6 +214,7 @@ export default function VictoryModal() {
 
       <div className="flex items-end justify-between gap-3 mt-3">
         <p
+          role="img"
           className="font-display text-display font-extrabold text-ink tabular-nums"
           aria-label={t(locale, "victory.totalAria", { value: score })}
         >

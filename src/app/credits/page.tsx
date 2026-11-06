@@ -21,6 +21,7 @@ export default function CreditsPage() {
 
   return (
     <main
+      id="main-content"
       className="page-shell flex min-h-screen flex-col items-center justify-start bg-theme-bg transition-colors duration-300 relative z-0"
       style={{ "--page-pt": "4rem" } as React.CSSProperties}
     >

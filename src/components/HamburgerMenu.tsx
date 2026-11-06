@@ -29,6 +29,7 @@ export default function HamburgerMenu({
   const toggleSound = useGameStore((state) => state.toggleSound);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const languageOptions = getLanguageOptions();
 
   // The stored preference is only known on the client, so the switch renders
@@ -63,6 +64,7 @@ export default function HamburgerMenu({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        buttonRef.current?.focus();
       }
     }
 
@@ -84,6 +86,7 @@ export default function HamburgerMenu({
       ref={menuRef}
     >
       <button
+        ref={buttonRef}
         onClick={() => {
           playButton();
           setIsOpen(!isOpen);
@@ -103,8 +106,8 @@ export default function HamburgerMenu({
       <div
         className={`absolute top-full left-0 mt-3 w-64 bg-card rounded-3xl shadow-[0_16px_34px_rgba(18,58,94,0.18)] overflow-hidden transition-all duration-200 origin-top-left z-50 ${
           isOpen
-            ? "opacity-100 scale-100 pointer-events-auto"
-            : "opacity-0 scale-95 pointer-events-none"
+            ? "visible opacity-100 scale-100 pointer-events-auto"
+            : "invisible opacity-0 scale-95 pointer-events-none"
         }`}
       >
         <nav className="flex flex-col">

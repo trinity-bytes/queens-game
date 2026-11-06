@@ -183,6 +183,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             className="flex flex-col items-center gap-1.5 w-[110px]"
           >
             <div
+              role="img"
               className="w-[50px] h-[50px] rounded-2xl bg-card shadow-[0_6px_16px_rgba(18,58,94,0.12)] flex items-center justify-center font-extrabold text-xl"
               style={{ color: medal.medalColor }}
               aria-label={t(locale, "leaderboard.position", { position: rank })}
@@ -225,6 +226,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                 </span>
                 {entry.mistakes === 0 && (
                   <span
+                    role="img"
                     className="shrink-0 w-6 h-[18px] flex items-center justify-center text-micro font-extrabold text-badge-flawless bg-badge-flawless-bg rounded-full"
                     title={t(locale, "leaderboard.flawlessTitle")}
                     aria-label={t(locale, "leaderboard.flawlessTitle")}
@@ -241,6 +243,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   </span>
                 )}
                 <span
+                  role="img"
                   className="font-extrabold text-stat-total text-sm"
                   aria-label={t(locale, "leaderboard.scoreAria", {
                     score: entry.score,
@@ -249,6 +252,7 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
                   {entry.score.toLocaleString(locale)}
                 </span>
                 <span
+                  role="img"
                   className="font-bold text-muted text-sm tabular-nums"
                   aria-label={t(locale, "leaderboard.timeAria", {
                     time: formatTime(entry.time_ms),
