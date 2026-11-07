@@ -265,3 +265,87 @@ describe("startGame", () => {
     expect(removeItem).toHaveBeenCalledWith("game-in-progress");
   });
 });
+
+describe("markCells", () => {
+  const STROKE = 1;
+  const mark = (indices: number[], stroke = STROKE) =>
+    useGameStore.getState().markCells(indices, stroke);
+
+  it("marks every empty cell of a stroke with an X", () => {
+    expect(mark([0, 1, 2])).toBe(true);
+
+    const { cells, solveLog } = useGameStore.getState();
+    expect(cells.slice(0, 4)).toEqual([1, 1, 1, 0]);
+    expect(solveLog.xMarksPlaced).toBe(3);
+    expect(solveLog.peakXMarks).toBe(3);
+  });
+
+  it("leaves queens and existing marks as they are", () => {
+    tap(0, 2);
+    tap(1);
+    mark([0, 1, 2]);
+
+    const { cells, solveLog } = useGameStore.getState();
+    expect(cells.slice(0, 3)).toEqual([2, 1, 1]);
+    expect(solveLog.xMarksPlaced).toBe(3);
+  });
+
+  it("counts a whole stroke as one move", () => {
+    mark([0]);
+    mark([1, 2]);
+    mark([3]);
+
+    const { movesCount, history } = useGameStore.getState();
+    expect(movesCount).toBe(1);
+    expect(history).toHaveLength(1);
+  });
+
+  it("takes back a whole stroke with one undo", () => {
+    mark([0]);
+    mark([1, 2]);
+    useGameStore.getState().undo();
+
+    const { cells, history } = useGameStore.getState();
+    expect(cells.every((cell) => cell === 0)).toBe(true);
+    expect(history).toHaveLength(0);
+  });
+
+  it("keeps separate strokes as separate moves", () => {
+    mark([0], 1);
+    mark([1], 2);
+    useGameStore.getState().undo();
+
+    const { cells, movesCount } = useGameStore.getState();
+    expect(cells.slice(0, 2)).toEqual([1, 0]);
+    expect(movesCount).toBe(3);
+  });
+
+  it("is no move at all when the stroke finds nothing to mark", () => {
+    tap(WRONG_CELL, 2);
+
+    expect(mark([WRONG_CELL])).toBe(false);
+
+    const { movesCount, history, mistakes, pendingQueen } =
+      useGameStore.getState();
+    expect(movesCount).toBe(2);
+    expect(history).toHaveLength(2);
+    expect(mistakes).toBe(0);
+    expect(pendingQueen).toEqual({ index: WRONG_CELL, correct: false });
+  });
+
+  it("settles a wrong queen the moment a stroke marks another cell", () => {
+    tap(WRONG_CELL, 2);
+    mark([OTHER_CELL]);
+
+    const { mistakes, pendingQueen } = useGameStore.getState();
+    expect(mistakes).toBe(1);
+    expect(pendingQueen).toBeNull();
+  });
+
+  it("does nothing once the game is not being played", () => {
+    useGameStore.setState({ status: "won" });
+
+    expect(mark([0])).toBe(false);
+    expect(useGameStore.getState().cells[0]).toBe(0);
+  });
+});

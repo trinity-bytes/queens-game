@@ -8,6 +8,27 @@
 
 const QUEEN = 2;
 
+/**
+ * The cells on the straight line between two cells, both included.
+ *
+ * Pointer events arrive per frame, so a fast stroke lands several cells apart;
+ * this fills in what it crossed on the way.
+ */
+export function cellsBetween(from: number, to: number, size: number): number[] {
+  const fromRow = Math.floor(from / size);
+  const fromCol = from % size;
+  const rowSpan = Math.floor(to / size) - fromRow;
+  const colSpan = (to % size) - fromCol;
+  const steps = Math.max(Math.abs(rowSpan), Math.abs(colSpan));
+
+  return Array.from({ length: steps + 1 }, (_, step) => {
+    const progress = steps === 0 ? 0 : step / steps;
+    const row = fromRow + Math.round(rowSpan * progress);
+    const col = fromCol + Math.round(colSpan * progress);
+    return row * size + col;
+  });
+}
+
 export type ConflictRule = "touch" | "row" | "column" | "region";
 
 /** The rule named when several clash at once, most visible first. */
