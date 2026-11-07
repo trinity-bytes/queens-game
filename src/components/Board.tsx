@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { t } from "@/lib/i18n";
 import { regionBoundaries } from "@/domain/board";
 import { useConflicts } from "@/lib/useConflicts";
+import { useMarkStroke } from "@/lib/useMarkStroke";
 
 export default function Board() {
   const gridSize = useGameStore((state) => state.gridSize);
@@ -16,6 +17,7 @@ export default function Board() {
 
   const { queens: conflicting } = useConflicts();
   const [tabStop, setTabStop] = useState(0);
+  const strokeHandlers = useMarkStroke(gridSize);
 
   // One path, so the lines stay even where they meet: overlapping strokes at
   // 75% opacity would darken every junction.
@@ -86,6 +88,7 @@ export default function Board() {
         role="grid"
         aria-label={t(locale, "board.gridAria", { size: gridSize })}
         className="w-full h-full"
+        {...strokeHandlers}
         onFocus={(event) => {
           const { cellIndex } = (event.target as HTMLElement).dataset;
           if (cellIndex) setTabStop(Number(cellIndex));
