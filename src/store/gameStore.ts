@@ -77,6 +77,8 @@ export interface Move {
   cells: CellState[];
   /** The unsettled queen this move took off, which Undo puts back unsettled. */
   passed: PendingQueen | null;
+  /** The drag this move belongs to, which keeps adding to it until it ends. */
+  strokeId?: number;
 }
 
 interface GameState {
@@ -122,6 +124,11 @@ interface GameState {
   undo: () => void;
   clearBoard: () => void;
   tickTimer: () => void;
+  /**
+   * Marks the empty cells among `indices` with an X, as part of the drag
+   * `strokeId`. Returns whether any cell changed.
+   */
+  markCells: (indices: number[], strokeId: number) => boolean;
   checkWinCondition: () => void;
   markCurrentWinSaved: () => void;
   closeFirstRun: () => void;
@@ -516,6 +523,47 @@ export const useGameStore = create<GameState>((set, get) => ({
       movesCount: newMovesCount,
     });
     get().checkWinCondition();
+  },
+
+  /**
+   * A whole drag is one move and one Undo, however many cells it crosses, so
+   * only its first mark opens a history entry. It never touches a queen or an
+   * X: sweeping over a cell must not step it on to the next state.
+   */
+  markCells: (indices, strokeId) => {
+    const { cells, status, mistakes, pendingQueen, history, solveLog, movesCount } =
+      get();
+    if (status !== "playing") return false;
+
+    const marked = new Set(indices.filter((index) => cells[index] === 0));
+    if (marked.size === 0) return false;
+
+    const newCells = [...cells];
+    marked.forEach((index) => (newCells[index] = 1));
+
+    const { tally } = settleMove(
+      { mistakes, pending: pendingQueen },
+      WHOLE_BOARD,
+      null,
+    );
+    const standing = newCells.filter((cell) => cell === 1).length;
+    const continuing = history[history.length - 1]?.strokeId === strokeId;
+
+    set({
+      cells: newCells,
+      mistakes: tally.mistakes,
+      pendingQueen: tally.pending,
+      history: continuing
+        ? history
+        : [...history, { index: WHOLE_BOARD, cells, passed: null, strokeId }],
+      solveLog: {
+        ...solveLog,
+        xMarksPlaced: solveLog.xMarksPlaced + marked.size,
+        peakXMarks: Math.max(solveLog.peakXMarks, standing),
+      },
+      movesCount: continuing ? movesCount : movesCount + 1,
+    });
+    return true;
   },
 
   /**

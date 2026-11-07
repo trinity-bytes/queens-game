@@ -35,7 +35,7 @@ export default function Home() {
     <main
       id="main-content"
       data-status={status}
-      className="game-shell page-shell bg-theme-bg transition-colors duration-300 relative z-0"
+      className="game-shell page-shell bg-theme-bg transition-colors duration-300 z-0"
     >
       <BackgroundPattern />
       <LiveAnnouncer />

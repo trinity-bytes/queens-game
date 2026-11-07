@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findConflicts, regionBoundaries } from "./board";
+import { cellsBetween, findConflicts, regionBoundaries } from "./board";
 
 // Regions of a 3x3 board: a left column, then two rows on the right.
 const REGIONS = [0, 1, 1, 0, 2, 2, 0, 2, 2];
@@ -90,5 +90,39 @@ describe("regionBoundaries", () => {
 
   it("draws nothing before a puzzle has loaded", () => {
     expect(regionBoundaries([], SIZE)).toEqual([]);
+  });
+});
+
+describe("cellsBetween", () => {
+  const SIZE = 5;
+  const at = (row: number, col: number) => row * SIZE + col;
+
+  it("is the cell alone when a stroke has not left it", () => {
+    expect(cellsBetween(at(2, 2), at(2, 2), SIZE)).toEqual([at(2, 2)]);
+  });
+
+  it("fills the cells a fast stroke jumped over along a row", () => {
+    expect(cellsBetween(at(1, 0), at(1, 3), SIZE)).toEqual([
+      at(1, 0),
+      at(1, 1),
+      at(1, 2),
+      at(1, 3),
+    ]);
+  });
+
+  it("walks backwards up a column", () => {
+    expect(cellsBetween(at(3, 4), at(1, 4), SIZE)).toEqual([
+      at(3, 4),
+      at(2, 4),
+      at(1, 4),
+    ]);
+  });
+
+  it("steps straight down a diagonal", () => {
+    expect(cellsBetween(at(0, 0), at(2, 2), SIZE)).toEqual([
+      at(0, 0),
+      at(1, 1),
+      at(2, 2),
+    ]);
   });
 });

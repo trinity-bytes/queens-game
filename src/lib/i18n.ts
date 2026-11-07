@@ -292,7 +292,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.errorsBadge.one": "1 error",
     "victory.breakdown": "{value} del tablero, −{percent} % por {errors}",
     "tutorial.cycleTitle": "Toca para cambiar la casilla",
-    "tutorial.markFree": "Marcar con ✕ es gratis: úsalo para descartar.",
+    "tutorial.markFree":
+      "Marcar con ✕ es gratis: úsalo para descartar. Arrastra el dedo por el tablero para marcar varias casillas de una vez.",
     "tutorial.scoreNote":
       "Cada reina mal colocada resta 8 %. El tiempo no resta puntos.",
     "leaderboard.errorTitle": "No pudimos cargar el ranking",
@@ -443,7 +444,8 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.errorsBadge.one": "1 mistake",
     "victory.breakdown": "{value} for the board, −{percent}% for {errors}",
     "tutorial.cycleTitle": "Tap to change the cell",
-    "tutorial.markFree": "Marking with ✕ is free: use it to rule cells out.",
+    "tutorial.markFree":
+      "Marking with ✕ is free: use it to rule cells out. Drag across the board to mark several cells at once.",
     "tutorial.scoreNote":
       "Each misplaced queen takes off 8%. Time costs no points.",
     "leaderboard.errorTitle": "We couldn't load the ranking",
