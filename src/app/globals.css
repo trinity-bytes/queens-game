@@ -356,13 +356,19 @@ body {
 /* ===== Game layout =====
    Portrait stacks everything and centres the board in whatever height is left.
    Wider screens put the controls beside the board. The board is always sized
-   from the smaller side, so the game fits with no scroll. */
+   from the smaller side, so the game fits with no scroll.
+   The shell is pinned to the screen edges rather than sized with 100dvh: an
+   installed app can report that unit taller than the screen after a reload,
+   which pushes the dock off the bottom. The overflow is for screens too small
+   to fit the game at all. */
 .game-shell {
   --gap: 0.75rem;
   --panel-width: 330px;
   --status-height: 2.75rem;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
   display: grid;
-  height: 100dvh;
   max-width: 36rem;
   margin-inline: auto;
   gap: var(--gap);
