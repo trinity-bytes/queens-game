@@ -3,10 +3,14 @@
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
+import { useHydrated } from "@/lib/useHydrated";
 
 export default function LoadingScreen() {
   const locale = useGameStore((state) => state.locale);
   const theme = useGameStore((state) => state.theme);
+  // The prerendered HTML carries the build-time theme and hydration keeps
+  // that src, so the figure waits for the client's theme.
+  const mounted = useHydrated();
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
 
@@ -44,17 +48,18 @@ export default function LoadingScreen() {
       >
         <div className="flex flex-col items-center gap-4">
           <div className="w-[110px] h-[110px] rounded-[32px] bg-card shadow-[0_12px_28px_rgba(18,58,94,0.14)] flex items-center justify-center">
-            <img
-              suppressHydrationWarning
-              src={`/assets/figures/${theme}.png`}
-              alt=""
-              aria-hidden="true"
-              className="w-16 h-16 object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "/assets/figures/queen.png";
-              }}
-            />
+            {mounted && (
+              <img
+                src={`/assets/figures/${theme}.png`}
+                alt=""
+                aria-hidden="true"
+                className="w-16 h-16 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    "/assets/figures/queen.png";
+                }}
+              />
+            )}
           </div>
           <div className="flex gap-2" aria-hidden="true">
             <span className="w-2.5 h-2.5 rounded-full bg-accent dot-bounce" />

@@ -41,15 +41,18 @@ export default function Header() {
           aria-hidden="true"
           className="w-9 h-9 flex-shrink-0 rounded-xl bg-icon-bg flex items-center justify-center"
         >
-          <img
-            suppressHydrationWarning
-            src={`/assets/figures/${theme}.png`}
-            alt="Theme Icon"
-            className="w-6 h-6 object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
-            }}
-          />
+          {/* The page is prerendered with the build-time theme, and hydration
+              keeps that src, so the figure waits for the client's theme. */}
+          {mounted && (
+            <img
+              src={`/assets/figures/${theme}.png`}
+              alt="Theme Icon"
+              className="w-6 h-6 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/assets/figures/queen.png";
+              }}
+            />
+          )}
         </span>
         {/* Kept in the accessibility tree on very narrow screens, where there
             is no room to render it next to the timer and the actions. */}
