@@ -32,29 +32,69 @@ import type { DifficultyBand } from "../workers/puzzleGenerator.types";
  */
 const BASE_POINTS_PER_QUEEN = 2000;
 
-export const BAND_MULTIPLIER: Record<DifficultyBand, number> = {
-  gentle: 1,
-  tricky: 1.6,
-  brutal: 2.4,
-};
+/**
+ * Each lookahead a puzzle demands adds 12% to its value. Bands used to set the
+ * value in three steps, which left most flawless solves tied at the top one;
+ * a continuous rating keeps two brutal boards of different depth apart.
+ *
+ * Uncapped on purpose: a lookahead rules a cell out, so a board can need at
+ * most one per cell, and that is the bound the API enforces.
+ */
+const PERCENT_PER_LOOKAHEAD = 12;
 
-/** Share of the puzzle's value forfeited per wrong queen. */
-const MISTAKE_COST = 0.08;
+/** Share of the puzzle's value forfeited per wrong queen, in percent. */
+const MISTAKE_COST_PERCENT = 8;
 
 /** However bad it goes, finishing a hard board is worth something. */
-const MIN_ACCURACY = 0.2;
+const MIN_ACCURACY_PERCENT = 20;
+
+/**
+ * Lowest rating of each band. The bands no longer price a puzzle; they name
+ * it, so a player can tell a brutal board from a gentle one at a glance.
+ */
+export const BAND_FLOOR: Record<DifficultyBand, number> = {
+  gentle: 0,
+  tricky: 7,
+  brutal: 12,
+};
+
+/**
+ * Cut points for the player-facing bands, taken from the measured
+ * distribution of layouts that clear the generation floor: they split it into
+ * rough thirds at size 9 (31% / 33% / 36%).
+ */
+export function bandFor(lookaheads: number): DifficultyBand {
+  if (lookaheads >= BAND_FLOOR.brutal) return "brutal";
+  if (lookaheads >= BAND_FLOOR.tricky) return "tricky";
+  return "gentle";
+}
+
+/** The most lookaheads a board of this size can demand: one per cell. */
+export const maxRating = (gridSize: number): number => gridSize * gridSize;
+
+/** The value multiplier, in percent, so the arithmetic stays in integers. */
+const multiplierPercent = (rating: number): number =>
+  100 + PERCENT_PER_LOOKAHEAD * rating;
+
+/** The multiplier as the victory screen shows it. */
+export const ratingMultiplier = (rating: number): number =>
+  multiplierPercent(rating) / 100;
 
 export interface ScoredGame {
   gridSize: number;
-  band: DifficultyBand;
+  /** The puzzle's difficulty rating: how many lookaheads it demands. */
+  rating: number;
   mistakes: number;
 }
 
 /** What a flawless solve of this puzzle pays. */
-export const puzzleValue = (gridSize: number, band: DifficultyBand): number =>
-  Math.round(BASE_POINTS_PER_QUEEN * gridSize * BAND_MULTIPLIER[band]);
+export const puzzleValue = (gridSize: number, rating: number): number =>
+  (BASE_POINTS_PER_QUEEN * gridSize * multiplierPercent(rating)) / 100;
 
-export function scoreFor({ gridSize, band, mistakes }: ScoredGame): number {
-  const accuracy = Math.max(MIN_ACCURACY, 1 - MISTAKE_COST * mistakes);
-  return Math.round(puzzleValue(gridSize, band) * accuracy);
+export function scoreFor({ gridSize, rating, mistakes }: ScoredGame): number {
+  const accuracy = Math.max(
+    MIN_ACCURACY_PERCENT,
+    100 - MISTAKE_COST_PERCENT * mistakes,
+  );
+  return Math.round((puzzleValue(gridSize, rating) * accuracy) / 100);
 }

@@ -182,6 +182,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.difficulty": "Dificultad",
     "victory.difficultyAria":
       "Dificultad del puzzle: {band}, multiplicador {multiplier}",
+    "victory.difficultyBandAria": "Dificultad del puzzle: {band}",
     "difficulty.gentle": "Suave",
     "difficulty.tricky": "Enredada",
     "difficulty.brutal": "Brutal",
@@ -295,7 +296,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "tutorial.markFree":
       "Marcar con ✕ es gratis: úsalo para descartar. Arrastra el dedo por el tablero para marcar varias casillas de una vez.",
     "tutorial.scoreNote":
-      "Cada reina mal colocada resta 8 %. El tiempo no resta puntos.",
+      "La dificultad exacta de cada tablero fija su valor, así que uno más difícil paga más aunque sea de la misma banda. Cada reina mal colocada resta 8 %. El tiempo no resta puntos.",
     "leaderboard.errorTitle": "No pudimos cargar el ranking",
     "leaderboard.errorText":
       "Los puntajes siguen a salvo. Revisa tu conexión e inténtalo otra vez.",
@@ -336,6 +337,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "victory.difficulty": "Difficulty",
     "victory.difficultyAria":
       "Puzzle difficulty: {band}, multiplier {multiplier}",
+    "victory.difficultyBandAria": "Puzzle difficulty: {band}",
     "difficulty.gentle": "Gentle",
     "difficulty.tricky": "Tricky",
     "difficulty.brutal": "Brutal",
@@ -447,7 +449,7 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     "tutorial.markFree":
       "Marking with ✕ is free: use it to rule cells out. Drag across the board to mark several cells at once.",
     "tutorial.scoreNote":
-      "Each misplaced queen takes off 8%. Time costs no points.",
+      "Each board's rating sets its value, so a harder board pays more even within its band. Each misplaced queen takes off 8%. Time costs no points.",
     "leaderboard.errorTitle": "We couldn't load the ranking",
     "leaderboard.errorText":
       "The scores are safe. Check your connection and try again.",

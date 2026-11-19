@@ -191,6 +191,15 @@ export default function Leaderboard({ fullPage = false }: LeaderboardProps) {
             <span className="font-extrabold text-stat-total text-sm">
               {entry.score.toLocaleString(locale)}
             </span>
+            <span
+              role="img"
+              className="font-bold text-muted text-sm tabular-nums"
+              aria-label={t(locale, "leaderboard.timeAria", {
+                time: formatTime(entry.time_ms),
+              })}
+            >
+              {formatTime(entry.time_ms)}
+            </span>
             <div
               className="w-full rounded-t-2xl"
               style={{
