@@ -9,8 +9,6 @@
 // column and region, and no two queens touching in any of the 8 directions.
 // There is no shared-diagonal rule.
 
-import type { DifficultyBand } from "./puzzleGenerator.types";
-
 /**
  * Layouts needing fewer lookaheads than this are dropped in generation.
  *
@@ -21,17 +19,8 @@ import type { DifficultyBand } from "./puzzleGenerator.types";
  */
 export const MIN_INTERESTING_LOOKAHEADS = 3;
 
-/**
- * Cut points for the player-facing bands, taken from the measured
- * distribution of layouts that clear the floor: they split it into rough
- * thirds at size 9 (31% / 33% / 36%), so the multiplier is not handing out
- * "brutal" to a fifth of the board or one puzzle in fifty.
- */
-export function bandFor(lookaheads: number): DifficultyBand {
-  if (lookaheads >= 12) return "brutal";
-  if (lookaheads >= 7) return "tricky";
-  return "gentle";
-}
+// The band cut points live with the score formula, which the API shares.
+export { bandFor } from "../domain/scoring.ts";
 
 /** Techniques the solver knows, ordered by how much work they ask of a player. */
 export const DIFFICULTY_TIERS = [

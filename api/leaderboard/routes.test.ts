@@ -7,7 +7,7 @@ import { handleLeaderboard } from "./routes";
 const win = (patch: Record<string, unknown> = {}) => ({
   winId: `win-${crypto.randomUUID()}`,
   playerName: "Queen",
-  score: 28800,
+  score: 35280,
   timeMs: 95000,
   mistakes: 0,
   movesCount: 12,
@@ -16,7 +16,7 @@ const win = (patch: Record<string, unknown> = {}) => ({
   locale: "es",
   appVersion: "1.4.0",
   difficultyBand: "tricky",
-  difficultyScore: 2,
+  difficultyScore: 8,
   deviceType: "mobile",
   solveLog: {
     placements: [{ atMs: 1000, correct: true }],
@@ -65,9 +65,9 @@ describe("POST /api/leaderboard", () => {
     expect(entry).toMatchObject({
       win_id: "win-store",
       player_name: "Queen",
-      score: 28800,
+      score: 35280,
       difficulty_band: "tricky",
-      difficulty_score: 2,
+      difficulty_score: 8,
     });
 
     const telemetry = await env.DB.prepare(
@@ -208,7 +208,7 @@ describe("POST /api/leaderboard", () => {
     );
     await env.DB.batch(statements);
 
-    const best = await post(win({ difficultyBand: "brutal", score: 43200 }));
+    const best = await post(win({ difficultyBand: "brutal", difficultyScore: 12, score: 43920 }));
     expect(best.status).toBe(201);
     expect(await count("leaderboard")).toBe(100);
     expect(await count("leaderboard_telemetry")).toBe(1);
@@ -239,7 +239,7 @@ describe("POST /api/leaderboard", () => {
 
 describe("GET /api/leaderboard", () => {
   const seed = async () => {
-    await post(win({ score: 18000, difficultyBand: "gentle", playerName: "C" }));
+    await post(win({ score: 18000, difficultyBand: "gentle", difficultyScore: 0, playerName: "C" }));
     await post(win({ timeMs: 90000, playerName: "A" }));
     await post(win({ timeMs: 95000, playerName: "B" }));
     await env.DB.prepare(

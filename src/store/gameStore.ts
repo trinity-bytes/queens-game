@@ -653,11 +653,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     // is solved anyway, and a single formula over the finished game is easier
     // to reason about — and to re-check on the server.
     //
-    // The band falls back to the cheapest one if a puzzle somehow arrived
-    // unrated, so a missing rating can never inflate a score.
-    const band = difficulty?.band ?? "gentle";
-    const value = puzzleValue(gridSize, band);
-    const finalScore = scoreFor({ gridSize, band, mistakes });
+    // An unrated puzzle scores as rating 0, the cheapest there is, so a
+    // missing rating can never inflate a score.
+    const rating = difficulty?.lookaheads ?? 0;
+    const value = puzzleValue(gridSize, rating);
+    const finalScore = scoreFor({ gridSize, rating, mistakes });
 
     // A win ends the reroll streak: the count belongs to the game it produced.
     localStorage.removeItem(ABANDONED_STORAGE_KEY);

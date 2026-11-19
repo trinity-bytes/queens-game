@@ -4,7 +4,7 @@ import { parseSubmission } from "./submission";
 const valid = {
   winId: "win-12345",
   playerName: "  Queen  ",
-  score: 28800,
+  score: 35280,
   timeMs: 95000,
   mistakes: 0,
   movesCount: 12,
@@ -13,7 +13,7 @@ const valid = {
   locale: "es",
   appVersion: "1.4.0",
   difficultyBand: "tricky",
-  difficultyScore: 2,
+  difficultyScore: 8,
   deviceType: "mobile",
   solveLog: {
     placements: [{ atMs: 1000, correct: true }],
@@ -33,7 +33,7 @@ describe("parseSubmission", () => {
     const result = parseSubmission(valid);
     expect(result).toMatchObject({
       ok: true,
-      value: { playerName: "Queen", score: 28800, winId: "win-12345" },
+      value: { playerName: "Queen", score: 35280, winId: "win-12345" },
     });
   });
 
@@ -69,7 +69,8 @@ describe("parseSubmission", () => {
     [{ difficultyBand: "legendary" }, "invalid difficulty band"],
     [{ difficultyBand: "constructor" }, "invalid difficulty band"],
     [{ difficultyScore: -1 }, "invalid difficulty score"],
-    [{ difficultyScore: 2147483648 }, "invalid difficulty score"],
+    [{ difficultyScore: 82 }, "invalid difficulty score"],
+    [{ difficultyScore: 2.5 }, "invalid difficulty score"],
     [{ winId: "👑👑👑👑" }, "invalid win id"],
     [{ winId: "win\0-12345" }, "invalid win id"],
     [{ playerName: "Que\0en" }, "invalid name"],
@@ -85,8 +86,34 @@ describe("parseSubmission", () => {
     expect(errorFor({ winId: "👑".repeat(64) })).toBeNull();
   });
 
-  it("rejects a score the band and mistakes cannot produce", () => {
-    expect(errorFor({ score: 28801 })).toBe("invalid score");
+  it("rejects a score the rating and mistakes cannot produce", () => {
+    expect(errorFor({ score: 35281 })).toBe("invalid score");
+  });
+
+  it("rejects a band the rating does not name", () => {
+    expect(errorFor({ difficultyBand: "brutal" })).toBe(
+      "invalid difficulty score",
+    );
+  });
+
+  it("prices the run by its rating, not its band", () => {
+    const result = parseSubmission({
+      ...valid,
+      difficultyBand: "brutal",
+      difficultyScore: 24,
+      score: 69840,
+    });
+    expect(result.ok && result.value.score).toBe(69840);
+  });
+
+  it("accepts the deepest rating a board can demand", () => {
+    const result = parseSubmission({
+      ...valid,
+      difficultyBand: "brutal",
+      difficultyScore: 81,
+      score: 192960,
+    });
+    expect(result.ok).toBe(true);
   });
 
   it.each([

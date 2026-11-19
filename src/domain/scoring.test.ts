@@ -1,43 +1,78 @@
 import { describe, expect, it } from "vitest";
-import { BAND_MULTIPLIER, scoreFor } from "./scoring";
+import {
+  bandFor,
+  maxRating,
+  puzzleValue,
+  ratingMultiplier,
+  scoreFor,
+} from "./scoring";
 
 describe("scoreFor", () => {
   it.each([
-    ["gentle", 18000],
-    ["tricky", 28800],
-    ["brutal", 43200],
-  ] as const)("pays a flawless %s 9x9 its full value", (band, expected) => {
-    expect(scoreFor({ gridSize: 9, band, mistakes: 0 })).toBe(expected);
+    [0, 18000],
+    [12, 43920],
+    [24, 69840],
+    [36, 95760],
+  ])("pays a flawless 9x9 of rating %i its full value", (rating, expected) => {
+    expect(scoreFor({ gridSize: 9, rating, mistakes: 0 })).toBe(expected);
+  });
+
+  it("pays two brutal boards of different depth differently", () => {
+    const shallow = scoreFor({ gridSize: 9, rating: 12, mistakes: 0 });
+    const deep = scoreFor({ gridSize: 9, rating: 13, mistakes: 0 });
+    expect(deep - shallow).toBe(2160);
   });
 
   it("takes 8% of the value per mistake", () => {
-    expect(scoreFor({ gridSize: 9, band: "tricky", mistakes: 3 })).toBe(21888);
+    expect(scoreFor({ gridSize: 9, rating: 10, mistakes: 3 })).toBe(30096);
   });
 
   it("never pays less than 20% of the value", () => {
-    expect(scoreFor({ gridSize: 9, band: "gentle", mistakes: 10 })).toBe(3600);
-    expect(scoreFor({ gridSize: 9, band: "gentle", mistakes: 500 })).toBe(3600);
+    expect(scoreFor({ gridSize: 9, rating: 0, mistakes: 10 })).toBe(3600);
+    expect(scoreFor({ gridSize: 9, rating: 0, mistakes: 500 })).toBe(3600);
   });
 
-  it("matches exact decimal arithmetic for every reachable input", () => {
-    // Postgres computed this in exact numerics. Tenths of a percent as
-    // integers reproduce that, so a float drift here would reject real wins.
-    const tenths = { gentle: 10, tricky: 16, brutal: 24 } as const;
-
-    for (const band of ["gentle", "tricky", "brutal"] as const) {
-      for (let gridSize = 4; gridSize <= 12; gridSize++) {
-        for (let mistakes = 0; mistakes <= 500; mistakes++) {
-          const value = (2000 * gridSize * tenths[band]) / 10;
+  it("matches exact integer arithmetic for every reachable input", () => {
+    // The browser and the Worker must agree to the point, so a float drift
+    // here would reject real wins.
+    for (let gridSize = 4; gridSize <= 12; gridSize++) {
+      for (let rating = 0; rating <= maxRating(gridSize); rating++) {
+        for (let mistakes = 0; mistakes <= 15; mistakes++) {
+          const value = 20 * gridSize * (100 + 12 * rating);
           const accuracyPct = Math.max(20, 100 - 8 * mistakes);
-          expect(scoreFor({ gridSize, band, mistakes })).toBe(
-            (value * accuracyPct) / 100,
+          expect(scoreFor({ gridSize, rating, mistakes })).toBe(
+            Math.round((value * accuracyPct) / 100),
           );
         }
       }
     }
   });
+});
 
-  it("exposes the multipliers the victory screen displays", () => {
-    expect(BAND_MULTIPLIER).toEqual({ gentle: 1, tricky: 1.6, brutal: 2.4 });
+describe("puzzleValue", () => {
+  it("is a whole number for every rating", () => {
+    for (let rating = 0; rating <= maxRating(12); rating++) {
+      expect(Number.isInteger(puzzleValue(12, rating))).toBe(true);
+    }
+  });
+});
+
+describe("ratingMultiplier", () => {
+  it("adds 12% per lookahead", () => {
+    expect(ratingMultiplier(0)).toBe(1);
+    expect(ratingMultiplier(24)).toBe(3.88);
+  });
+});
+
+describe("bandFor", () => {
+  it.each([
+    [0, "gentle"],
+    [6, "gentle"],
+    [7, "tricky"],
+    [11, "tricky"],
+    [12, "brutal"],
+    [81, "brutal"],
+  ] as const)("names rating %i %s", (rating, band) => {
+    expect(bandFor(rating)).toBe(band);
   });
 });

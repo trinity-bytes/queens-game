@@ -8,7 +8,7 @@ import BackgroundPattern from "@/components/BackgroundPattern";
 import BandBadge from "@/components/BandBadge";
 import FirstRun from "@/components/FirstRun";
 import HamburgerMenu from "@/components/HamburgerMenu";
-import { puzzleValue } from "@/domain/scoring";
+import { BAND_FLOOR, puzzleValue } from "@/domain/scoring";
 import { useGameStore } from "@/store/gameStore";
 import { t } from "@/lib/i18n";
 import { REGION_PALETTE_DARK, REGION_PALETTE_LIGHT } from "@/lib/designTokens";
@@ -19,6 +19,18 @@ const BANDS: DifficultyBand[] = ["gentle", "tricky", "brutal"];
 
 /** Scores are quoted for the board the game deals. */
 const STANDARD_GRID = 9;
+
+/**
+ * What a flawless standard board of this band pays, from its easiest rating
+ * to its hardest. The top band has no ceiling, so it reads as "from".
+ */
+function bandRange(band: DifficultyBand, locale: string): string {
+  const format = (rating: number) =>
+    puzzleValue(STANDARD_GRID, rating).toLocaleString(locale);
+  const next = BANDS[BANDS.indexOf(band) + 1];
+  const low = format(BAND_FLOOR[band]);
+  return next ? `${low} – ${format(BAND_FLOOR[next] - 1)}` : `${low}+`;
+}
 
 /** The region the cycle illustration borrows its colour and texture from. */
 const CYCLE_REGION = 3;
@@ -220,7 +232,7 @@ export default function TutorialPage() {
               <li key={band} className="flex items-center justify-between gap-2">
                 <BandBadge band={band} locale={locale} />
                 <span className="font-extrabold text-ink text-sm tabular-nums">
-                  {puzzleValue(STANDARD_GRID, band).toLocaleString(locale)}
+                  {bandRange(band, locale)}
                 </span>
               </li>
             ))}
