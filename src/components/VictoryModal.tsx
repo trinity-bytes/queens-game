@@ -226,7 +226,13 @@ export default function VictoryModal() {
       </div>
 
       <div className="flex flex-wrap gap-1.5 mt-2.5">
-        {difficulty && <BandBadge band={difficulty.band} locale={locale} />}
+        {difficulty && (
+          <BandBadge
+            band={difficulty.band}
+            locale={locale}
+            rating={difficulty.lookaheads}
+          />
+        )}
         <span
           className={`px-2.5 py-1 rounded-xl text-micro font-extrabold uppercase tracking-wider ${
             mistakes === 0

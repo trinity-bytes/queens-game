@@ -1,4 +1,9 @@
-import { BAND_MULTIPLIER, scoreFor } from "../../src/domain/scoring";
+import {
+  BAND_FLOOR,
+  bandFor,
+  maxRating,
+  scoreFor,
+} from "../../src/domain/scoring";
 import type { DifficultyBand } from "../../src/workers/puzzleGenerator.types";
 
 /**
@@ -20,8 +25,6 @@ export const RANKED_GRID_SIZE = 9;
 const MIN_WIN_ID_LENGTH = 5;
 const MAX_WIN_ID_LENGTH = 64;
 const MAX_LABEL_LENGTH = 64;
-/** The column was an int4 in Postgres; nothing legitimate comes close. */
-const MAX_DIFFICULTY_SCORE = 2_147_483_647;
 
 export interface Placement {
   atMs: number;
@@ -74,7 +77,7 @@ const optionalLabel = (value: unknown): string | null =>
   isLabel(value) ? value : null;
 
 const isBand = (value: unknown): value is DifficultyBand =>
-  typeof value === "string" && Object.hasOwn(BAND_MULTIPLIER, value);
+  typeof value === "string" && Object.hasOwn(BAND_FLOOR, value);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -186,7 +189,12 @@ export function parseSubmission(body: unknown): ParsedSubmission {
 
   if (!isBand(difficultyBand)) return fail("invalid difficulty band");
 
-  if (!isIntegerBetween(difficultyScore, 0, MAX_DIFFICULTY_SCORE)) {
+  // The rating now prices the run, so it is bounded by what a board can
+  // demand, and the band must be the one that rating names.
+  if (
+    !isIntegerBetween(difficultyScore, 0, maxRating(gridSize)) ||
+    bandFor(difficultyScore) !== difficultyBand
+  ) {
     return fail("invalid difficulty score");
   }
 
@@ -196,7 +204,7 @@ export function parseSubmission(body: unknown): ParsedSubmission {
   const solveLog = parseSolveLog(body.solveLog, movesCount);
   if (!solveLog) return fail("invalid solve log");
 
-  const expected = scoreFor({ gridSize, band: difficultyBand, mistakes });
+  const expected = scoreFor({ gridSize, rating: difficultyScore, mistakes });
   // The expected value stays out of the message: it would hand a forger the
   // exact number to send.
   if (score !== expected) return fail("invalid score");
