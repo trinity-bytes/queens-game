@@ -50,6 +50,10 @@ describe("scoreFor", () => {
 });
 
 describe("puzzleValue", () => {
+  it("tops out at the bound the database enforces", () => {
+    expect(puzzleValue(12, maxRating(12))).toBe(438720);
+  });
+
   it("is a whole number for every rating", () => {
     for (let rating = 0; rating <= maxRating(12); rating++) {
       expect(Number.isInteger(puzzleValue(12, rating))).toBe(true);

@@ -90,6 +90,12 @@ describe("parseSubmission", () => {
     expect(errorFor({ score: 35281 })).toBe("invalid score");
   });
 
+  it("rejects a tricky band sent with a brutal rating", () => {
+    expect(
+      errorFor({ difficultyBand: "tricky", difficultyScore: 12, score: 43920 }),
+    ).toBe("invalid difficulty score");
+  });
+
   it("rejects a band the rating does not name", () => {
     expect(errorFor({ difficultyBand: "brutal" })).toBe(
       "invalid difficulty score",

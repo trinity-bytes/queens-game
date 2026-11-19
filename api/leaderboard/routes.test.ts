@@ -266,6 +266,8 @@ describe("POST /api/leaderboard", () => {
 
     expect(await count("leaderboard_solve_log")).toBe(1);
     expect(await count("leaderboard_telemetry")).toBe(1);
+    // Nor does the replay put the run back on the board.
+    expect(await count("leaderboard")).toBe(0);
   });
 
   it("removes runs older than five days when a new one arrives", async () => {

@@ -44,7 +44,12 @@ export function d1Repository(db: D1Database): LeaderboardRepository {
                id, win_id, player_name, score, time_ms, mistakes, moves_count,
                grid_size, theme_used, locale, difficulty_band, difficulty_score
              )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12
+             -- A win that already left the board is still known by its solve
+             -- log, so replaying it cannot bring it back with a fresh date.
+             WHERE NOT EXISTS (
+               SELECT 1 FROM leaderboard_solve_log WHERE win_id = ?2
+             )
              ON CONFLICT (win_id) DO NOTHING`,
           )
           .bind(
