@@ -45,8 +45,17 @@ const count = async (table: string) => {
 };
 
 beforeEach(async () => {
-  await env.DB.prepare("DELETE FROM leaderboard").run();
+  // The research tables no longer empty with the board, so each is cleared.
+  await env.DB.batch(
+    ["leaderboard", "leaderboard_solve_log", "leaderboard_telemetry"].map(
+      (table) => env.DB.prepare(`DELETE FROM ${table}`),
+    ),
+  );
 });
+
+/** An ISO timestamp the given number of days before now. */
+const daysAgo = (days: number) =>
+  new Date(Date.now() - days * 86_400_000).toISOString();
 
 describe("POST /api/leaderboard", () => {
   it("stores the run, its telemetry and its solve log", async () => {
@@ -199,7 +208,7 @@ describe("POST /api/leaderboard", () => {
     expect(response.status).toBe(200);
   });
 
-  it("keeps only the best 100 runs and removes their private rows", async () => {
+  it("keeps only the best 100 runs and keeps every solve log", async () => {
     const statements = Array.from({ length: 100 }, (_, i) =>
       env.DB.prepare(
         `INSERT INTO leaderboard (id, win_id, player_name, score, time_ms, theme_used)
@@ -208,32 +217,83 @@ describe("POST /api/leaderboard", () => {
     );
     await env.DB.batch(statements);
 
-    const best = await post(win({ difficultyBand: "brutal", difficultyScore: 12, score: 43920 }));
+    const best = await post(
+      win({ difficultyBand: "brutal", difficultyScore: 12, score: 43920 }),
+    );
     expect(best.status).toBe(201);
     expect(await count("leaderboard")).toBe(100);
-    expect(await count("leaderboard_telemetry")).toBe(1);
 
     const worstSeed = await env.DB.prepare(
       "SELECT 1 FROM leaderboard WHERE id = 'seed-99'",
     ).first();
     expect(worstSeed).toBeNull();
 
-    // Too low to make the board: valid, but not stored, and the response says
-    // so instead of naming a row that does not exist.
+    // Too low to make the board: valid, but not ranked, and the response says
+    // so instead of naming a row that does not exist. Its research rows are
+    // kept all the same.
     const outOfBoard = await post(win({ winId: "win-low" }));
     expect(outOfBoard.status).toBe(200);
     expect(await outOfBoard.json()).toEqual({ id: null });
     expect(await count("leaderboard")).toBe(100);
+    expect(await count("leaderboard_telemetry")).toBe(2);
+    expect(await count("leaderboard_solve_log")).toBe(2);
+
+    const log = await env.DB.prepare(
+      `SELECT grid_size, difficulty_score, time_ms, mistakes, moves_count
+       FROM leaderboard_solve_log WHERE win_id = 'win-low'`,
+    ).first();
+    expect(log).toEqual({
+      grid_size: 9,
+      difficulty_score: 8,
+      time_ms: 95000,
+      mistakes: 0,
+      moves_count: 12,
+    });
+  });
+
+  it("keeps the research rows when a stored run leaves the board", async () => {
+    await post(win({ winId: "win-gone" }));
+    await env.DB.prepare("DELETE FROM leaderboard").run();
+
     expect(await count("leaderboard_telemetry")).toBe(1);
     expect(await count("leaderboard_solve_log")).toBe(1);
   });
 
-  it("cascades private rows when a stored run leaves the board", async () => {
-    await post(win({ winId: "win-gone" }));
+  it("does not store a replayed win's research rows twice", async () => {
+    await post(win({ winId: "win-replay" }));
     await env.DB.prepare("DELETE FROM leaderboard").run();
+    await post(win({ winId: "win-replay" }));
 
-    expect(await count("leaderboard_telemetry")).toBe(0);
-    expect(await count("leaderboard_solve_log")).toBe(0);
+    expect(await count("leaderboard_solve_log")).toBe(1);
+    expect(await count("leaderboard_telemetry")).toBe(1);
+  });
+
+  it("removes runs older than five days when a new one arrives", async () => {
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO leaderboard (id, win_id, player_name, score, time_ms, theme_used, created_at)
+         VALUES ('old', 'old-win', 'Old', 90000, 1000, 'elephant', ?)`,
+      ).bind(daysAgo(6)),
+      env.DB.prepare(
+        `INSERT INTO leaderboard (id, win_id, player_name, score, time_ms, theme_used, created_at)
+         VALUES ('recent', 'recent-win', 'Recent', 90000, 1000, 'elephant', ?)`,
+      ).bind(daysAgo(4)),
+    ]);
+
+    await post(win());
+
+    const ids = await env.DB.prepare("SELECT id FROM leaderboard").all<{
+      id: string;
+    }>();
+    expect(ids.results.map((row) => row.id)).not.toContain("old");
+    expect(ids.results.map((row) => row.id)).toContain("recent");
+  });
+
+  it("accepts a score above the old band ceiling", async () => {
+    const response = await post(
+      win({ difficultyBand: "brutal", difficultyScore: 36, score: 95760 }),
+    );
+    expect(response.status).toBe(201);
   });
 });
 
@@ -247,6 +307,22 @@ describe("GET /api/leaderboard", () => {
        VALUES ('legacy', 'legacy-win', 'Other grid', 25600, 1000, 8, 'dog')`,
     ).run();
   };
+
+  it("shows only runs from the last five days", async () => {
+    await post(win({ playerName: "Fresh" }));
+    // Inserted straight into the table: the trigger would remove it on the
+    // next submission, but the board must hide it even if none comes.
+    await env.DB.prepare(
+      `INSERT INTO leaderboard (id, win_id, player_name, score, time_ms, theme_used, created_at)
+       VALUES ('stale', 'stale-win', 'Stale', 90000, 1000, 'elephant', ?)`,
+    )
+      .bind(daysAgo(5.1))
+      .run();
+
+    const response = await call("/api/leaderboard");
+    const entries = await response.json<{ player_name: string }[]>();
+    expect(entries.map((e) => e.player_name)).toEqual(["Fresh"]);
+  });
 
   it("ranks 9x9 runs by score, then by time", async () => {
     await seed();

@@ -7,6 +7,12 @@ import type { LeaderboardRepository, RankedRun } from "./repository";
 const PUBLIC_COLUMNS =
   "id, player_name, score, time_ms, mistakes, moves_count, grid_size, created_at";
 
+/**
+ * How far back the board looks, as an SQLite date modifier. Must match the
+ * cleanup trigger in migrations/0002_rating_scores_and_rolling_board.sql.
+ */
+const BOARD_WINDOW = "-5 days";
+
 export function d1Repository(db: D1Database): LeaderboardRepository {
   return {
     async topScores(gridSize, limit) {
@@ -14,10 +20,11 @@ export function d1Repository(db: D1Database): LeaderboardRepository {
         .prepare(
           `SELECT ${PUBLIC_COLUMNS} FROM leaderboard
            WHERE grid_size = ?
+             AND created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)
            ORDER BY score DESC, time_ms ASC
            LIMIT ?`,
         )
-        .bind(gridSize, limit)
+        .bind(gridSize, BOARD_WINDOW, limit)
         .all<RankedRun>();
       return results;
     },
@@ -26,10 +33,10 @@ export function d1Repository(db: D1Database): LeaderboardRepository {
       const id = crypto.randomUUID();
       const { solveLog } = submission;
 
-      // One batch is one transaction, so a run never exists without its
-      // private rows. Those are guarded by EXISTS because the first statement
-      // may store nothing: a replayed win id conflicts, and a run too low for
-      // the board is removed again by the cleanup trigger.
+      // One batch is one transaction. The solve log is written for every
+      // new win, on the board or not: it is research data, and a run too low
+      // for the board is as useful for calibrating as one at the top. Its
+      // unique win id makes a replay a no-op, and telemetry follows it.
       await db.batch([
         db
           .prepare(
@@ -56,28 +63,36 @@ export function d1Repository(db: D1Database): LeaderboardRepository {
           ),
         db
           .prepare(
-            `INSERT INTO leaderboard_telemetry (
-               entry_id, user_agent, device_type, device_local_time, app_version
-             )
-             SELECT ?1, ?2, ?3, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), ?4
-             WHERE EXISTS (SELECT 1 FROM leaderboard WHERE id = ?1)`,
-          )
-          .bind(id, userAgent, submission.deviceType, submission.appVersion),
-        db
-          .prepare(
             `INSERT INTO leaderboard_solve_log (
-               entry_id, placements, x_marks_placed, peak_x_marks, puzzles_abandoned
+               entry_id, win_id, grid_size, difficulty_score, time_ms,
+               mistakes, moves_count, placements, x_marks_placed,
+               peak_x_marks, puzzles_abandoned
              )
-             SELECT ?1, ?2, ?3, ?4, ?5
-             WHERE EXISTS (SELECT 1 FROM leaderboard WHERE id = ?1)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT (win_id) DO NOTHING`,
           )
           .bind(
             id,
+            submission.winId,
+            submission.gridSize,
+            submission.difficultyScore,
+            submission.timeMs,
+            submission.mistakes,
+            submission.movesCount,
             JSON.stringify(solveLog.placements),
             solveLog.xMarksPlaced,
             solveLog.peakXMarks,
             solveLog.puzzlesAbandoned,
           ),
+        db
+          .prepare(
+            `INSERT INTO leaderboard_telemetry (
+               entry_id, user_agent, device_type, device_local_time, app_version
+             )
+             SELECT ?1, ?2, ?3, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), ?4
+             WHERE EXISTS (SELECT 1 FROM leaderboard_solve_log WHERE entry_id = ?1)`,
+          )
+          .bind(id, userAgent, submission.deviceType, submission.appVersion),
       ]);
 
       const stored = await db
